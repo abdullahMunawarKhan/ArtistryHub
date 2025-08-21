@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
+import { useNavigate } from 'react-router-dom';
 
 function ArtistList() {
 	const [artists, setArtists] = useState([]);

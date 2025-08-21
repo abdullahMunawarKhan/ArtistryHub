@@ -9,6 +9,7 @@ import AdminLogin from './pages/AdminLogin';
 import UpdatePassword from './pages/UpdatePassword';
 import AdminDashboard from './pages/AdminDashboard';
 import ArtistList from './pages/ArtistList';
+import ArtistProfile from './pages/ArtistProfile';
 import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
@@ -30,6 +31,7 @@ function App() {
             <Route path="/admin-login" element={<AdminLogin/>} />
             <Route path="/admin-dashboard" element={<AdminDashboard/>} />
             <Route path="/artist-list" element={<ArtistList />} />
+            <Route path="/artist-profile" element={<ArtistProfile />} />
             <Route path="/cart" element={<Cart/>} />
             <Route path="/register" element={<Register/>} />
             <Route path="/orders" element={<Orders/>} />

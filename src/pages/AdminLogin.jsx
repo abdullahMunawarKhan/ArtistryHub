@@ -64,23 +64,7 @@ function AdminLogin() {
 			}
 			setIsLoggingIn(false);
 		};
-// --- SQL for admin table and policies ---
-//
-// CREATE TABLE public.admin (
-//   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-//   email text NOT NULL UNIQUE,
-//   password text NOT NULL
-// );
-//
-// ALTER TABLE public.admin ENABLE ROW LEVEL SECURITY;
-//
-// -- Only you (as owner) can insert/update/delete
-// CREATE POLICY "Owner can manage admin table" ON public.admin
-//   FOR ALL USING (auth.role() = 'service_role');
-//
-// -- Anyone can select (for login)
-// CREATE POLICY "Anyone can view admin for login" ON public.admin
-//   FOR SELECT USING (true);
+
 
 	return (
 		<div className="relative min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-900 via-yellow-100 to-pink-100 p-6 sm:p-8">
