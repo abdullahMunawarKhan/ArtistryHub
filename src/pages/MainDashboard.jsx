@@ -1,18 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 
-
-
-
 function MainDashboard() {
   const navigate = useNavigate();
-  // Example tags (can be fetched from DB later)
+
   const [tags, setTags] = useState([
     'Portrait', 'Landscape', 'Abstract', 'Watercolor', 'Oil', 'Digital', 'Sketch', 'Modern', 'Classic', 'Calligraphy'
   ]);
   const [selectedTag, setSelectedTag] = useState('');
-  const [artists, setArtists] = useState([]); // Placeholder for filtered artists
+  const [artworks, setArtworks] = useState([]);
   const [user, setUser] = useState(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -29,80 +26,56 @@ function MainDashboard() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Example: fetch artists (replace with real DB fetch)
+  // Fetch artworks with artist info
   useEffect(() => {
-    // Simulate fetch
-    setArtists([
-      { name: '', tags: ['Portrait', 'Watercolor'], image: '/images/artist1.jpg' },
-      { name: 'Ali Raza', tags: ['Landscape', 'Oil'], image: '/images/artist2.jpg' },
-      { name: 'Sara Malik', tags: ['Abstract', 'Digital'], image: '/images/artist3.jpg' },
-      { name: 'Bilal Ahmed', tags: ['Sketch', 'Classic'], image: '/images/artist4.jpg' },
-      { name: 'Fatima Noor', tags: ['Calligraphy', 'Modern'], image: '/images/artist5.jpg' },
-    ]);
+    const fetchArtworks = async () => {
+      let { data, error } = await supabase
+        .from('artworks')
+        .select(`id, title, image_url, tags, rate, artist_id, artists (id, name)`);
+      if (!error && data) {
+        setArtworks(data);
+      }
+    };
+    fetchArtworks();
   }, []);
 
-  // Filter artists by selected tag
-  const filteredArtists = selectedTag
-    ? artists.filter(a => a.tags.includes(selectedTag))
-    : artists;
+  // Filter artworks by selected tag; show all if no tag selected
+  const filteredArtworks = selectedTag
+    ? artworks.filter(a => a.tags && a.tags.includes(selectedTag))
+    : artworks;
+
+  // Add to cart function
+  async function handleAddToCart(artworkId) {
+    if (!user) {
+      navigate('/user-login');
+      return;
+    }
+    const { error } = await supabase
+      .from('cart')
+      .insert([{ user_id: user.id, artwork_id: artworkId, quantity: 1 }]);
+    if (!error) {
+      alert('Added to cart!');
+    } else {
+      alert('Error adding to cart');
+    }
+  }
+
+  // Buy now function
+  function handleBuy(artworkId, artistId) {
+    navigate('/orders', { state: { artworkId, artistId } });
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-pink-50 to-purple-100 py-8 px-4 relative">
-      {/* Corner menu for login */}
-      <div className="absolute top-6 right-8 z-40">
-        <div className="relative">
-          
-          {menuOpen && (
-            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl text-gray-800 ring-1 ring-black ring-opacity-5 overflow-hidden z-50">
-              {!user ? (
-                <>
-                  <button
-                    onClick={() => { setMenuOpen(false); navigate('/user-login'); }}
-                    className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                  >Login as User</button>
-                  <button
-                    onClick={() => { setMenuOpen(false); navigate('/admin-login'); }}
-                    className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                  >Login as Admin</button>
-                </>
-              ) : (
-                <>
-                  <div className="px-5 py-4 bg-yellow-50 border-b border-yellow-100">
-                    <div className="text-xs text-gray-500">Signed in as</div>
-                    <div className="font-semibold text-gray-900 truncate text-xs break-all leading-tight" style={{ maxWidth: '170px' }}>{user.email}</div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMenuOpen(false);
-                      if (user.role === 'admin') {
-                        navigate('/admin-dashboard');
-                      } else {
-                        navigate('/main-dashboard');
-                      }
-                    }}
-                    className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                  >{user.role === 'admin' ? 'Admin Dashboard' : 'User Dashboard'}</button>
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setMenuOpen(false);
-                      navigate('/');
-                    }}
-                    className="w-full px-5 py-3 text-left hover:bg-red-50 transition text-base font-semibold text-red-600"
-                  >Logout</button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Section header */}
-      <h1 className="section-header text-center text-gradient mb-2">Discover Arts</h1>
-      <p className="section-subtitle text-center mb-8">Find your perfect art by style, medium, or theme. Filter below:</p>
-
-      {/* Tag filter system */}
+      
+      {/* Tag filter system with 'All' button */}
       <div className="flex flex-wrap gap-3 justify-center mb-10">
+        <button
+          className={`badge-primary px-4 py-2 font-semibold shadow-construction-lg transition-all duration-200 ${selectedTag === '' ? 'bg-yellow-400 text-white scale-105' : ''}`}
+          onClick={() => setSelectedTag('')}
+        >
+          All
+        </button>
         {tags.map(tag => (
           <button
             key={tag}
@@ -114,29 +87,44 @@ function MainDashboard() {
         ))}
       </div>
 
-      {/* Artist cards */}
+      {/* ARTWORK CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 justify-center">
-        {filteredArtists.length === 0 ? (
-          <div className="col-span-full text-center text-lg text-gray-500 py-10">No artists found for selected tag.</div>
+        {filteredArtworks.length === 0 ? (
+          <div className="col-span-full text-center text-lg text-gray-500 py-10">
+            No artworks found for selected tag.
+          </div>
         ) : (
-          filteredArtists.map(artist => (
-            <div key={artist.name} className="construction-card p-6 flex flex-col items-center text-center">
+          filteredArtworks.map(artwork => (
+            <div key={artwork.id} className="construction-card p-6 flex flex-col items-center text-center">
               <img
-                src={artist.image}
-                alt={artist.name}
-                className="w-24 h-24 rounded-full object-cover mb-4 shadow-construction-lg border-4 border-yellow-200"
+                src={artwork.image_url}
+                alt={artwork.title}
+                className="w-32 h-32 rounded object-cover mb-2 shadow-construction-lg border-4 border-yellow-200"
                 onError={e => { e.target.src = '/images/background.png'; }}
               />
-              <h2 className="text-xl font-bold text-gradient mb-2">{artist.name}</h2>
+              <h2 className="text-lg font-bold text-gradient mb-1">{artwork.title}</h2>
               <div className="flex flex-wrap gap-2 justify-center mb-2">
-                {artist.tags.map(t => (
-                  <span key={t} className="badge-secondary px-3 py-1">{t}</span>
+                {artwork.tags.map(t => (
+                  <span key={t} className="badge-secondary px-2 py-1">{t}</span>
                 ))}
               </div>
               <Link
-                to="/artist-list"
-                className="btn-outline mt-3"
-              >View Profile</Link>
+                to={`/artist-list?id=${artwork.artist_id}`}
+                className="underline text-blue-600 font-semibold block mb-1"
+              >
+                {artwork.artists?.name}
+              </Link>
+              <div className="font-semibold text-xl mb-3">₹{artwork.rate}</div>
+              <div className="flex gap-2">
+                <button
+                  className="btn-primary"
+                  onClick={() => handleBuy(artwork.id, artwork.artist_id)}
+                >Buy</button>
+                <button
+                  className="btn-outline"
+                  onClick={() => handleAddToCart(artwork.id)}
+                >Add to Cart</button>
+              </div>
             </div>
           ))
         )}
@@ -146,4 +134,3 @@ function MainDashboard() {
 }
 
 export default MainDashboard;
-
