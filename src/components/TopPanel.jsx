@@ -53,7 +53,6 @@ function TopPanel() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        // Refresh role and artist profile
         getUserData();
       } else {
         setUser(null);
@@ -64,8 +63,6 @@ function TopPanel() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
-
-  // Admin menu logic and other handlers unchanged
 
   const handleAdminLoginClick = (e) => {
     if (e.type === 'click') {
@@ -104,6 +101,17 @@ function TopPanel() {
     navigate('/');
   };
 
+  // Helper to navigate or redirect to login if not signed in
+  const navOrLogin = (path) => {
+    if (user) {
+      navigate(path);
+    } else {
+      navigate('/user-login');
+    }
+    setMenuOpen(false);
+    setAdminMenuOpen(false);
+  };
+
   return (
     <header className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
       {/* Logo */}
@@ -116,7 +124,29 @@ function TopPanel() {
         <button onClick={() => handleNav('/main-dashboard')} className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400">Home</button>
         <button onClick={() => handleNav('/artist-list')} className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400">See Artist</button>
 
-        {/* Conditionally render 'Artist Profile' or 'Register as Artist' */}
+        {/* Always show these buttons but redirect to login if not authenticated */}
+        <button
+          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
+          onClick={() => navOrLogin(artistProfile ? `/artist-profile?id=${artistProfile.id}` : '/register')}
+        >
+          {user && artistProfile ? 'Artist Profile' : 'Register as Artist'}
+        </button>
+
+        <button
+          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
+          onClick={() => navOrLogin('/cart')}
+        >
+          Your Cart
+        </button>
+
+        <button
+          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
+          onClick={() => navOrLogin('/orders')}
+        >
+          Orders
+        </button>
+
+        {/* Menu for login options */}
         <div className="relative">
           <button
             onClick={handleAdminLoginClick}
@@ -124,7 +154,7 @@ function TopPanel() {
             onMouseEnter={() => !adminMenuOpen && setAdminMenuOpen(true)}
             className="text-yellow-400 px-3 py-1 rounded font-semibold hover:text-yellow-300"
           >
-            {user ? (artistProfile ? 'Artist Profile' : 'Register as Artist') : 'Login'}
+            {user ? 'User Menu' : 'Login'}
           </button>
           {adminMenuOpen && (
             <div
@@ -134,45 +164,19 @@ function TopPanel() {
               <div className="border-t border-yellow-100 mt-2 pt-2">
                 {user ? (
                   <>
-                    {artistProfile ? (
+                    {userRole === 'admin' && (
                       <button
-                        className="w-full px-5 py-3 text-left text-gray-700 hover:bg-yellow-50 transition text-base font-medium"
-                        onClick={() => {
-                          setAdminMenuOpen(false);
-                          // Navigate to artist profile page with their artist ID
-                          navigate(`/artist-profile?id=${artistProfile.id}`);
-                        }}
+                        className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
+                        onClick={handleAdminDashboard}
                       >
-                        Artist Profile
-                      </button>
-                    ) : (
-                      <button
-                        className="w-full px-5 py-3 text-left text-gray-700 hover:bg-yellow-50 transition text-base font-medium"
-                        onClick={() => {
-                          setAdminMenuOpen(false);
-                          navigate('/register');
-                        }}
-                      >
-                        Register as Artist
+                        Admin Dashboard
                       </button>
                     )}
                     <button
-                      className="w-full px-5 py-3 text-left text-gray-700 hover:bg-yellow-50 transition text-base font-medium"
-                      onClick={() => {
-                        setAdminMenuOpen(false);
-                        navigate('/cart');
-                      }}
+                      className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
+                      onClick={handleLogout}
                     >
-                      Your Cart
-                    </button>
-                    <button
-                      className="w-full px-5 py-3 text-left text-gray-700 hover:bg-yellow-50 transition text-base font-medium"
-                      onClick={() => {
-                        setAdminMenuOpen(false);
-                        navigate('/orders');
-                      }}
-                    >
-                      Orders
+                      Logout
                     </button>
                   </>
                 ) : (
@@ -198,30 +202,6 @@ function TopPanel() {
                   </>
                 )}
               </div>
-              {user && (
-                <>
-                  <div className="px-5 py-4 bg-yellow-50 border-b border-yellow-100">
-                    <div className="text-xs text-gray-500">Signed in as</div>
-                    <div className="font-semibold text-gray-900 truncate text-xs break-all leading-tight" style={{ maxWidth: '170px' }}>
-                      {user.email}
-                    </div>
-                  </div>
-                  {userRole === 'admin' && (
-                    <button
-                      onClick={handleAdminDashboard}
-                      className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                    >
-                      Admin Dashboard
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    className="w-full px-5 py-3 text-left hover:bg-red-50 transition text-base font-semibold text-red-600"
-                  >
-                    Logout
-                  </button>
-                </>
-              )}
             </div>
           )}
         </div>
@@ -250,56 +230,50 @@ function TopPanel() {
             <button onClick={() => handleNav('/main-dashboard')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">Home</button>
             <button onClick={() => handleNav('/artist-list')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">See Artist</button>
 
-            {/* Mobile artist/register option */}
-            {user ? (
-              artistProfile ? (
-                <button
-                  className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate(`/artist-profile?id=${artistProfile.id}`);
-                  }}
-                >
-                  Artist Profile
-                </button>
-              ) : (
-                <button
-                  className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate('/register');
-                  }}
-                >
-                  Register as Artist
-                </button>
-              )
-            ) : (
-              <button
-                className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-                onClick={() => {
-                  setMenuOpen(false);
+            {/* Always show these buttons but redirect to login if not authenticated */}
+            <button
+              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
+              onClick={() => {
+                setMenuOpen(false);
+                if (user) {
+                  if (artistProfile) navigate(`/artist-profile?id=${artistProfile.id}`);
+                  else navigate('/register');
+                } else {
                   navigate('/user-login');
-                }}
-              >
-                Login
-              </button>
-            )}
-
-            <button onClick={() => handleNav('/cart')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">Your Cart</button>
-            <button onClick={() => handleNav('/orders')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">Orders</button>
+                }
+              }}
+            >
+              {user && artistProfile ? 'Artist Profile' : 'Register as Artist'}
+            </button>
+            <button
+              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
+              onClick={() => {
+                setMenuOpen(false);
+                navOrLogin('/cart');
+              }}
+            >
+              Your Cart
+            </button>
+            <button
+              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
+              onClick={() => {
+                setMenuOpen(false);
+                navOrLogin('/orders');
+              }}
+            >
+              Orders
+            </button>
 
             {!user ? (
-              <>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate('/admin-login');
-                  }}
-                  className="text-yellow-600 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-                >
-                  Admin Login
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate('/admin-login');
+                }}
+                className="text-yellow-600 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
+              >
+                Admin Login
+              </button>
             ) : null}
           </div>
         </div>
