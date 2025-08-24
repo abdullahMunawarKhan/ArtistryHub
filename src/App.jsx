@@ -13,6 +13,9 @@ import ArtistProfile from './pages/ArtistProfile';
 import Register from './pages/Register';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
+import ArtistUploadWork from './pages/ArtistUploadWork';
+import OrderProcess from './pages/OrderProcess';
+
 function App() {
   const location = useLocation();
   const isWelcomePage = location.pathname === '/';
@@ -35,6 +38,8 @@ function App() {
             <Route path="/cart" element={<Cart/>} />
             <Route path="/register" element={<Register/>} />
             <Route path="/orders" element={<Orders/>} />
+            <Route path="/upload-work" element={<ArtistUploadWork />} />
+            <Route path="/order-process" element={<OrderProcess /> } />
           </Routes>
         </div>
       </main>
