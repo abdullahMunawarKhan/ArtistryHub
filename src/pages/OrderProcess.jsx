@@ -23,6 +23,8 @@ export default function OrderProcess() {
     altMobile: "",
   });
 
+  const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+
   useEffect(() => {
     if (!artworkId) {
       alert("Artwork not specified");
@@ -54,8 +56,9 @@ export default function OrderProcess() {
     setForm((f) => ({ ...f, [name]: value }));
   }
 
-  async function placeOrder() {
+  async function handlePayment() {
     setProcessing(true);
+
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
@@ -65,36 +68,71 @@ export default function OrderProcess() {
       return;
     }
 
-    try {
-      const { error } = await supabase.from("orders").insert([
-        {
-          user_id: user.id,
-          artwork_id: artwork.id,
-          quantity,
-          amount: totalCost,
-          delivery_fee: DELIVERY_FEE,
-          status: "pending",
-          ordered_at: new Date().toISOString(),
-          shipping_address: form.shippingAddress,
-          billing_address: form.billingAddress,
-          full_name: form.fullName,
-          mobile: form.mobile,
-          alt_mobile: form.altMobile,
+    return new Promise((resolve, reject) => {
+      const options = {
+        key: razorpayKey,
+        amount: totalCost * 100, // in paise
+        currency: "INR",
+        name: "My Art Store",
+        description: "Artwork Purchase",
+        handler: async function (response) {
+          try {
+            // Insert order in Supabase after successful payment
+            const { error } = await supabase.from("orders").insert([
+              {
+                user_id: user.id,
+                artwork_id: artwork.id,
+                quantity,
+                amount: totalCost,
+                delivery_fee: DELIVERY_FEE,
+                status: "paid",
+                ordered_at: new Date().toISOString(),
+                shipping_address: form.shippingAddress,
+                billing_address: form.billingAddress,
+                full_name: form.fullName,
+                mobile: form.mobile,
+                alt_mobile: form.altMobile,
+                razorpay_payment_id: response.razorpay_payment_id,
+              },
+            ]);
+            if (error) throw error;
+            alert("Payment successful & order placed!");
+            navigate("/orders");
+            resolve(response);
+          } catch (err) {
+            alert("Error saving order: " + err.message);
+            reject(err);
+          } finally {
+            setProcessing(false);
+            setShowConfirm(false);
+          }
         },
-      ]);
-      if (error) throw error;
-      alert("Order placed successfully!");
-      navigate("/orders");
-    } catch (err) {
-      alert("Failed to place order: " + err.message);
-    } finally {
-      setProcessing(false);
-      setShowConfirm(false);
+        prefill: {
+          name: form.fullName,
+          email: user?.email,
+          contact: form.mobile,
+        },
+        theme: { color: "#F59E0B" },
+        modal: {
+         ondismiss: function () {
+         setProcessing(false);
+         setShowConfirm(false); // Optional: Also close the confirmation modal if needed
+    
+      }
     }
+  };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    });
   }
 
   if (loading || !artwork) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
   }
 
   return (
@@ -107,14 +145,24 @@ export default function OrderProcess() {
             alt={artwork.title}
             className="w-full h-96 object-cover rounded-lg"
           />
-          <h1 className="text-3xl font-extrabold mt-6 text-gray-800">{artwork.title}</h1>
-          <p className="text-xl text-yellow-600 mt-2">₹{artwork.cost.toFixed(2)}</p>
+          <h1 className="text-3xl font-extrabold mt-6 text-gray-800">
+            {artwork.title}
+          </h1>
+          <p className="text-xl text-yellow-600 mt-2">
+            ₹{artwork.cost.toFixed(2)}
+          </p>
         </div>
 
         {/* Right side: Form */}
         <div className="md:w-1/2 p-8">
           <h2 className="text-2xl font-bold mb-6">Complete Your Purchase</h2>
-          <form className="space-y-4" onSubmit={e => { e.preventDefault(); setShowConfirm(true); }}>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setShowConfirm(true);
+            }}
+          >
             <div>
               <label className="block mb-1 font-semibold">Full Name</label>
               <input
@@ -162,7 +210,9 @@ export default function OrderProcess() {
             </div>
 
             <div>
-              <label className="block mb-1 font-semibold">Alternative Mobile Number</label>
+              <label className="block mb-1 font-semibold">
+                Alternative Mobile Number
+              </label>
               <input
                 name="altMobile"
                 value={form.altMobile}
@@ -193,7 +243,7 @@ export default function OrderProcess() {
                   type="number"
                   min="1"
                   value={quantity}
-                  onChange={e => setQuantity(Number(e.target.value))}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
                   className="w-20 border border-gray-300 rounded px-2 py-1 ml-2"
                 />
               </label>
@@ -203,7 +253,7 @@ export default function OrderProcess() {
                 disabled={processing}
                 className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded font-semibold"
               >
-                {processing ? "Processing..." : "Place Order"}
+                {processing ? "Processing..." : "Pay with UPI"}
               </button>
             </div>
           </form>
@@ -231,11 +281,11 @@ export default function OrderProcess() {
                 Cancel
               </button>
               <button
-                onClick={placeOrder}
+                onClick={handlePayment}
                 disabled={processing}
                 className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
               >
-                {processing ? "Placing Order..." : "Confirm Order"}
+                {processing ? "Processing..." : "Confirm & Pay"}
               </button>
             </div>
           </div>
@@ -244,5 +294,3 @@ export default function OrderProcess() {
     </div>
   );
 }
-
-
