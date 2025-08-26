@@ -11,7 +11,7 @@ function ArtistList() {
     const fetchArtists = async () => {
       const { data, error } = await supabase
         .from('artists')
-        .select('id, name, experience, registered_at, paintings_sold, paintings (id, title, image_url)');
+        .select('id, name, paintings_sold');
       if (!error && data) {
         setArtists(data);
       }
@@ -45,16 +45,21 @@ function ArtistList() {
           artists.map((artist, idx) => (
             <div
               key={artist.id}
-              className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center text-center border border-yellow-200 hover:shadow-xl transition-all duration-300"
+              className="bg-white rounded-2xl shadow-lg p-6 flex flex-col items-center text-center border border-yellow-200 hover:shadow-xl transition-all duration-300 cursor-pointer"
               style={{ minWidth: 260 }}
+              onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/artist-profile?id=${artist.id}`); }}
+              title="Tap for more info"
             >
-              {/* Profile Image - circular assignment */}
+              {/* Profile Image - from local images folder */}
               <img
                 src={getProfileImageSrc(idx)}
                 alt={artist.name}
-                className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-yellow-300 shadow-lg bg-yellow-50"
+                className="w-24 h-24 rounded-full object-cover mb-3 border-4 border-yellow-300 shadow-lg bg-yellow-50"
                 onError={e => {
-                  e.target.src = '/images/background.png';
+                  e.currentTarget.src = '/images/Profile1.png';
                 }}
               />
 
@@ -63,33 +68,15 @@ function ArtistList() {
                 {artist.name}
               </h2>
 
-              {/* Info Badges */}
-              <div className="flex flex-wrap gap-2 justify-center mb-2">
-                <span className="bg-yellow-100 text-yellow-800 font-semibold px-3 py-1 rounded-xl text-xs shadow">
-                  Experience: {artist.experience} yr
-                </span>
+              {/* Paintings sold */}
+              <div className="mb-3">
                 <span className="bg-green-50 text-green-700 font-semibold px-3 py-1 rounded-xl text-xs shadow">
-                  Paintings Sold: {artist.paintings_sold}
-                </span>
-                <span className="bg-blue-100 text-blue-800 font-semibold px-3 py-1 rounded-xl text-xs shadow">
-                  Current paintings: {artist.paintings?.length || 0}
+                  Paintings Sold: {artist.paintings_sold ?? 0}
                 </span>
               </div>
 
-              {/* Gallery of paintings */}
-              {artist.paintings && artist.paintings.length > 0 && (
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {artist.paintings.slice(0, 4).map(painting => (
-                    <img
-                      key={painting.id}
-                      src={painting.image_url || '/images/background.png'}
-                      alt={painting.title}
-                      className="w-16 h-16 rounded-lg object-cover border border-yellow-200 shadow-md transition-transform hover:scale-105"
-                      title={painting.title}
-                    />
-                  ))}
-                </div>
-              )}
+              {/* Tap for more info */}
+              <span className="text-blue-600 hover:text-blue-700 text-sm font-semibold">Tap for more info →</span>
             </div>
           ))
         )}

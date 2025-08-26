@@ -50,8 +50,22 @@ function Cart() {
     fetchCartItems();
   }
 
-  function handleOrderNow(artworkId) {
-    navigate('/order-process', { state: { artworkId } });
+  async function handleOrderNow(artworkId) {
+    // Check availability before proceeding to order
+    const { data, error } = await supabase
+      .from('artworks')
+      .select('availability, artist_id')
+      .eq('id', artworkId)
+      .single();
+    if (error) {
+      alert('Unable to verify availability. Please try again.');
+      return;
+    }
+    if (data && data.availability === false) {
+      alert('This artwork is currently not available for ordering.');
+      return;
+    }
+    navigate('/order-process', { state: { artworkId, artistId: data?.artist_id } });
   }
 
   if (loading) {
@@ -75,35 +89,35 @@ function Cart() {
 
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
-      <h1 className="text-2xl font-bold mb-6">Your Cart</h1>
+      <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
       <ul>
         {cartItems.map(item => (
           <li key={item.id} className="mb-8 border-b pb-4">
             <div className="flex items-center gap-6">
               <img
-                src={item.artworks?.image_urls?.[0] || '/default-artwork.png'}
-
-                alt={item.artworks?.title || 'Artwork'}
-                className="w-24 h-24 object-cover rounded shadow"
+                src={item.artworks?.image_urls?.[0] || '/default-image.png'}
+                alt={item.artworks?.title || 'Untitled'}
+                className="w-24 h-24 object-cover rounded cursor-pointer"
+                onClick={() => navigate(`/product?id=${item.artwork_id}`)}
               />
-              <div className="flex-1">
+              <div className="flex-1 cursor-pointer" onClick={() => navigate(`/product?id=${item.artwork_id}`)}>
                 <h3 className="text-lg font-semibold">{item.artworks?.title || 'Untitled'}</h3>
-                <div className="text-yellow-700 mb-1 font-bold">₹{item.artworks?.cost}</div>
-                <div className="text-gray-500 text-sm mb-2">Quantity: {item.quantity}</div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleOrderNow(item.artwork_id)}
-                    className="bg-green-600 text-white py-1 px-3 rounded hover:bg-green-700"
-                  >
-                    Order Now
-                  </button>
-                  <button
-                    onClick={() => handleRemove(item.id)}
-                    className="bg-red-600 text-white py-1 px-3 rounded hover:bg-red-700"
-                  >
-                    Remove
-                  </button>
-                </div>
+                <div className="text-yellow-700 font-bold">₹{item.artworks?.cost}</div>
+                <div className="text-gray-500 text-sm">Quantity: {item.quantity}</div>
+              </div>
+              <div>
+                <button
+                  className="bg-green-600 text-white px-3 py-1 rounded mr-2 hover:bg-green-700"
+                  onClick={() => handleOrderNow(item.artwork_id)}
+                >
+                  Order Now
+                </button>
+                <button
+                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                  onClick={() => handleRemove(item.id)}
+                >
+                  Remove
+                </button>
               </div>
             </div>
           </li>

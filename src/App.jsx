@@ -15,6 +15,7 @@ import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import ArtistUploadWork from './pages/ArtistUploadWork';
 import OrderProcess from './pages/OrderProcess';
+import ProductDetails from './pages/ProductDetails';
 
 function App() {
   const location = useLocation();
@@ -40,6 +41,8 @@ function App() {
             <Route path="/orders" element={<Orders/>} />
             <Route path="/upload-work" element={<ArtistUploadWork />} />
             <Route path="/order-process" element={<OrderProcess /> } />
+            <Route path="/product" element={<ProductDetails />} />
+            
           </Routes>
         </div>
       </main>

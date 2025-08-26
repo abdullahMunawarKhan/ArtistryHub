@@ -4,6 +4,27 @@ import { supabase } from "../utils/supabase";
 
 const DELIVERY_FEE = 50;
 
+const POLICY_LINKS = [
+  {
+    title: "Shipping Policy",
+    url: "https://merchant.razorpay.com/policy/R9hxQi8w5g7gdt/shipping",
+    preview:
+      "Shipping delays may occur due to shipping partner issues or unforeseen circumstances. Orders shipped after payment verification. Check shipment timelines and eligible addresses before confirming your order.",
+  },
+  {
+    title: "Terms and Conditions",
+    url: "https://merchant.razorpay.com/policy/R9hxQi8w5g7gdt/terms",
+    preview:
+      "Your payment and service use are subject to strict compliance with applicable laws. Personal data may be processed, and product categories registered in your profile. Any unlawful, fraudulent or prohibited activities are not allowed.",
+  },
+  {
+    title: "Cancellation & Refunds",
+    url: "https://merchant.razorpay.com/policy/R9hxQi8w5g7gdt/refund",
+    preview:
+      "Refunds are issued within 7-10 business days to the original payment method if cancelled within 24 hours (cancellation charges may apply). Products must be unused and in original packaging. Some items are not eligible for return.",
+  },
+];
+
 export default function OrderProcess() {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -13,7 +34,6 @@ export default function OrderProcess() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -23,6 +43,10 @@ export default function OrderProcess() {
     altMobile: "",
   });
 
+  // Modal & checkbox state
+  const [showPolicies, setShowPolicies] = useState(false);
+  const [policiesChecked, setPoliciesChecked] = useState(false);
+
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
   useEffect(() => {
@@ -31,6 +55,7 @@ export default function OrderProcess() {
       navigate("/main-dashboard");
       return;
     }
+
     async function loadArtwork() {
       setLoading(true);
       const { data, error } = await supabase
@@ -39,6 +64,7 @@ export default function OrderProcess() {
         .eq("id", artworkId)
         .single();
       setLoading(false);
+
       if (error || !data) {
         alert("Failed to load artwork");
         navigate("/main-dashboard");
@@ -57,10 +83,16 @@ export default function OrderProcess() {
   }
 
   async function handlePayment() {
-    setProcessing(true);
+    if (!policiesChecked) {
+      alert("Please read and accept all policies before proceeding.");
+      setShowPolicies(true);
+      return;
+    }
 
+    setProcessing(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
+
     if (!user) {
       alert("Please log in to place order");
       setProcessing(false);
@@ -77,7 +109,6 @@ export default function OrderProcess() {
         description: "Artwork Purchase",
         handler: async function (response) {
           try {
-            // Insert order in Supabase after successful payment
             const { error } = await supabase.from("orders").insert([
               {
                 user_id: user.id,
@@ -104,7 +135,7 @@ export default function OrderProcess() {
             reject(err);
           } finally {
             setProcessing(false);
-            setShowConfirm(false);
+            setShowPolicies(false);
           }
         },
         prefill: {
@@ -114,178 +145,339 @@ export default function OrderProcess() {
         },
         theme: { color: "#F59E0B" },
         modal: {
-         ondismiss: function () {
-         setProcessing(false);
-         setShowConfirm(false); // Optional: Also close the confirmation modal if needed
-    
-      }
-    }
-  };
-
+          ondismiss: function () {
+            setProcessing(false);
+            setShowPolicies(false);
+          },
+        },
+      };
       const rzp = new window.Razorpay(options);
       rzp.open();
     });
   }
 
   if (loading || !artwork) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        Loading...
-      </div>
-    );
+    return <div className="center">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center px-4 py-8">
-      <div className="flex flex-col md:flex-row w-full max-w-7xl bg-white rounded-lg shadow-lg overflow-hidden">
-        {/* Left side: Artwork image and summary */}
-        <div className="md:w-1/2 p-6 flex flex-col items-center border-b md:border-b-0 md:border-r border-gray-200">
-          <img
-            src={artwork.image_urls?.[0] || "/default-artwork.png"}
-            alt={artwork.title}
-            className="w-full h-96 object-cover rounded-lg"
-          />
-          <h1 className="text-3xl font-extrabold mt-6 text-gray-800">
-            {artwork.title}
-          </h1>
-          <p className="text-xl text-yellow-600 mt-2">
-            ₹{artwork.cost.toFixed(2)}
-          </p>
-        </div>
+    <div
+      className="order-page"
+      style={{
+        maxWidth: 680,
+        margin: "0 auto",
+        padding: "2rem",
+        boxShadow: "0 4px 20px #d6d6d6",
+        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+        backgroundColor: "#fff",
+      }}
+    >
+      <h2 style={{ marginBottom: 24 }}>Checkout</h2>
 
-        {/* Right side: Form */}
-        <div className="md:w-1/2 p-8">
-          <h2 className="text-2xl font-bold mb-6">Complete Your Purchase</h2>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              setShowConfirm(true);
-            }}
+      <div
+        className="order-artwork-details"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginBottom: 30,
+          gap: 18,
+        }}
+      >
+        <img
+          src={artwork.image_urls[0]}
+          alt={artwork.title}
+          style={{ height: 100, borderRadius: 8, objectFit: "cover" }}
+        />
+        <div>
+          <strong
+            style={{ display: "block", fontSize: 18, marginBottom: 6, color: "#111" }}
           >
-            <div>
-              <label className="block mb-1 font-semibold">Full Name</label>
-              <input
-                name="fullName"
-                value={form.fullName}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold">Shipping Address</label>
-              <textarea
-                name="shippingAddress"
-                value={form.shippingAddress}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2 resize-none"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold">Billing Address</label>
-              <textarea
-                name="billingAddress"
-                value={form.billingAddress}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2 resize-none"
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold">Mobile Number</label>
-              <input
-                name="mobile"
-                value={form.mobile}
-                onChange={handleChange}
-                required
-                className="w-full border border-gray-300 rounded px-3 py-2"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 font-semibold">
-                Alternative Mobile Number
-              </label>
-              <input
-                name="altMobile"
-                value={form.altMobile}
-                onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2"
-              />
-            </div>
-
-            <div className="mt-6 p-4 bg-yellow-100 rounded-md border border-yellow-300">
-              <div className="flex justify-between">
-                <span className="font-semibold">Items Total:</span>
-                <span>₹{(artwork.cost * quantity).toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mt-2">
-                <span className="font-semibold">Delivery Charges:</span>
-                <span>₹{DELIVERY_FEE.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between mt-4 text-xl font-bold">
-                <span>Total:</span>
-                <span>₹{totalCost.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-between items-center">
-              <label className="flex items-center gap-2">
-                Quantity:
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-20 border border-gray-300 rounded px-2 py-1 ml-2"
-                />
-              </label>
-
-              <button
-                type="submit"
-                disabled={processing}
-                className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded font-semibold"
-              >
-                {processing ? "Processing..." : "Pay with UPI"}
-              </button>
-            </div>
-          </form>
+            {artwork.title}
+          </strong>
+          <div style={{ fontSize: 16, color: "#444" }}>₹{artwork.cost.toFixed(2)}</div>
         </div>
       </div>
 
-      {showConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full shadow-lg">
-            <h3 className="text-xl font-bold mb-4">Confirm Your Order</h3>
-            <p>
-              Items: <strong>{quantity}</strong>
-            </p>
-            <p>
-              Delivery Charges: <strong>₹{DELIVERY_FEE.toFixed(2)}</strong>
-            </p>
-            <p className="font-bold text-lg mt-2">
-              Total Amount: ₹{totalCost.toFixed(2)}
-            </p>
-            <div className="mt-6 flex justify-end gap-4">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-4 py-2 border rounded"
+      <div style={{ marginBottom: 20 }}>
+        <label style={{ fontWeight: 600, marginRight: 8 }}>
+          Quantity:
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={quantity}
+            disabled={processing}
+            onChange={(e) =>
+              setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))
+            }
+            style={{
+              width: 60,
+              marginLeft: 8,
+              padding: "6px 8px",
+              borderRadius: 4,
+              border: "1px solid #ccc",
+            }}
+          />
+        </label>
+      </div>
+
+      <div
+        className="order-cost-breakup"
+        style={{ marginBottom: 22, fontSize: 16, color: "#222" }}
+      >
+        <div>
+          Delivery Charges: <strong>₹{DELIVERY_FEE.toFixed(2)}</strong>
+        </div>
+        <div style={{ fontWeight: "bold", marginTop: 6 }}>
+          Total Amount: ₹{totalCost.toFixed(2)}
+        </div>
+      </div>
+
+      <form className="form-details" style={{ marginBottom: 18 }}>
+        <input
+          name="fullName"
+          placeholder="Full Name"
+          value={form.fullName}
+          required
+          onChange={handleChange}
+          style={{
+            marginBottom: 10,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15,
+          }}
+        />
+        <input
+          name="mobile"
+          placeholder="Mobile"
+          value={form.mobile}
+          required
+          onChange={handleChange}
+          style={{
+            marginBottom: 10,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15,
+          }}
+        />
+        <input
+          name="altMobile"
+          placeholder="Alternate Mobile"
+          value={form.altMobile}
+          onChange={handleChange}
+          style={{
+            marginBottom: 10,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15,
+          }}
+        />
+        <input
+          name="shippingAddress"
+          placeholder="Shipping Address"
+          value={form.shippingAddress}
+          required
+          onChange={handleChange}
+          style={{
+            marginBottom: 10,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15,
+          }}
+        />
+        <input
+          name="billingAddress"
+          placeholder="Billing Address"
+          value={form.billingAddress}
+          required
+          onChange={handleChange}
+          style={{
+            marginBottom: 10,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15,
+          }}
+        />
+      </form>
+
+      <button
+        className="btn"
+        onClick={() => setShowPolicies(true)}
+        disabled={processing}
+        style={{
+          width: "100%",
+          marginTop: 12,
+          background: "#F59E0B",
+          color: "#fff",
+          padding: "12px 0",
+          fontWeight: 600,
+          border: "none",
+          borderRadius: 8,
+          cursor: "pointer",
+        }}
+      >
+        Proceed to Payment
+      </button>
+
+      {/* Terms & Conditions Modal */}
+      {showPolicies && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "rgba(26,26,26,0.35)",
+            zIndex: 9999,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 14,
+              padding: "26px 28px 22px",
+              maxWidth: 700,
+              width: "100%",
+              boxShadow: "0 4px 30px rgba(0,0,0,0.1)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <h2 style={{ marginBottom: 22, color: "#222" }}>Terms & Policies</h2>
+            <div
+              style={{
+                display: "flex",
+                gap: 16,
+                marginBottom: 20,
+                justifyContent: "space-between",
+              }}
+            >
+              {POLICY_LINKS.map((policy) => (
+                <a
+                  key={policy.title}
+                  href={policy.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    flex: 1,
+                    background: "#f7f7f7",
+                    padding: "20px 18px",
+                    borderRadius: 8,
+                    boxShadow: "0 2px 14px #e3e3e3",
+                    color: "#222",
+                    fontWeight: 600,
+                    fontSize: 16,
+                    textDecoration: "none",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  <div style={{ fontWeight: "bold", marginBottom: 10 }}>
+                    {policy.title}
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 400,
+                      fontSize: 14,
+                      color: "#555",
+                      flex: 1,
+                      marginBottom: 10,
+                    }}
+                  >
+                    {policy.preview}
+                  </div>
+                  <div
+                    style={{ color: "#2563eb", fontWeight: 700, fontSize: 14 }}
+                  >
+                    View Full Policy →
+                  </div>
+                </a>
+              ))}
+            </div>
+
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                fontSize: 15,
+                color: "#444",
+                marginBottom: 16,
+                userSelect: "none",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={policiesChecked}
+                onChange={(e) => setPoliciesChecked(e.target.checked)}
+                style={{ accentColor: "#F59E0B", transform: "scale(1.3)" }}
+              />
+              I have read and accept all policies above
+            </label>
+            {policiesChecked && (
+              <div
+                style={{
+                  marginBottom: 12,
+                  fontSize: 14,
+                  color: "#15803d",
+                  fontWeight: 600,
+                }}
               >
-                Cancel
+                Please ensure you have read all policies before proceeding with
+                payment.
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 12 }}>
+              <button
+                disabled={!policiesChecked}
+                onClick={() => {
+                  setShowPolicies(false);
+                  handlePayment();
+                }}
+                style={{
+                  flex: 1,
+                  background: "#F59E0B",
+                  color: "white",
+                  fontWeight: 700,
+                  padding: "12px 0",
+                  borderRadius: 8,
+                  border: "none",
+                  cursor: policiesChecked ? "pointer" : "not-allowed",
+                  opacity: policiesChecked ? 1 : 0.6,
+                }}
+              >
+                Proceed to Payment
               </button>
               <button
-                onClick={handlePayment}
-                disabled={processing}
-                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded"
+                onClick={() => setShowPolicies(false)}
+                style={{
+                  flex: 1,
+                  background: "#ef4444",
+                  color: "white",
+                  fontWeight: 700,
+                  padding: "12px 0",
+                  borderRadius: 8,
+                  border: "none",
+                  cursor: "pointer",
+                }}
               >
-                {processing ? "Processing..." : "Confirm & Pay"}
+                Cancel
               </button>
             </div>
           </div>

@@ -164,6 +164,12 @@ function TopPanel() {
               <div className="border-t border-yellow-100 mt-2 pt-2">
                 {user ? (
                   <>
+                    <div className="px-5 pb-2 text-xs text-gray-500 break-words">
+                      <span className="font-semibold text-gray-700">Signed in:</span>
+                      <div className="mt-1 text-gray-600 break-words">
+                        {user.email}
+                      </div>
+                    </div>
                     {userRole === 'admin' && (
                       <button
                         className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"

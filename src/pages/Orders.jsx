@@ -108,7 +108,7 @@ function Orders() {
       ) : (
         <ul className="space-y-6">
           {orders.map(order => (
-            <li key={order.id} className="flex items-center gap-6 bg-white p-5 rounded shadow">
+            <li key={order.id} className="flex items-center gap-6 bg-white p-5 rounded shadow cursor-pointer" onClick={() => navigate(`/product?id=${order.artwork_id}`)}>
               <img
                 src={order.artworks?.image_urls?.[0] ?? '/default-artwork.png'}
                 alt={order.artworks?.title ?? 'Artwork'}
