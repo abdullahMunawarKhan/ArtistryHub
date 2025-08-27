@@ -134,7 +134,7 @@ function TopPanel() {
             👨‍🎨 Artists
           </Link>
           
-          {user && (
+          
             <>
               <button onClick={() => navOrLogin('/cart')} className="nav-link">
                 🛒 Cart
@@ -155,7 +155,7 @@ function TopPanel() {
                 </button>
               )}
             </>
-          )}
+          
 
           {/* Admin Section */}
           {userRole === 'admin' && (
