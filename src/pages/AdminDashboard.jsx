@@ -1,58 +1,60 @@
+// src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { useNavigate } from 'react-router-dom';
 
 function AdminDashboard() {
-	const [loading, setLoading] = useState(true);
-	const [user, setUser] = useState(null);
-	const [role, setRole] = useState('');
-	const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState('');
+  const navigate = useNavigate();
 
-	useEffect(() => {
-		const checkAuth = async () => {
-			const { data: { user } } = await supabase.auth.getUser();
-			setUser(user);
-			if (!user) {
-				navigate('/admin-login');
-				return;
-			}
-			// Fetch role from Supabase profile table
-			const { data: profile, error } = await supabase
-				.from('users')
-				.select('role')
-				.eq('id', user.id)
-				.single();
-			if (!error && profile && profile.role === 'admin') {
-				setRole('admin');
-			} else {
-				// Not admin, redirect to main dashboard
-				navigate('/main-dashboard');
-				return;
-			}
-			setLoading(false);
-		};
-		checkAuth();
-	}, [navigate]);
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/admin-login');
+        return;
+      }
+      setUserEmail(user.email);
+      const { data: profile, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
 
-	if (loading) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-yellow-100 to-pink-100">
-				<div className="text-xl text-gray-700 font-bold animate-pulse">Loading Admin Dashboard...</div>
-			</div>
-		);
-	}
+      if (error || profile?.role !== 'admin') {
+        navigate('/main-dashboard');
+        return;
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, [navigate]);
 
-	return (
-		<div className="min-h-screen bg-gradient-to-br from-purple-900 via-yellow-100 to-pink-100 p-8">
-			<div className="max-w-4xl mx-auto bg-white/80 rounded-2xl shadow-2xl p-10 mt-10">
-				<h1 className="text-4xl font-bold text-gradient mb-4 text-center">Admin Dashboard</h1>
-				<p className="text-lg text-gray-700 text-center mb-8">Welcome, <span className="font-bold text-yellow-700">{user?.email}</span></p>
-				<div className="divider-yellow" />
-				{/* Future admin features will go here */}
-				<div className="text-center text-gray-500 mt-10">Admin features coming soon...</div>
-			</div>
-		</div>
-	);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-lg text-gray-700">Checking admin credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 bg-gray-100 min-h-screen">
+      <div className="max-w-3xl mx-auto glass-card backdrop-blur-lg p-6 rounded-2xl shadow-lg">
+        <h1 className="text-3xl font-bold text-gradient-primary mb-4">
+          Welcome, {userEmail}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          You have administrative access. Use the navigation menu to manage users,
+          artists, and artworks.
+        </p>
+        {/* Future admin features: user management, analytics, content moderation, etc. */}
+      </div>
+    </div>
+  );
 }
 
 export default AdminDashboard;

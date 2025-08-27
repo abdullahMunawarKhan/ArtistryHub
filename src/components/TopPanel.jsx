@@ -1,5 +1,6 @@
+// src/components/TopPanel.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 
 function TopPanel() {
@@ -8,7 +9,9 @@ function TopPanel() {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState('');
   const [artistProfile, setArtistProfile] = useState(null); // to track if user is artist
+
   const navigate = useNavigate();
+  const adminMenuRef = useRef();
 
   // Fetch user and role and artist profile
   useEffect(() => {
@@ -34,7 +37,7 @@ function TopPanel() {
         const { data: artistData, error: artistError } = await supabase
           .from('artists')
           .select('id')
-          .eq('user_id', user.id)  // assuming you have user_id field in artists referencing users
+          .eq('user_id', user.id) // assuming you have user_id field in artists referencing users
           .single();
 
         if (!artistError && artistData) {
@@ -47,6 +50,7 @@ function TopPanel() {
         setArtistProfile(null);
       }
     };
+
     getUserData();
 
     // Listen for auth changes & refresh data
@@ -74,13 +78,13 @@ function TopPanel() {
     setAdminMenuOpen(false);
   };
 
-  const adminMenuRef = useRef();
   useEffect(() => {
     function handleClickOutside(event) {
       if (adminMenuRef.current && !adminMenuRef.current.contains(event.target)) {
         setAdminMenuOpen(false);
       }
     }
+
     if (adminMenuOpen) document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [adminMenuOpen]);
@@ -113,174 +117,199 @@ function TopPanel() {
   };
 
   return (
-    <header className="bg-gray-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-50 shadow-md">
-      {/* Logo */}
-      <div className="text-2xl font-bold font-['Nova_Round',cursive] select-none">
-        ArtistryHub
-      </div>
+    <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-artistryhub">
+      <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        {/* Logo */}
+        <Link to="/" className="artistryhub-logo no-print">
+          <span className="logo-icon">🎨</span>
+          ArtistryHub
+        </Link>
 
-      {/* Desktop nav */}
-      <nav className="hidden md:flex gap-6 ml-8 flex-wrap items-center">
-        <button onClick={() => handleNav('/main-dashboard')} className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400">Home</button>
-        <button onClick={() => handleNav('/artist-list')} className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400">See Artist</button>
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center space-x-8">
+          <Link to="/main-dashboard" className="nav-link">
+            🏠 Home
+          </Link>
+          <Link to="/artist-list" className="nav-link">
+            👨‍🎨 Artists
+          </Link>
+          
+          {user && (
+            <>
+              <button onClick={() => navOrLogin('/cart')} className="nav-link">
+                🛒 Cart
+              </button>
+              <button onClick={() => navOrLogin('/orders')} className="nav-link">
+                📦 Orders
+              </button>
+              
+              {artistProfile && (
+                <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
+                  👤 My Profile
+                </Link>
+              )}
+              
+              {!artistProfile && (
+                <button onClick={() => navOrLogin('/register')} className="nav-link">
+                  ✨ Become Artist
+                </button>
+              )}
+            </>
+          )}
 
-        {/* Always show these buttons but redirect to login if not authenticated */}
-        <button
-          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
-          onClick={() => navOrLogin(artistProfile ? `/artist-profile?id=${artistProfile.id}` : '/register')}
-        >
-          {user && artistProfile ? 'Artist Profile' : 'Register as Artist'}
-        </button>
+          {/* Admin Section */}
+          {userRole === 'admin' && (
+            <div className="relative" ref={adminMenuRef}>
+              <button
+                onClick={handleAdminLoginClick}
+                onDoubleClick={handleAdminLoginDoubleClick}
+                className="nav-link relative"
+              >
+                ⚙️ Admin
+              </button>
+              {adminMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 artistryhub-card p-2 space-y-1">
+                  <button
+                    onClick={handleAdminDashboard}
+                    className="w-full text-left px-3 py-2 nav-link rounded-lg"
+                  >
+                    📊 Dashboard
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full text-left px-3 py-2 nav-link rounded-lg"
+                  >
+                    🚪 Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
-        <button
-          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
-          onClick={() => navOrLogin('/cart')}
-        >
-          Your Cart
-        </button>
-
-        <button
-          className="text-white px-3 py-1 rounded font-semibold hover:text-yellow-400"
-          onClick={() => navOrLogin('/orders')}
-        >
-          Orders
-        </button>
-
-        {/* Menu for login options */}
-        <div className="relative">
-          <button
-            onClick={handleAdminLoginClick}
-            onDoubleClick={handleAdminLoginDoubleClick}
-            onMouseEnter={() => !adminMenuOpen && setAdminMenuOpen(true)}
-            className="text-yellow-400 px-3 py-1 rounded font-semibold hover:text-yellow-300"
-          >
-            {user ? 'User Menu' : 'Login'}
-          </button>
-          {adminMenuOpen && (
-            <div
-              ref={adminMenuRef}
-              className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl text-gray-800 ring-1 ring-black ring-opacity-5 overflow-hidden z-50"
-            >
-              <div className="border-t border-yellow-100 mt-2 pt-2">
-                {user ? (
-                  <>
-                    <div className="px-5 pb-2 text-xs text-gray-500 break-words">
-                      <span className="font-semibold text-gray-700">Signed in:</span>
-                      <div className="mt-1 text-gray-600 break-words">
-                        {user.email}
-                      </div>
-                    </div>
-                    {userRole === 'admin' && (
-                      <button
-                        className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                        onClick={handleAdminDashboard}
-                      >
-                        Admin Dashboard
-                      </button>
-                    )}
-                    <button
-                      className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                      onClick={handleLogout}
-                    >
-                      Logout
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => {
-                        setAdminMenuOpen(false);
-                        navigate('/user-login');
-                      }}
-                      className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                    >
-                      Login as User
-                    </button>
-                    <button
-                      onClick={() => {
-                        setAdminMenuOpen(false);
-                        navigate('/admin-login');
-                      }}
-                      className="w-full px-5 py-3 text-left hover:bg-yellow-50 transition text-base font-medium"
-                    >
-                      Login as Admin
-                    </button>
-                  </>
-                )}
-              </div>
+          {/* Auth Buttons */}
+          {user ? (
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-slate-600">
+                Welcome, {user.email?.split('@')[0]}
+              </span>
+              {userRole !== 'admin' && (
+                <button onClick={handleLogout} className="btn-secondary">
+                  Logout
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center space-x-3">
+              <Link to="/user-login" className="btn-primary">
+                Login
+              </Link>
+              <Link to="/signup" className="btn-outline">
+                Sign Up
+              </Link>
             </div>
           )}
         </div>
+
+        {/* Mobile Menu Button */}
+        <button
+          className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <div className="w-6 h-6 flex flex-col justify-center space-y-1">
+            <span className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? 'rotate-45 translate-y-1' : ''}`}></span>
+            <span className={`block h-0.5 w-6 bg-gray-600 transition-opacity ${menuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? '-rotate-45 -translate-y-1' : ''}`}></span>
+          </div>
+        </button>
       </nav>
 
-      {/* Hamburger for mobile */}
-      <button
-        className="md:hidden flex items-center justify-center w-10 h-10 rounded hover:bg-gray-800 transition"
-        onClick={() => setMenuOpen(!menuOpen)}
-        aria-label="Open menu"
-      >
-        <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      </button>
-
-      {/* Mobile menu overlay */}
+      {/* Mobile Menu */}
       {menuOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex md:hidden">
-          <div className="ml-auto w-64 bg-white h-full shadow-xl flex flex-col pt-8">
-            <button className="self-end mr-4 mb-6" onClick={() => setMenuOpen(false)} aria-label="Close menu">
-              <svg className="w-7 h-7 text-gray-700" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <button onClick={() => handleNav('/main-dashboard')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">Home</button>
-            <button onClick={() => handleNav('/artist-list')} className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left">See Artist</button>
-
-            {/* Always show these buttons but redirect to login if not authenticated */}
-            <button
-              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-              onClick={() => {
-                setMenuOpen(false);
-                if (user) {
-                  if (artistProfile) navigate(`/artist-profile?id=${artistProfile.id}`);
-                  else navigate('/register');
-                } else {
-                  navigate('/user-login');
-                }
-              }}
+        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
+          <div className="px-6 py-4 space-y-4">
+            <Link 
+              to="/main-dashboard" 
+              onClick={() => handleNav('/main-dashboard')}
+              className="block nav-link py-2"
             >
-              {user && artistProfile ? 'Artist Profile' : 'Register as Artist'}
-            </button>
-            <button
-              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-              onClick={() => {
-                setMenuOpen(false);
-                navOrLogin('/cart');
-              }}
+              🏠 Home
+            </Link>
+            <Link 
+              to="/artist-list" 
+              onClick={() => handleNav('/artist-list')}
+              className="block nav-link py-2"
             >
-              Your Cart
-            </button>
-            <button
-              className="text-gray-900 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-              onClick={() => {
-                setMenuOpen(false);
-                navOrLogin('/orders');
-              }}
-            >
-              Orders
-            </button>
-
-            {!user ? (
-              <button
-                onClick={() => {
-                  setMenuOpen(false);
-                  navigate('/admin-login');
-                }}
-                className="text-yellow-600 px-6 py-3 text-lg font-semibold hover:bg-yellow-50 text-left"
-              >
-                Admin Login
-              </button>
-            ) : null}
+              👨‍🎨 Artists
+            </Link>
+            
+            {user ? (
+              <>
+                <button 
+                  onClick={() => navOrLogin('/cart')} 
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  🛒 Cart
+                </button>
+                <button 
+                  onClick={() => navOrLogin('/orders')} 
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  📦 Orders
+                </button>
+                
+                {artistProfile && (
+                  <Link 
+                    to={`/artist-profile?id=${artistProfile.id}`}
+                    onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
+                    className="block nav-link py-2"
+                  >
+                    👤 My Profile
+                  </Link>
+                )}
+                
+                {!artistProfile && (
+                  <button 
+                    onClick={() => navOrLogin('/register')} 
+                    className="block nav-link py-2 w-full text-left"
+                  >
+                    ✨ Become Artist
+                  </button>
+                )}
+                
+                {userRole === 'admin' && (
+                  <button 
+                    onClick={handleAdminDashboard}
+                    className="block nav-link py-2 w-full text-left"
+                  >
+                    ⚙️ Admin Dashboard
+                  </button>
+                )}
+                
+                <button 
+                  onClick={handleLogout} 
+                  className="block btn-secondary w-full mt-4"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <div className="space-y-3 pt-4">
+                <Link 
+                  to="/user-login" 
+                  onClick={() => handleNav('/user-login')}
+                  className="block btn-primary w-full text-center"
+                >
+                  Login
+                </Link>
+                <Link 
+                  to="/signup" 
+                  onClick={() => handleNav('/signup')}
+                  className="block btn-outline w-full text-center"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

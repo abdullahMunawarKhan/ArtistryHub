@@ -1,9 +1,9 @@
+// src/pages/OrderProcess.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 
 const DELIVERY_FEE = 50;
-
 const POLICY_LINKS = [
   {
     title: "Shipping Policy",
@@ -34,7 +34,6 @@ export default function OrderProcess() {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-
   const [form, setForm] = useState({
     fullName: "",
     shippingAddress: "",
@@ -43,10 +42,8 @@ export default function OrderProcess() {
     altMobile: "",
   });
 
-  // Modal & checkbox state
   const [showPolicies, setShowPolicies] = useState(false);
   const [policiesChecked, setPoliciesChecked] = useState(false);
-
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
   useEffect(() => {
@@ -55,16 +52,14 @@ export default function OrderProcess() {
       navigate("/main-dashboard");
       return;
     }
-
     async function loadArtwork() {
       setLoading(true);
       const { data, error } = await supabase
         .from("artworks")
-        .select("id, title, cost, image_urls")
+        .select("id, title, cost, availability, image_urls")
         .eq("id", artworkId)
         .single();
       setLoading(false);
-
       if (error || !data) {
         alert("Failed to load artwork");
         navigate("/main-dashboard");
@@ -75,7 +70,8 @@ export default function OrderProcess() {
     loadArtwork();
   }, [artworkId, navigate]);
 
-  const totalCost = artwork ? artwork.cost * quantity + DELIVERY_FEE : 0;
+  const totalCost =
+    artwork && quantity > 0 ? artwork.cost * quantity + DELIVERY_FEE : 0;
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -90,9 +86,9 @@ export default function OrderProcess() {
     }
 
     setProcessing(true);
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       alert("Please log in to place order");
       setProcessing(false);
@@ -140,10 +136,12 @@ export default function OrderProcess() {
         },
         prefill: {
           name: form.fullName,
-          email: user?.email,
+          email: user.email,
           contact: form.mobile,
         },
-        theme: { color: "#F59E0B" },
+        theme: {
+          color: "#F59E0B",
+        },
         modal: {
           ondismiss: function () {
             setProcessing(false);
@@ -156,330 +154,185 @@ export default function OrderProcess() {
     });
   }
 
-  if (loading || !artwork) {
-    return <div className="center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-yellow-700 font-semibold">Loading artwork details...</p>
+      </div>
+    );
   }
 
+  if (!artwork) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-red-600 font-semibold">Artwork not found.</p>
+      </div>
+    );
+  }
+
+  const isAvailable = artwork.availability !== false;
+
   return (
-    <div
-      className="order-page"
-      style={{
-        maxWidth: 680,
-        margin: "0 auto",
-        padding: "2rem",
-        boxShadow: "0 4px 20px #d6d6d6",
-        fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-        backgroundColor: "#fff",
-      }}
-    >
-      <h2 style={{ marginBottom: 24 }}>Checkout</h2>
-
-      <div
-        className="order-artwork-details"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          marginBottom: 30,
-          gap: 18,
-        }}
+    <div className="max-w-2xl mx-auto p-6 bg-white bg-opacity-90 rounded-xl shadow-construction-lg">
+      <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-6 font-['Nova_Round',cursive]">
+        Purchase "{artwork.title}"
+      </h1>
+      <p className="text-lg mb-2 font-semibold text-gray-800">
+        Price per piece: <span className="text-yellow-600">₹{artwork.cost}</span>
+      </p>
+      <p className="mb-2 text-gray-700">
+        Shipping Fee: <span className="font-semibold text-yellow-700">₹{DELIVERY_FEE.toFixed(2)}</span>
+      </p>
+      <p
+        className={`mb-6 font-semibold ${
+          isAvailable ? "text-green-600" : "text-red-600"
+        }`}
       >
-        <img
-          src={artwork.image_urls[0]}
-          alt={artwork.title}
-          style={{ height: 100, borderRadius: 8, objectFit: "cover" }}
-        />
-        <div>
-          <strong
-            style={{ display: "block", fontSize: 18, marginBottom: 6, color: "#111" }}
-          >
-            {artwork.title}
-          </strong>
-          <div style={{ fontSize: 16, color: "#444" }}>₹{artwork.cost.toFixed(2)}</div>
-        </div>
-      </div>
+        Availability: {isAvailable ? "Available" : "Not Available"}
+      </p>
 
-      <div style={{ marginBottom: 20 }}>
-        <label style={{ fontWeight: 600, marginRight: 8 }}>
-          Quantity:
-          <input
-            type="number"
-            min={1}
-            max={10}
-            value={quantity}
-            disabled={processing}
-            onChange={(e) =>
-              setQuantity(Math.max(1, Math.min(10, Number(e.target.value))))
-            }
-            style={{
-              width: 60,
-              marginLeft: 8,
-              padding: "6px 8px",
-              borderRadius: 4,
-              border: "1px solid #ccc",
-            }}
-          />
-        </label>
-      </div>
-
-      <div
-        className="order-cost-breakup"
-        style={{ marginBottom: 22, fontSize: 16, color: "#222" }}
-      >
-        <div>
-          Delivery Charges: <strong>₹{DELIVERY_FEE.toFixed(2)}</strong>
-        </div>
-        <div style={{ fontWeight: "bold", marginTop: 6 }}>
-          Total Amount: ₹{totalCost.toFixed(2)}
-        </div>
-      </div>
-
-      <form className="form-details" style={{ marginBottom: 18 }}>
+      <label className="block mb-4">
+        <span className="text-gray-700 font-semibold mb-1 block">Quantity</span>
         <input
+          type="number"
+          min={1}
+          value={quantity}
+          onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
+          className="form-input w-24 rounded-md border-yellow-400 focus:ring-yellow-400"
+          disabled={!isAvailable}
+        />
+      </label>
+
+      <label className="block mb-4">
+        <span className="form-label font-semibold">Full Name</span>
+        <input
+          type="text"
           name="fullName"
-          placeholder="Full Name"
           value={form.fullName}
-          required
           onChange={handleChange}
-          style={{
-            marginBottom: 10,
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15,
-          }}
+          className="form-input"
+          required
+          placeholder="Your full name"
         />
+      </label>
+
+      <label className="block mb-4">
+        <span className="form-label font-semibold">Shipping Address</span>
+        <textarea
+          name="shippingAddress"
+          value={form.shippingAddress}
+          onChange={handleChange}
+          className="form-input"
+          rows={3}
+          required
+          placeholder="Shipping address"
+        ></textarea>
+      </label>
+
+      <label className="block mb-4">
+        <span className="form-label font-semibold">Billing Address</span>
+        <textarea
+          name="billingAddress"
+          value={form.billingAddress}
+          onChange={handleChange}
+          className="form-input"
+          rows={3}
+          required
+          placeholder="Billing address"
+        ></textarea>
+      </label>
+
+      <label className="block mb-4">
+        <span className="form-label font-semibold">Mobile Number</span>
         <input
+          type="tel"
           name="mobile"
-          placeholder="Mobile"
           value={form.mobile}
-          required
           onChange={handleChange}
-          style={{
-            marginBottom: 10,
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15,
-          }}
+          className="form-input"
+          required
+          placeholder="10-digit mobile number"
         />
+      </label>
+
+      <label className="block mb-6">
+        <span className="form-label font-semibold">Alternate Mobile Number (optional)</span>
         <input
+          type="tel"
           name="altMobile"
-          placeholder="Alternate Mobile"
           value={form.altMobile}
           onChange={handleChange}
-          style={{
-            marginBottom: 10,
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15,
-          }}
+          className="form-input"
+          placeholder="Alternate mobile number"
         />
-        <input
-          name="shippingAddress"
-          placeholder="Shipping Address"
-          value={form.shippingAddress}
-          required
-          onChange={handleChange}
-          style={{
-            marginBottom: 10,
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15,
-          }}
-        />
-        <input
-          name="billingAddress"
-          placeholder="Billing Address"
-          value={form.billingAddress}
-          required
-          onChange={handleChange}
-          style={{
-            marginBottom: 10,
-            width: "100%",
-            padding: "10px 12px",
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15,
-          }}
-        />
-      </form>
+      </label>
 
-      <button
-        className="btn"
-        onClick={() => setShowPolicies(true)}
-        disabled={processing}
-        style={{
-          width: "100%",
-          marginTop: 12,
-          background: "#F59E0B",
-          color: "#fff",
-          padding: "12px 0",
-          fontWeight: 600,
-          border: "none",
-          borderRadius: 8,
-          cursor: "pointer",
-        }}
-      >
-        Proceed to Payment
-      </button>
-
-      {/* Terms & Conditions Modal */}
-      {showPolicies && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(26,26,26,0.35)",
-            zIndex: 9999,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: "1rem",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 14,
-              padding: "26px 28px 22px",
-              maxWidth: 700,
-              width: "100%",
-              boxShadow: "0 4px 30px rgba(0,0,0,0.1)",
-              display: "flex",
-              flexDirection: "column",
-            }}
+      <label className="inline-flex items-center mb-6">
+        <input
+          type="checkbox"
+          className="form-checkbox text-yellow-500"
+          checked={policiesChecked}
+          onChange={() => setPoliciesChecked(!policiesChecked)}
+        />
+        <span className="ml-2 text-gray-700">
+          I have read and accept the{" "}
+          <button
+            type="button"
+            onClick={() => setShowPolicies(true)}
+            className="text-yellow-600 underline font-semibold"
           >
-            <h2 style={{ marginBottom: 22, color: "#222" }}>Terms & Policies</h2>
-            <div
-              style={{
-                display: "flex",
-                gap: 16,
-                marginBottom: 20,
-                justifyContent: "space-between",
-              }}
-            >
-              {POLICY_LINKS.map((policy) => (
+            policies
+          </button>
+        </span>
+      </label>
+
+      <p className="text-xl font-semibold mb-6 text-gray-800">
+        Total:{" "}
+        <span className="text-yellow-600 font-bold">₹{totalCost.toFixed(2)}</span>{" "}
+        (including delivery)
+      </p>
+
+      <div className="flex space-x-4">
+        <button
+          onClick={handlePayment}
+          disabled={!isAvailable || processing}
+          className={`btn-primary ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          {processing ? "Processing..." : "Pay Now"}
+        </button>
+        <button
+          onClick={() => navigate(-1)}
+          className="btn-outline"
+        >
+          Cancel
+        </button>
+      </div>
+
+      {showPolicies && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-6">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-construction overflow-auto max-h-[80vh]">
+            <h2 className="text-2xl font-bold mb-4 text-yellow-600 font-['Nova_Round',cursive]">
+              Policies
+            </h2>
+            {POLICY_LINKS.map((policy) => (
+              <div key={policy.title} className="mb-5">
                 <a
-                  key={policy.title}
                   href={policy.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{
-                    flex: 1,
-                    background: "#f7f7f7",
-                    padding: "20px 18px",
-                    borderRadius: 8,
-                    boxShadow: "0 2px 14px #e3e3e3",
-                    color: "#222",
-                    fontWeight: 600,
-                    fontSize: 16,
-                    textDecoration: "none",
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
+                  className="text-yellow-600 underline font-semibold text-lg"
                 >
-                  <div style={{ fontWeight: "bold", marginBottom: 10 }}>
-                    {policy.title}
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: 400,
-                      fontSize: 14,
-                      color: "#555",
-                      flex: 1,
-                      marginBottom: 10,
-                    }}
-                  >
-                    {policy.preview}
-                  </div>
-                  <div
-                    style={{ color: "#2563eb", fontWeight: 700, fontSize: 14 }}
-                  >
-                    View Full Policy →
-                  </div>
+                  {policy.title}
                 </a>
-              ))}
-            </div>
-
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                fontSize: 15,
-                color: "#444",
-                marginBottom: 16,
-                userSelect: "none",
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={policiesChecked}
-                onChange={(e) => setPoliciesChecked(e.target.checked)}
-                style={{ accentColor: "#F59E0B", transform: "scale(1.3)" }}
-              />
-              I have read and accept all policies above
-            </label>
-            {policiesChecked && (
-              <div
-                style={{
-                  marginBottom: 12,
-                  fontSize: 14,
-                  color: "#15803d",
-                  fontWeight: 600,
-                }}
-              >
-                Please ensure you have read all policies before proceeding with
-                payment.
+                <p className="text-gray-700 mt-1">{policy.preview}</p>
               </div>
-            )}
-
-            <div style={{ display: "flex", gap: 12 }}>
-              <button
-                disabled={!policiesChecked}
-                onClick={() => {
-                  setShowPolicies(false);
-                  handlePayment();
-                }}
-                style={{
-                  flex: 1,
-                  background: "#F59E0B",
-                  color: "white",
-                  fontWeight: 700,
-                  padding: "12px 0",
-                  borderRadius: 8,
-                  border: "none",
-                  cursor: policiesChecked ? "pointer" : "not-allowed",
-                  opacity: policiesChecked ? 1 : 0.6,
-                }}
-              >
-                Proceed to Payment
-              </button>
-              <button
-                onClick={() => setShowPolicies(false)}
-                style={{
-                  flex: 1,
-                  background: "#ef4444",
-                  color: "white",
-                  fontWeight: 700,
-                  padding: "12px 0",
-                  borderRadius: 8,
-                  border: "none",
-                  cursor: "pointer",
-                }}
-              >
-                Cancel
-              </button>
-            </div>
+            ))}
+            <button
+              onClick={() => setShowPolicies(false)}
+              className="btn-primary mt-4 px-6 py-2"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

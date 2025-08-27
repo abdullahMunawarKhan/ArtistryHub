@@ -1,6 +1,7 @@
+// src/pages/Register.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const proofOptions = [
   { value: 'PAN', label: 'PAN Card' },
@@ -10,31 +11,15 @@ const proofOptions = [
 
 const TERMS_TEXT = `
 Artist Registration Terms and Conditions
-
-By registering as an artist on our platform, you agree to the following terms and conditions:
-
-1. Accuracy of Information
-You confirm that all information provided during the registration process is complete, accurate, and truthful to the best of your knowledge. You are solely responsible for maintaining the correctness and updating any changes promptly.
-
-2. Compliance with Legal Requirements
-You affirm that all documents submitted for verification and registration are authentic, valid, and legally compliant. You understand that submission of fraudulent or forged documents may lead to immediate suspension or termination of your account.
-
-3. Intellectual Property Rights
-You warrant that the artworks and content you upload do not infringe upon the intellectual property rights or copyrights of any third party. You retain ownership of your work but grant our platform a license to display and promote your art as part of our services.
-
-4. Acceptance of Platform Policies
-By registering, you acknowledge that you have read, understood, and accepted all platform policies, including but not limited to privacy, content guidelines, payment, and dispute resolution policies, as outlined in our Terms of Service.
-
-5. Responsibility and Liability
-You agree to hold the platform harmless from any claims, damages, or losses arising from inaccuracies in the information or documents you provide. It is your responsibility to ensure compliance with all applicable laws and regulations pertaining to your participation.
-
-6. Account Suspension and Termination
-The platform reserves the right to suspend, block, or terminate your artist account at its sole discretion if any violation of these terms or platform policies is detected.
-
-By proceeding with the registration, you confirm that you accept these terms and agree to abide by them strictly.
+1. Provide accurate information.
+2. Submit authentic documents.
+3. You retain ownership of your work.
+4. Accept all platform policies.
+5. Remain compliant with laws.
+6. Accounts may be suspended for violations.
 `;
 
-function Register() {
+export default function Register() {
   const [form, setForm] = useState({
     name: '',
     mobile: '',
@@ -43,39 +28,34 @@ function Register() {
     qualification: '',
     id_proof_type: proofOptions[0].value,
   });
-  const [isEdit, setIsEdit] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
-  const [profileImagePreview, setProfileImagePreview] = useState(null);
-  const [idProofFile, setIdProofFile] = useState(null);
-  const [idProofPreview, setIdProofPreview] = useState(null);
+  const [profilePreview, setProfilePreview] = useState(null);
+  const [idFile, setIdFile] = useState(null);
+  const [idPreview, setIdPreview] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
-
-  // Modal & checkbox state for terms acceptance
-  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-
+  const [userId, setUserId] = useState(null);
+  const [isEdit, setIsEdit] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Get logged-in user and prefill if editing
   useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) navigate('/user-login');
-      else setUser(user);
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return navigate('/user-login');
+      setUserId(user.id);
 
-      // Check query for edit mode or existing artist
-      const params = new URLSearchParams(window.location.search);
-      const editMode = params.get('edit') === '1';
-      if (editMode) setIsEdit(true);
+      // check edit mode
+      const params = new URLSearchParams(location.search);
+      if (params.get('edit') === '1') setIsEdit(true);
 
       const { data: existing } = await supabase
         .from('artists')
-        .select('id, name, mobile, email, location, qualification, id_proof_type, profile_image_url, id_proof_url')
-        .eq('user_id', user?.id)
+        .select('*')
+        .eq('user_id', user.id)
         .single();
+
       if (existing) {
         setIsEdit(true);
         setForm({
@@ -86,458 +66,173 @@ function Register() {
           qualification: existing.qualification || '',
           id_proof_type: existing.id_proof_type || proofOptions[0].value,
         });
-        if (existing.profile_image_url) setProfileImagePreview(existing.profile_image_url);
-        if (existing.id_proof_url && existing.id_proof_url.match(/^https?:/)) setIdProofPreview(existing.id_proof_url);
+        if (existing.profile_image_url) setProfilePreview(existing.profile_image_url);
+        if (existing.id_proof_url) setIdPreview(existing.id_proof_url);
       }
-    };
-    getUser();
-  }, [navigate]);
+    })();
+  }, [location, navigate]);
 
-  // Handle form input changes
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  // Profile image upload/preview
-  const handleProfileImageChange = (e) => {
+  const handleFile = (e, setter, previewSetter) => {
     const file = e.target.files[0];
     if (!file) return;
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-    if (!validTypes.includes(file.type)) {
-      alert('Profile image must be JPG or PNG');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Profile image must be less than 10MB');
-      return;
-    }
-    setProfileImage(file);
-    setProfileImagePreview(URL.createObjectURL(file));
-  };
-
-  // ID proof file upload/preview
-  const handleIdProofChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-    if (!validTypes.includes(file.type)) {
-      alert('ID proof must be PDF or JPG/PNG image');
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('ID proof document must be less than 10MB');
-      return;
-    }
-    setIdProofFile(file);
+    setter(file);
     if (file.type.startsWith('image/')) {
-      setIdProofPreview(URL.createObjectURL(file));
+      previewSetter(URL.createObjectURL(file));
     } else {
-      setIdProofPreview(null);
+      previewSetter(null);
     }
   };
 
-  // File upload helper
   const uploadFile = async (file, folder) => {
     if (!file) return '';
-    const filename = `${folder}/${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage
-      .from('artist-assets')
-      .upload(filename, file, { upsert: true });
-    if (error) {
-      console.error('Upload error:', error);
-      return '';
-    }
-    const { publicUrl } = supabase.storage.from('artist-assets').getPublicUrl(filename).data;
-    return publicUrl;
+    const name = `${folder}/${Date.now()}_${file.name}`;
+    await supabase.storage.from('artist-assets').upload(name, file, { upsert: true });
+    const { data } = supabase.storage.from('artist-assets').getPublicUrl(name);
+    return data.publicUrl;
   };
 
-  // Submit handler triggers terms modal first
-  const handleRegisterClick = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Basic checks before showing terms modal
     if (!form.name || !form.mobile || !form.email || !form.location) {
-      alert('Please fill all required fields.');
-      return;
+      return alert('Please fill all required fields.');
     }
-    // In edit mode, allow skipping re-uploads
-    if (!isEdit) {
-      if (!profileImage) {
-        alert('Profile image is required.');
-        return;
-      }
-      if (!idProofFile) {
-        alert('ID proof document is required.');
-        return;
-      }
+    if (!isEdit && (!profileImage || !idFile)) {
+      return alert('Profile image and ID proof are required.');
     }
-    setShowTermsModal(true);
+    setShowTerms(true);
   };
 
-  // Final submit after terms accepted
-  const handleSubmit = async () => {
-    if (!termsAccepted) {
-      alert('You must accept the terms and conditions to proceed.');
-      return;
-    }
+  const confirmSubmit = async () => {
+    if (!termsAccepted) return alert('Accept terms to proceed.');
     setLoading(true);
-    setShowTermsModal(false);
     try {
-      const uploadedProfileUrl = await uploadFile(profileImage, 'profile-images');
-      const uploadedIdUrl = await uploadFile(idProofFile, 'id-proofs');
-
+      const profileUrl = await uploadFile(profileImage, 'profiles');
+      const idUrl = await uploadFile(idFile, 'id-proofs');
       let error;
       if (isEdit) {
-        // Update existing row for this user
-        const updatePayload = {
-          name: form.name,
-          email: form.email,
-          mobile: form.mobile,
-          location: form.location,
-          qualification: form.qualification,
-          id_proof_type: form.id_proof_type,
-        };
-        if (uploadedProfileUrl) updatePayload.profile_image_url = uploadedProfileUrl;
-        if (uploadedIdUrl) updatePayload.id_proof_url = uploadedIdUrl;
         ({ error } = await supabase
           .from('artists')
-          .update(updatePayload)
-          .eq('user_id', user.id));
+          .update({
+            ...form,
+            profile_image_url: profileUrl || profilePreview,
+            id_proof_url: idUrl || idPreview,
+          })
+          .eq('user_id', userId));
       } else {
-        if (!uploadedProfileUrl || !uploadedIdUrl) {
-          alert('Image or ID proof upload failed, please try again.');
-          setLoading(false);
-          return;
-        }
-        ({ error } = await supabase.from('artists').insert([
-          {
-            user_id: user.id,
-            name: form.name,
-            email: form.email,
-            mobile: form.mobile,
-            location: form.location,
-            qualification: form.qualification,
-            id_proof_type: form.id_proof_type,
-            profile_image_url: uploadedProfileUrl,
-            id_proof_url: uploadedIdUrl,
+        ({ error } = await supabase
+          .from('artists')
+          .insert([{
+            user_id: userId,
+            ...form,
+            profile_image_url: profileUrl,
+            id_proof_url: idUrl,
             registered_at: new Date().toISOString(),
-          },
-        ]));
+          }]));
       }
-      if (error) {
-        alert('Error registering artist: ' + error.message);
-      } else {
-        alert(isEdit ? 'Profile updated successfully!' : 'Artist registered successfully!');
-        navigate('/main-dashboard');
-        window.location.reload();
-      }
+      if (error) throw error;
+      alert(isEdit ? 'Profile updated!' : 'Registered successfully!');
+      navigate('/main-dashboard');
     } catch (err) {
       alert('Error: ' + err.message);
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   return (
-    <>
-      <div
-        style={{
-          maxWidth: 680,
-          margin: '2rem auto',
-          padding: '2rem',
-          boxShadow: '0 4px 20px #d6d6d6',
-          borderRadius: 10,
-          fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-          backgroundColor: '#fff',
-        }}
-      >
-        <h1 style={{ marginBottom: '1.5rem', color: '#222' }}>Artist Registration</h1>
-
-        <form>
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}>
-            Full Name *
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            placeholder="Enter your full name"
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 16,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-            }}
-          />
-
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}>
-            Mobile Number *
-          </label>
-          <input
-            type="tel"
-            name="mobile"
-            value={form.mobile}
-            onChange={handleChange}
-            required
-            placeholder="Enter mobile number"
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 16,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-            }}
-          />
-
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}>
-            Email *
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            placeholder="Enter email address"
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 16,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-            }}
-          />
-
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}>
-            Location *
-          </label>
-          <input
-            type="text"
-            name="location"
-            value={form.location}
-            onChange={handleChange}
-            required
-            placeholder="City, State, Country"
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 16,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-            }}
-          />
-
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}>
-            Qualification (optional)
-          </label>
-          <input
-            type="text"
-            name="qualification"
-            value={form.qualification}
-            onChange={handleChange}
-            placeholder="Your qualifications (if any)"
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 16,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-            }}
-          />
-
-          <label
-            htmlFor="id_proof_type"
-            style={{ display: 'block', marginBottom: 8, fontWeight: '600', color: '#444' }}
-          >
-            ID Proof Type
-          </label>
+    <div className="min-h-screen p-6 bg-gray-100">
+      <h1 className="text-3xl font-bold text-gradient-primary mb-4">
+        {isEdit ? 'Edit Artist Profile' : 'Artist Registration'}
+      </h1>
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        {['name','mobile','email','location','qualification'].map((field) => (
+          <div key={field}>
+            <label className="form-label">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+            <input
+              name={field}
+              value={form[field]}
+              onChange={handleChange}
+              className="form-input"
+            />
+          </div>
+        ))}
+        <div>
+          <label className="form-label">ID Proof Type</label>
           <select
             name="id_proof_type"
             value={form.id_proof_type}
             onChange={handleChange}
-            style={{
-              width: '100%',
-              padding: '10px 14px',
-              marginBottom: 20,
-              borderRadius: 6,
-              border: '1px solid #ccc',
-              fontSize: 16,
-              cursor: 'pointer',
-            }}
+            className="form-input"
           >
-            {proofOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
+            {proofOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
-
-          <label
-            style={{ display: 'block', marginBottom: 10, fontWeight: '600', color: '#444' }}
-          >
-            Profile Image *
-          </label>
+        </div>
+        <div>
+          <label className="form-label">Profile Image</label>
           <input
             type="file"
-            accept=".jpg,.jpeg,.png"
-            onChange={handleProfileImageChange}
-            style={{ marginBottom: 12 }}
+            accept="image/*"
+            onChange={(e) => handleFile(e, setProfileImage, setProfilePreview)}
+            className="form-input"
           />
-          {profileImagePreview && (
-            <img
-              src={profileImagePreview}
-              alt="Profile Preview"
-              style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, marginBottom: 16 }}
-            />
+          {profilePreview && (
+            <img src={profilePreview} alt="Profile preview" className="w-24 h-24 mt-2 rounded" />
           )}
-
-          <label
-            style={{ display: 'block', marginBottom: 10, fontWeight: '600', color: '#444' }}
-          >
-            ID Proof Document (PDF or Image) *
-          </label>
+        </div>
+        <div>
+          <label className="form-label">ID Proof Document</label>
           <input
             type="file"
-            accept=".pdf,.jpg,.jpeg,.png"
-            onChange={handleIdProofChange}
-            style={{ marginBottom: 12 }}
+            accept=".png,.jpg,.jpeg,.pdf"
+            onChange={(e) => handleFile(e, setIdFile, setIdPreview)}
+            className="form-input"
           />
-          {idProofPreview && (
-            <img
-              src={idProofPreview}
-              alt="ID Proof Preview"
-              style={{ width: 120, height: 120, objectFit: "cover", borderRadius: 10, marginBottom: 16 }}
-            />
+          {idPreview && (
+            <p className="text-gray-600 mt-2">Preview not available for non-image</p>
           )}
+        </div>
+        <button type="submit" className="btn-primary" disabled={loading}>
+          {loading ? 'Processing...' : isEdit ? 'Update Profile' : 'Register'}
+        </button>
+      </form>
 
-          <button
-            onClick={handleRegisterClick}
-            disabled={loading}
-            style={{
-              width: '100%',
-              backgroundColor: '#F59E0B',
-              color: 'white',
-              fontWeight: 700,
-              padding: '14px 0',
-              fontSize: 18,
-              border: 'none',
-              borderRadius: 8,
-              cursor: 'pointer',
-            }}
-          >
-            {loading ? 'Registering...' : 'Register as Artist'}
-          </button>
-        </form>
-      </div>
-
-      {/* Terms and Conditions Modal */}
-      {showTermsModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: 12,
-              maxWidth: 600,
-              width: '100%',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 4px 30px rgba(0,0,0,0.1)',
-              padding: '1.5rem 2rem',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <h2 style={{ marginBottom: '1rem', color: '#222' }}>Artist Registration Terms and Conditions</h2>
-            <pre
-              style={{
-                whiteSpace: 'pre-wrap',
-                fontFamily: 'inherit',
-                fontSize: 14,
-                color: '#444',
-                lineHeight: 1.5,
-                marginBottom: '1.5rem',
-              }}
-            >
-              {TERMS_TEXT}
-            </pre>
-            <label
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                marginBottom: 24,
-                fontSize: 15,
-                color: '#444',
-                userSelect: 'none',
-              }}
-            >
+      {showTerms && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-lg max-w-lg">
+            <h2 className="text-xl font-semibold mb-4">Terms & Conditions</h2>
+            <pre className="text-gray-700 whitespace-pre-wrap mb-4">{TERMS_TEXT}</pre>
+            <div className="flex items-center mb-4">
               <input
                 type="checkbox"
                 checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-                style={{ accentColor: '#F59E0B', transform: 'scale(1.3)' }}
+                onChange={() => setTermsAccepted(!termsAccepted)}
+                id="terms"
+                className="mr-2"
               />
-              I have read and accept the terms and conditions above
-            </label>
-            <div style={{ display: 'flex', gap: 12 }}>
+              <label htmlFor="terms">I accept the terms and conditions</label>
+            </div>
+            <div className="flex justify-end space-x-2">
               <button
-                disabled={!termsAccepted}
-                onClick={handleSubmit}
-                style={{
-                  flex: 1,
-                  backgroundColor: termsAccepted ? '#F59E0B' : '#d6a545',
-                  color: 'white',
-                  fontWeight: 700,
-                  padding: '12px',
-                  borderRadius: 8,
-                  border: 'none',
-                  cursor: termsAccepted ? 'pointer' : 'not-allowed',
-                }}
-              >
-                Submit Registration
-              </button>
-              <button
-                onClick={() => setShowTermsModal(false)}
-                style={{
-                  flex: 1,
-                  backgroundColor: '#ef4444',
-                  color: 'white',
-                  fontWeight: 700,
-                  padding: '12px',
-                  borderRadius: 8,
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
+                onClick={() => setShowTerms(false)}
+                className="btn-outline"
               >
                 Cancel
+              </button>
+              <button
+                onClick={confirmSubmit}
+                className="btn-primary"
+                disabled={loading}
+              >
+                {loading ? 'Submitting...' : 'Confirm'}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
-
-export default Register;

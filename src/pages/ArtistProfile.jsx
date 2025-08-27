@@ -121,6 +121,14 @@ export default function ArtistProfile() {
     setConfirmModal({ visible: true, artworkId, currentAvailability });
   };
 
+function handleEditProduct(artwork) {
+  if (!artwork?.id) {
+    alert('Invalid artwork for editing');
+    return;
+  }
+  navigate(`/upload-work?id=${artwork.id}`);
+}
+
   // Confirm availability change and update DB + local state
   const confirmToggle = async () => {
     const newAvailability = !confirmModal.currentAvailability;
@@ -152,40 +160,96 @@ export default function ArtistProfile() {
   return (
     <>
       <div className="max-w-5xl mx-auto my-8 p-6 bg-white rounded-2xl shadow-construction">
-        {/* Top profile card - horizontal */}
-        <div className="flex gap-6 items-center">
-          <img
-            src={artist.profile_image_url}
-            alt={artist.name}
-            className="w-36 h-36 rounded-full object-cover shadow-md"
-          />
-          <div className="flex-1">
-            <div className="flex items-center justify-between gap-3">
-              <h1 className="text-2xl font-bold text-slate-900 m-0">{artist.name}</h1>
-              <StarRating value={4.5} />
-            </div>
-            <p className="text-slate-600 mt-1">
-              Location : {artist.location}
-            </p>
-            {isOwner ? (
-              <>
-                <p className="text-slate-700"><b>Mobile:</b> {artist.mobile}</p>
-                <p className="text-slate-700"><b>Email:</b> {artist.email}</p>
-              </>
-            ) : null}
-            {isOwner && (
-              <div className="flex gap-3 mt-3 flex-wrap">
-                
-                <button
-                  onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
-                  className="btn-secondary px-4 py-2"
-                >
-                  Edit Profile
-                </button>
+        {/* Top profile card - enhanced horizontal layout */}
+<div className="bg-gradient-to-br from-white via-blue-50/30 to-purple-50/20 rounded-3xl p-8 shadow-xl border border-white/50 backdrop-blur-sm">
+  <div className="flex gap-8 items-start">
+    {/* Profile image with enhanced styling */}
+    <div className="flex flex-col items-center space-y-4">
+      <div className="relative">
+        <img
+          src={artist.profile_image_url}
+          alt={artist.name}
+          className="w-44 h-44 rounded-full object-cover shadow-2xl ring-4 ring-white/80 ring-offset-4 ring-offset-transparent"
+        />
+        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white shadow-lg"></div>
+      </div>
+      
+      {/* Rating section with enhanced design */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl px-6 py-4 shadow-lg border border-white/60 text-center min-w-[180px]">
+        <p className="text-sm font-semibold text-slate-600 uppercase tracking-wider mb-2">Artist Rating</p>
+        <div className="flex justify-center mb-2">
+          <StarRating value={4.5} />
+        </div>
+        <p className="text-xs text-slate-500 font-medium">4.5 out of 5 stars</p>
+      </div>
+    </div>
+
+    {/* Artist information with enhanced layout */}
+    <div className="flex-1 space-y-6">
+      {/* Name and main info */}
+      <div className="space-y-3">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-purple-900 bg-clip-text text-transparent leading-tight">
+          {artist.name}
+        </h1>
+        
+        {/* Location with icon */}
+        <div className="flex items-center gap-2 text-slate-600">
+          <svg className="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">{artist.location}</span>
+        </div>
+      </div>
+
+      {/* Contact info for owners */}
+      {isOwner && (
+        <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-white/40 space-y-2">
+          <h3 className="font-semibold text-slate-800 text-sm uppercase tracking-wider mb-3">Contact Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                </svg>
               </div>
-            )}
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Mobile</p>
+                <p className="font-semibold text-slate-700">{artist.mobile}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Email</p>
+                <p className="font-semibold text-slate-700 truncate">{artist.email}</p>
+              </div>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Action button for owners */}
+      {isOwner && (
+        <div className="flex gap-3 pt-2">
+          <button
+            onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+            </svg>
+            Edit Profile
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+</div>
 
         {/* Artworks section header */}
         <div className="flex items-center justify-between mt-10 mb-4">
@@ -208,12 +272,22 @@ export default function ArtistProfile() {
             {artworks.map(artwork => (
               <div
                 key={artwork.id}
-                className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition p-3 cursor-pointer"
+                className="bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition p-3 cursor-pointer relative"
                 onClick={() => navigate(`/product?id=${artwork.id}`)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/product?id=${artwork.id}`); }}
               >
+                {isOwner && (
+                  <button
+                    className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded"
+                    onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditProduct(artwork);
+                    }}>
+                    Edit
+                  </button>
+                )}
                 <div className="w-full h-40 bg-slate-50 rounded-lg flex items-center justify-center overflow-hidden">
                   <img
                     src={artwork.image_urls && artwork.image_urls[0]}
@@ -242,6 +316,8 @@ export default function ArtistProfile() {
                         Availability: {(artwork.availability === false ? false : true) ? 'Yes' : 'No'}
                       </span>
                     </label>
+                     
+                   
                   </div>
                 )}
               </div>
