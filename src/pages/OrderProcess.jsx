@@ -86,9 +86,9 @@ export default function OrderProcess() {
     }
 
     setProcessing(true);
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+
+    const { data: { user } } = await supabase.auth.getUser();
+
     if (!user) {
       alert("Please log in to place order");
       setProcessing(false);
@@ -105,7 +105,8 @@ export default function OrderProcess() {
         description: "Artwork Purchase",
         handler: async function (response) {
           try {
-            const { error } = await supabase.from("orders").insert([
+            // Step 1: Insert the order
+            const { error: orderError } = await supabase.from("orders").insert([
               {
                 user_id: user.id,
                 artwork_id: artwork.id,
@@ -122,8 +123,21 @@ export default function OrderProcess() {
                 razorpay_payment_id: response.razorpay_payment_id,
               },
             ]);
-            if (error) throw error;
-            alert("Payment successful & order placed!");
+
+            if (orderError) throw orderError;
+
+            // Step 2: Update artwork availability to false (sold)
+            const { error: availabilityError } = await supabase
+              .from("artworks")
+              .update({ availability: false })
+              .eq("id", artwork.id);
+
+            if (availabilityError) {
+              console.error("Failed to update availability:", availabilityError);
+              // Order is already placed successfully, so we just log this error
+            }
+
+            alert("Payment successful & order placed! Artwork is now marked as sold.");
             navigate("/orders");
             resolve(response);
           } catch (err) {
@@ -149,6 +163,7 @@ export default function OrderProcess() {
           },
         },
       };
+
       const rzp = new window.Razorpay(options);
       rzp.open();
     });
@@ -184,9 +199,8 @@ export default function OrderProcess() {
         Shipping Fee: <span className="font-semibold text-yellow-700">₹{DELIVERY_FEE.toFixed(2)}</span>
       </p>
       <p
-        className={`mb-6 font-semibold ${
-          isAvailable ? "text-green-600" : "text-red-600"
-        }`}
+        className={`mb-6 font-semibold ${isAvailable ? "text-green-600" : "text-red-600"
+          }`}
       >
         Availability: {isAvailable ? "Available" : "Not Available"}
       </p>

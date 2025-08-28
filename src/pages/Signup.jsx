@@ -35,10 +35,17 @@ function Signup() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Use signUp with email and password options
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin + '/user-login'
+        }
+      });
 
       if (error) {
-        // Check for existing user error message
+        console.error('Signup error:', error);
         if (
           error.message.toLowerCase().includes('already registered') ||
           error.message.toLowerCase().includes('user already exists')
@@ -54,7 +61,32 @@ function Signup() {
         return;
       }
 
-      // In some cases, Supabase returns a user object with empty identities if account exists and confirmation needed
+      // Try to insert user profile, but don't fail if it doesn't work
+      if (data.user) {
+        try {
+          // Use upsert instead of insert to handle duplicates
+          const { error: profileError } = await supabase
+            .from('user')
+            .upsert([{
+              id: data.user.id,
+              email: email.trim().toLowerCase(),
+              role: 'user',
+            }], {
+              onConflict: 'id'
+            });
+
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Don't fail signup if profile creation fails - we can create it on login
+            console.log('Profile will be created on first login');
+          }
+        } catch (profileErr) {
+          console.error('Profile creation failed:', profileErr);
+          // Don't fail signup - profile will be created on first login
+        }
+      }
+
+      // Check for existing user case
       if (data.user?.identities?.length === 0) {
         setMessage({
           text: 'An account with this email already exists. Please login instead.',
@@ -68,8 +100,9 @@ function Signup() {
         text: '✅ Account created! Check your email to confirm, then log in.',
         type: 'success',
       });
-      setTimeout(() => navigate('/main-dashboard'), 3000);
-    } catch {
+      setTimeout(() => navigate('/user-login'), 3000);
+    } catch (err) {
+      console.error('Unexpected error during signup:', err);
       setMessage({ text: 'An unexpected error occurred. Please try again.', type: 'error' });
     }
     setLoading(false);

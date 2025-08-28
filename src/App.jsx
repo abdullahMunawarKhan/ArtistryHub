@@ -16,6 +16,7 @@ import Orders from './pages/Orders';
 import ArtistUploadWork from './pages/ArtistUploadWork';
 import OrderProcess from './pages/OrderProcess';
 import ProductDetails from './pages/ProductDetails';
+import TrackOrder from './pages/TrackOrder';
 
 function App() {
   const location = useLocation();
@@ -48,6 +49,7 @@ function App() {
             <Route path="/upload-work" element={<ArtistUploadWork />} />
             <Route path="/order-process" element={<OrderProcess />} />
             <Route path="/product" element={<ProductDetails />} />
+            <Route path="/track-order" element={<TrackOrder />} />
           </Routes>
         </div>
       </main>

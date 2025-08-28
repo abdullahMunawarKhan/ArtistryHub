@@ -53,15 +53,42 @@ export default function Orders() {
     setLoading(false);
   }
 
-  async function cancelOrder(id) {
-    if (!window.confirm('Are you sure you want to cancel this order?')) return;
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: 'canceled' })
-      .eq('id', id);
-    if (error) alert('Failed to cancel: ' + error.message);
-    else fetchOrders();
+async function cancelOrder(id) {
+  if (!window.confirm('Are you sure you want to cancel this order?')) return;
+
+  // Get the order details before canceling
+  const { data: orderData } = await supabase
+    .from('orders')
+    .select('artwork_id')
+    .eq('id', id)
+    .single();
+
+  // Cancel the order
+  const { error: cancelError } = await supabase
+    .from('orders')
+    .update({ status: 'canceled' })
+    .eq('id', id);
+
+  if (cancelError) {
+    alert('Failed to cancel: ' + cancelError.message);
+    return;
   }
+
+  // Make artwork available again
+  if (orderData?.artwork_id) {
+    const { error: availabilityError } = await supabase
+      .from('artworks')
+      .update({ availability: true })
+      .eq('id', orderData.artwork_id);
+
+    if (availabilityError) {
+      console.error('Failed to update availability:', availabilityError);
+    }
+  }
+
+  fetchOrders();
+}
+
 
   async function deleteOrder(id) {
     if (!window.confirm('Are you sure you want to delete this order?')) return;

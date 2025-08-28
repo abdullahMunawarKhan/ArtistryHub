@@ -1,4 +1,3 @@
-// src/pages/UserLogin.jsx
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +17,29 @@ function UserLogin() {
   const [debugInfo, setDebugInfo] = useState('');
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkAndRedirectUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Check if user has profile, if not create it
+        await ensureUserProfile(user);
+        navigate('/main-dashboard');
+      }
+    };
+
+    checkAndRedirectUser();
+
+    // Listen for auth state changes
+    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        await ensureUserProfile(session.user);
+        navigate('/main-dashboard');
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, [navigate]);
+
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   useEffect(() => {
@@ -26,6 +48,58 @@ function UserLogin() {
       return () => clearTimeout(timer);
     }
   }, [resetStatus]);
+
+  // Helper function to ensure user profile exists
+  const ensureUserProfile = async (user) => {
+    try {
+      console.log('Ensuring user profile for:', user.id);
+      
+      // First check if profile exists
+      const { data: existingProfile, error: selectError } = await supabase
+        .from('user')
+        .select('id, role')
+        .eq('id', user.id)
+        .single();
+
+      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is "not found"
+        console.error('Error checking profile:', selectError);
+        return null;
+      }
+
+      if (existingProfile) {
+        console.log('Profile exists:', existingProfile);
+        return existingProfile;
+      }
+
+      // Profile doesn't exist, create it
+      console.log('Creating new profile for user:', user.id);
+      const { data: newProfile, error: insertError } = await supabase
+        .from('user')
+        .upsert([
+          {
+            id: user.id,
+            email: user.email,
+            role: 'user'
+          }
+        ], {
+          onConflict: 'id',
+          ignoreDuplicates: false
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Failed to create profile:', insertError);
+        throw insertError;
+      }
+
+      console.log('Profile created successfully:', newProfile);
+      return newProfile;
+    } catch (error) {
+      console.error('Error in ensureUserProfile:', error);
+      return null;
+    }
+  };
 
   const handleLogin = async () => {
     setErrorEmail('');
@@ -52,6 +126,7 @@ function UserLogin() {
 
     setIsLoggingIn(true);
     setDebugInfo('Attempting to sign in...');
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -59,6 +134,7 @@ function UserLogin() {
       });
 
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes('Invalid login credentials')) {
           setLoginError('Invalid email or password. Please check your credentials.');
         } else if (error.message.includes('Email not confirmed')) {
@@ -69,15 +145,73 @@ function UserLogin() {
           setLoginError(error.message);
         }
         setDebugInfo(`Error: ${error.message}`);
-      } else if (data.user) {
-        navigate('/main-dashboard');
-      } else {
-        setLoginError('Login failed. Please try again.');
+        setIsLoggingIn(false);
+        return;
       }
+
+      if (!data.user) {
+        setLoginError('Login failed. Please try again.');
+        setIsLoggingIn(false);
+        return;
+      }
+
+      console.log('Login successful for user:', data.user.id);
+      setDebugInfo('Login successful, checking profile...');
+
+      // Ensure user profile exists and get role
+      const userProfile = await ensureUserProfile(data.user);
+      
+      if (!userProfile) {
+        // If profile creation failed, try a different approach
+        console.log('Profile creation failed, attempting alternative method...');
+        
+        // Try to create profile without RLS (this might work if there's a policy issue)
+        try {
+          // First disable RLS temporarily for this operation if needed
+          const { error: directInsertError } = await supabase
+            .from('user')
+            .insert([{
+              id: data.user.id,
+              email: data.user.email,
+              role: 'user'
+            }]);
+          
+          if (directInsertError) {
+            console.error('Direct insert also failed:', directInsertError);
+            setLoginError('Unable to create user profile. Please contact support.');
+            setIsLoggingIn(false);
+            return;
+          }
+          
+          console.log('Profile created via direct insert');
+          // Set default profile
+          const userProfile = { role: 'user' };
+        } catch (fallbackError) {
+          console.error('Fallback profile creation failed:', fallbackError);
+          setLoginError('Profile creation failed. Please try logging in again or contact support.');
+          setIsLoggingIn(false);
+          return;
+        }
+      }
+
+      // Check role and redirect accordingly
+      if (userProfile && userProfile.role === 'admin') {
+        await supabase.auth.signOut(); // Sign out admin users
+        setLoginError('Please use the admin login page to sign in.');
+        setIsLoggingIn(false);
+        return;
+      }
+
+      // Success - redirect to dashboard
+      setDebugInfo('Login completed successfully!');
+      navigate('/main-dashboard');
+
     } catch (err) {
+      console.error('Unexpected error during login:', err);
       setLoginError('An unexpected error occurred. Please try again.');
       setDebugInfo(`Unexpected error: ${err.message}`);
     }
+    
     setIsLoggingIn(false);
   };
 
@@ -124,6 +258,12 @@ function UserLogin() {
           </div>
         )}
 
+        {debugInfo && process.env.NODE_ENV === 'development' && (
+          <div className="mb-4 text-center text-xs text-gray-500 bg-gray-100 p-2 rounded">
+            Debug: {debugInfo}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div>
             <label className="form-label">Email</label>
@@ -151,6 +291,7 @@ function UserLogin() {
             <button
               onClick={() => setShowPassword(!showPassword)}
               className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              type="button"
             >
               {showPassword ? (
                 <EyeSlashIcon className="w-5 h-5" />
@@ -179,12 +320,14 @@ function UserLogin() {
             <button
               onClick={() => setShowForgotModal(!showForgotModal)}
               className="text-purple-600 hover:underline"
+              type="button"
             >
               Forgot Password?
             </button>
             <button
               onClick={() => navigate('/signup')}
               className="text-purple-600 hover:underline"
+              type="button"
             >
               Create Account
             </button>
@@ -199,6 +342,7 @@ function UserLogin() {
                 onClick={handleResetPassword}
                 disabled={isSending}
                 className="btn-outline w-full py-2 font-medium"
+                type="button"
               >
                 {isSending ? 'Sending...' : 'Send Reset Email'}
               </button>

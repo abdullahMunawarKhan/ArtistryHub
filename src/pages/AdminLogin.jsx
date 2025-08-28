@@ -1,4 +1,3 @@
-// src/pages/AdminLogin.jsx
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -22,7 +21,6 @@ function AdminLogin() {
     setErrorPassword('');
     setLoginError('');
 
-    // Validation
     if (!email) {
       setErrorEmail('Email is required.');
       return;
@@ -42,18 +40,32 @@ function AdminLogin() {
 
     setIsLoggingIn(true);
     try {
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin')
-        .select('id,email,password')
-        .eq('email', email.trim().toLowerCase())
-        .single();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
-      if (adminError || !adminData) {
-        setLoginError('Admin not found or invalid email.');
-      } else if (adminData.password !== password) {
-        setLoginError('Incorrect password.');
+      if (error) {
+        setLoginError(error.message);
+      } else if (data.user) {
+        // Fetch user role
+        const { data: userProfile, error: profileError } = await supabase
+          .from('user')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError || !userProfile) {
+          setLoginError('User profile not found.');
+        } else if (userProfile.role !== 'admin') {
+          setLoginError('You are not authorized to access the admin dashboard.');
+          // Optionally log out user
+          await supabase.auth.signOut();
+        } else {
+          navigate('/admin-dashboard');
+        }
       } else {
-        navigate('/admin-dashboard');
+        setLoginError('Login failed. Please try again.');
       }
     } catch (err) {
       setLoginError('Unexpected error. Please try again.');
@@ -95,6 +107,7 @@ function AdminLogin() {
             <button
               onClick={() => setShowPassword(!showPassword)}
               className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              type="button"
             >
               {showPassword ? (
                 <EyeSlashIcon className="w-5 h-5" />

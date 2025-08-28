@@ -1,4 +1,3 @@
-// src/pages/AdminDashboard.jsx
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -16,18 +15,21 @@ function AdminDashboard() {
         return;
       }
       setUserEmail(user.email);
+
       const { data: profile, error } = await supabase
-        .from('users')
+        .from('user')
         .select('role')
         .eq('id', user.id)
         .single();
 
       if (error || profile?.role !== 'admin') {
+        // Non-admins redirected to user area or login
         navigate('/main-dashboard');
         return;
       }
       setLoading(false);
     };
+
     checkAuth();
   }, [navigate]);
 
@@ -51,7 +53,7 @@ function AdminDashboard() {
           You have administrative access. Use the navigation menu to manage users,
           artists, and artworks.
         </p>
-        {/* Future admin features: user management, analytics, content moderation, etc. */}
+        {/* Extend here: Add Users list, Content Moderation, Analytics etc */}
       </div>
     </div>
   );

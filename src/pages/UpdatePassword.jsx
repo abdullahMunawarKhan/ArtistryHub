@@ -1,4 +1,3 @@
-// src/pages/UpdatePassword.jsx
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
@@ -41,8 +40,9 @@ function UpdatePassword() {
         const { data: { user } } = await supabase.auth.getUser();
         let role = 'user';
         if (user) {
+          // Fetch user role from user table
           const { data: profile, error: profileError } = await supabase
-            .from('users')
+            .from('user')
             .select('role')
             .eq('id', user.id)
             .single();
@@ -50,9 +50,7 @@ function UpdatePassword() {
             role = profile.role;
           }
         }
-        setSuccessMsg(
-          `Password updated successfully! Redirecting ${role === 'admin' ? 'to admin' : 'to main'} dashboard...`
-        );
+        setSuccessMsg(`Password updated successfully! Redirecting ${role === 'admin' ? 'to admin' : 'to main'} dashboard...`);
         setTimeout(() => {
           navigate(role === 'admin' ? '/admin-dashboard' : '/main-dashboard');
         }, 3000);
@@ -88,11 +86,7 @@ function UpdatePassword() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
-              {showPassword ? (
-                <EyeSlashIcon className="w-5 h-5" />
-              ) : (
-                <EyeIcon className="w-5 h-5" />
-              )}
+              {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
             </button>
           </div>
 
@@ -110,11 +104,7 @@ function UpdatePassword() {
               onClick={() => setShowPassword(!showPassword)}
               className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
-              {showPassword ? (
-                <EyeSlashIcon className="w-5 h-5" />
-              ) : (
-                <EyeIcon className="w-5 h-5" />
-              )}
+              {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
             </button>
           </div>
 
