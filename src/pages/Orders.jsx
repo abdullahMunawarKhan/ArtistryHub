@@ -39,6 +39,7 @@ export default function Orders() {
         quantity,
         artworks ( title, image_urls ),
         artists ( name )
+        tracking_id, 
       `)
       .eq('user_id', user.id)
       .eq('status', selectedCategory)
@@ -53,41 +54,41 @@ export default function Orders() {
     setLoading(false);
   }
 
-async function cancelOrder(id) {
-  if (!window.confirm('Are you sure you want to cancel this order?')) return;
+  async function cancelOrder(id) {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
-  // Get the order details before canceling
-  const { data: orderData } = await supabase
-    .from('orders')
-    .select('artwork_id')
-    .eq('id', id)
-    .single();
+    // Get the order details before canceling
+    const { data: orderData } = await supabase
+      .from('orders')
+      .select('artwork_id')
+      .eq('id', id)
+      .single();
 
-  // Cancel the order
-  const { error: cancelError } = await supabase
-    .from('orders')
-    .update({ status: 'canceled' })
-    .eq('id', id);
+    // Cancel the order
+    const { error: cancelError } = await supabase
+      .from('orders')
+      .update({ status: 'canceled' })
+      .eq('id', id);
 
-  if (cancelError) {
-    alert('Failed to cancel: ' + cancelError.message);
-    return;
-  }
-
-  // Make artwork available again
-  if (orderData?.artwork_id) {
-    const { error: availabilityError } = await supabase
-      .from('artworks')
-      .update({ availability: true })
-      .eq('id', orderData.artwork_id);
-
-    if (availabilityError) {
-      console.error('Failed to update availability:', availabilityError);
+    if (cancelError) {
+      alert('Failed to cancel: ' + cancelError.message);
+      return;
     }
-  }
 
-  fetchOrders();
-}
+    // Make artwork available again
+    if (orderData?.artwork_id) {
+      const { error: availabilityError } = await supabase
+        .from('artworks')
+        .update({ availability: true })
+        .eq('id', orderData.artwork_id);
+
+      if (availabilityError) {
+        console.error('Failed to update availability:', availabilityError);
+      }
+    }
+
+    fetchOrders();
+  }
 
 
   async function deleteOrder(id) {
@@ -108,9 +109,8 @@ async function cancelOrder(id) {
           <button
             key={cat.value}
             onClick={() => setSelectedCategory(cat.value)}
-            className={`btn-chip ${
-              selectedCategory === cat.value ? 'active' : ''
-            }`}
+            className={`btn-chip ${selectedCategory === cat.value ? 'active' : ''
+              }`}
           >
             {cat.label}
           </button>
@@ -163,18 +163,27 @@ async function cancelOrder(id) {
                   </p>
                   <p className="mt-2">
                     <span
-                      className={`badge-primary ${
-                        order.status === 'pending'
+                      className={`badge-primary ${order.status === 'pending'
                           ? 'badge-primary'
                           : order.status === 'completed'
-                          ? 'badge-secondary'
-                          : 'badge-red-500 text-white'
-                      }`}
+                            ? 'badge-secondary'
+                            : 'badge-red-500 text-white'
+                        }`}
                     >
                       {order.status.charAt(0).toUpperCase() +
                         order.status.slice(1)}
                     </span>
                   </p>
+                  {order.tracking_id ? (
+                    <button
+                      onClick={() => navigate(`/track-order/${order.tracking_id}`)}
+                      className="btn-primary ml-4"
+                    >
+                      Track Order
+                    </button>
+                  ) : (
+                    <p className="text-gray-500 ml-4">Awaiting Shipment</p>
+                  )}
                 </div>
                 {selectedCategory === 'pending' ? (
                   <button

@@ -68,15 +68,9 @@ function TopPanel() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const handleAdminLoginClick = (e) => {
-    if (e.type === 'click') {
-      setAdminMenuOpen((prev) => !prev);
-    }
-  };
 
-  const handleAdminLoginDoubleClick = () => {
-    setAdminMenuOpen(false);
-  };
+
+
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -173,28 +167,13 @@ function TopPanel() {
           {isAdmin && (
             <div className="relative" ref={adminMenuRef}>
               <button
-                onClick={handleAdminLoginClick}
-                onDoubleClick={handleAdminLoginDoubleClick}
-                className="nav-link relative"
+                onClick={handleAdminDashboard}
+                className="w-full text-left px-3 py-2 nav-link rounded-lg"
+                
               >
-                ⚙️ Admin
+                ⚙️📊 Admin Dashboard
               </button>
-              {adminMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 artistryhub-card p-2 space-y-1">
-                  <button
-                    onClick={handleAdminDashboard}
-                    className="w-full text-left px-3 py-2 nav-link rounded-lg"
-                  >
-                    📊 Dashboard
-                  </button>
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left px-3 py-2 nav-link rounded-lg"
-                  >
-                    🚪 Logout
-                  </button>
-                </div>
-              )}
+              
             </div>
           )}
 
@@ -203,11 +182,11 @@ function TopPanel() {
               <span className="text-sm text-slate-600">
                 Welcome, {user.email?.split('@')[0]}
               </span>
-              {!isAdmin && (
+              
                 <button onClick={handleLogout} className="btn-secondary">
                   Logout
                 </button>
-              )}
+              
             </div>
           ) : (
             <div className="relative" ref={loginDropdownRef}>
@@ -219,7 +198,7 @@ function TopPanel() {
                 Login ▾
               </button>
               {loginDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-36 bg-white border rounded shadow-md z-50">
+                <div className="absolute left-0 mt-2 w-36 bg-white border rounded shadow-md z-50">
                   <button
                     type="button"
                     onClick={() => {

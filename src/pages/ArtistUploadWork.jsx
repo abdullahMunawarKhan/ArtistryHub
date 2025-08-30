@@ -10,7 +10,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
   const [user, setUser] = useState(null);
   const [artistId, setArtistId] = useState(null);
-  
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
@@ -30,6 +30,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [pickupAddress, setPickupAddress] = useState("");
 
   const defaultCategories = [
     "Portrait",
@@ -86,6 +87,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     fetchArtwork();
   }, [productId, navigate]);
 
+
   function handleImageChange(e) {
     const files = Array.from(e.target.files).slice(0, 3);
     const validFiles = files.filter((file) => file.size <= 10 * 1024 * 1024);
@@ -125,9 +127,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     return data.publicUrl;
   }
 
+
+
   async function handleSubmit(e) {
     e.preventDefault();
-    
+
     if (!artistId) {
       alert("You must be registered as an artist.");
       return;
@@ -147,6 +151,15 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       alert("Valid cost is required.");
       return;
     }
+    if (!pickupAddress.trim()) {
+      alert("Pickup address is required.");
+      return;
+    }
+    if (!length || !width || !height || !weight) {
+      alert("All dimensions are required.");
+      return;
+    }
+
 
     setLoading(true);
 
@@ -159,7 +172,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
       if (productId) {
         // Update existing artwork
-        const { error } = await supabase
+        const { error: artworkError } = await supabase
           .from("artworks")
           .update({
             title: title.trim(),
@@ -170,14 +183,30 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             image_urls: uploadedImageUrls,
             video_url: uploadedVideoUrl,
             updated_at: new Date().toISOString(),
+            length: Number(length),
+            width: Number(width),
+            height: Number(height),
+            weight: Number(weight),
           })
           .eq("id", productId);
 
-        if (error) throw error;
-        alert("Artwork updated successfully!");
+        if (artworkError) throw artworkError;
+
+        // Update pickup address in orders
+        const { error: orderError } = await supabase
+          .from("orders")
+          .update({
+            pickup_address: pickupAddress.trim(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("artwork_id", productId);
+
+        if (orderError) throw orderError;
+
+        alert("Artwork & pickup address updated successfully!");
       } else {
         // Insert new artwork
-        const { error } = await supabase
+        const { data: newArtwork, error: artworkError } = await supabase
           .from("artworks")
           .insert({
             artist_id: artistId,
@@ -189,10 +218,30 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             image_urls: uploadedImageUrls,
             video_url: uploadedVideoUrl,
             created_at: new Date().toISOString(),
+            length: Number(length),
+            width: Number(width),
+            height: Number(height),
+            weight: Number(weight),
+          })
+          .select()
+          .single();
+
+        if (artworkError) throw artworkError;
+
+        // also insert pickup address into orders
+        const { error: orderError } = await supabase
+          .from("orders")
+          .insert({
+            artwork_id: newArtwork.id,
+            pickup_address: pickupAddress.trim(),
+            created_at: new Date().toISOString(),
           });
-        if (error) throw error;
-        alert("Artwork uploaded successfully!");
+
+        if (orderError) throw orderError;
+
+        alert("Artwork & pickup address saved successfully!");
       }
+
 
       // Reset or redirect
       setTitle("");
@@ -255,6 +304,18 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           ))}
         </select>
 
+        <input type="number" value={length} onChange={e => setLength(e.target.value)}
+          required min="1" placeholder="Length (cm) *after packing" />
+
+        <input type="number" value={width} onChange={e => setWidth(e.target.value)}
+          required min="1" placeholder="Width/Thickness(cm) *after packing" />
+
+        <input type="number" value={height} onChange={e => setHeight(e.target.value)}
+          required min="1" placeholder="Height (cm) **after packing" />
+
+        <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
+          required min="1" placeholder="dead Weight (kg) **after packing" />
+
         <label>Cost (INR)</label>
         <input
           type="number"
@@ -272,6 +333,22 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           onChange={(e) => setMaterial(e.target.value)}
           placeholder="Enter material"
           style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
+        />
+        <label>Pickup Address(provide precise and also include pin code) *</label>
+        <textarea
+          value={pickupAddress}
+          onChange={(e) => setPickupAddress(e.target.value)}
+          placeholder="Enter pickup address"
+          rows={3}
+          required
+          style={{
+            width: "100%",
+            padding: 12,
+            marginBottom: 16,
+            borderRadius: 6,
+            border: "1px solid #ccc",
+            fontSize: 15
+          }}
         />
 
         <label>Upload Images (Max 3, each under 10MB)</label>

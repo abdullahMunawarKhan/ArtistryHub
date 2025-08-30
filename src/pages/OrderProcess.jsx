@@ -105,7 +105,9 @@ export default function OrderProcess() {
         description: "Artwork Purchase",
         handler: async function (response) {
           try {
-            // Step 1: Insert the order
+
+
+            // Step 2: Insert the order with tracking_id
             const { error: orderError } = await supabase.from("orders").insert([
               {
                 user_id: user.id,
@@ -121,12 +123,17 @@ export default function OrderProcess() {
                 mobile: form.mobile,
                 alt_mobile: form.altMobile,
                 razorpay_payment_id: response.razorpay_payment_id,
+                tracking_id: null,              // not yet known
+                courier_name: null,
+                shipment_status: "pending",     // waiting for shipment creation
+                shipment_created_at: null
+
               },
             ]);
 
             if (orderError) throw orderError;
 
-            // Step 2: Update artwork availability to false (sold)
+            // Step 3: Update artwork availability to false (sold)
             const { error: availabilityError } = await supabase
               .from("artworks")
               .update({ availability: false })
@@ -137,7 +144,7 @@ export default function OrderProcess() {
               // Order is already placed successfully, so we just log this error
             }
 
-            alert("Payment successful & order placed! Artwork is now marked as sold.");
+            alert("Payment successful & order placed! Tracking ID allocated. Artwork is now marked as sold.");
             navigate("/orders");
             resolve(response);
           } catch (err) {
@@ -168,7 +175,6 @@ export default function OrderProcess() {
       rzp.open();
     });
   }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -231,7 +237,7 @@ export default function OrderProcess() {
       </label>
 
       <label className="block mb-4">
-        <span className="form-label font-semibold">Shipping Address</span>
+        <span className="form-label font-semibold">Shipping Address provide precise *inlcude Pin code </span>
         <textarea
           name="shippingAddress"
           value={form.shippingAddress}
