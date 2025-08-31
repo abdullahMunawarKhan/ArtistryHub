@@ -17,6 +17,7 @@ import ArtistUploadWork from './pages/ArtistUploadWork';
 import OrderProcess from './pages/OrderProcess';
 import ProductDetails from './pages/ProductDetails';
 import TrackOrder from './pages/TrackOrder';
+import ArtistDashboard from './pages/ArtistDashboard' ;
 
 function App() {
   const location = useLocation();
@@ -50,6 +51,7 @@ function App() {
             <Route path="/order-process" element={<OrderProcess />} />
             <Route path="/product" element={<ProductDetails />} />
             <Route path="/track-order" element={<TrackOrder />} />
+            <Route path="/artist-dashboard" element={<ArtistDashboard />} />
           </Routes>
         </div>
       </main>

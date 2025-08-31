@@ -3,6 +3,30 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../utils/supabase";
 import { useNavigate, useParams } from "react-router-dom";
 
+function InteractiveStarRating({ value, onChange }) {
+  const [hover, setHover] = useState(null);
+
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {[...Array(5)].map((_, i) => (
+        <svg
+          key={i}
+          width={28}
+          height={28}
+          viewBox="0 0 20 20"
+          fill={(hover !== null ? i < hover : i < value) ? "#F59E0B" : "#E5E7EB"}
+          onClick={() => onChange(i + 1)}
+          onMouseEnter={() => setHover(i + 1)}
+          onMouseLeave={() => setHover(null)}
+          style={{ cursor: 'pointer' }}
+        >
+          <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
 const TrackOrder = () => {
   const { trackingId } = useParams();
   const navigate = useNavigate();
@@ -80,6 +104,7 @@ const TrackOrder = () => {
       }
     };
 
+
     if (trackingId) {
       fetchOrderData();
     }
@@ -92,6 +117,16 @@ const TrackOrder = () => {
       month: "long",
       day: "numeric",
     });
+  };
+  const handleReviewSubmit = async () => {
+    if (!starRating || !reviewText || !orderData?.products[0]?.id) return;
+    setReviewLoading(true);
+    const { error } = await supabase
+      .from("artworks")
+      .update({ rating: starRating, review: reviewText })
+      .eq("id", orderData.products[0].id);
+    if (!error) setReviewSubmitted(true);
+    setReviewLoading(false);
   };
 
   if (loading) {
@@ -217,6 +252,34 @@ const TrackOrder = () => {
           <p className="text-gray-700 text-sm">Name: {orderData.customer.name}</p>
           <p className="text-gray-700 text-sm">Phone: {orderData.customer.phone}</p>
         </div>
+        
+        <div className="mt-6 border-t pt-4">
+          <h3 className="font-semibold text-lg mb-2">Please provide your review</h3>
+          {reviewSubmitted ? (
+            <div className="text-green-600 font-medium">Thank you for your review!</div>
+          ) : (
+            <>
+              <label className="block mb-2">Your Rating:</label>
+              <InteractiveStarRating value={starRating} onChange={setStarRating} />
+              <textarea
+                placeholder="Write your review"
+                value={reviewText}
+                onChange={e => setReviewText(e.target.value)}
+                className="border rounded px-2 py-1 w-full mt-3 mb-2"
+                rows={3}
+                disabled={reviewLoading}
+              />
+              <button
+                onClick={handleReviewSubmit}
+                className={`bg-blue-600 text-white py-1 px-4 rounded ${reviewLoading ? "opacity-60" : ""}`}
+                disabled={reviewLoading || !starRating || !reviewText}
+              >
+                Submit Review
+              </button>
+            </>
+          )}
+        </div>
+
       </div>
     </div>
   );
