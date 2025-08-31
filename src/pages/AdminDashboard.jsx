@@ -83,7 +83,7 @@ function AdminDashboard() {
         .select(`
           *,
           artworks (
-            id, title, image_urls, cost, length, width, height, weight
+            id, title, image_urls, cost, length, width, height, weight,pickupAddress,availability
           ),
           artists (
             id, name, email, mobile

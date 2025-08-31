@@ -45,6 +45,10 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     "Calligraphy",
   ];
   const selectableCategories = categories ?? defaultCategories;
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
 
   useEffect(() => {
     async function loadUserAndArtist() {
@@ -78,10 +82,15 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         setTitle(data.title || "");
         setDescription(data.description || "");
         setCategory(data.category || "");
+        setPickupAddress(data.pickupAddress || "")
         setCost(data.cost?.toString() || "");
         setMaterial(data.material || "");
         setPreviewUrls(Array.isArray(data.image_urls) ? data.image_urls : data.image_urls ? [data.image_urls] : []);
         setVideoPreview(data.video_url || "");
+        setLength(data.length || " ");
+        setHeight(data.Height || " ");
+        setWeight(data.weight || " ");
+        setWidth(data.width || " ");
       }
     }
     fetchArtwork();
@@ -180,6 +189,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             category,
             cost: Number(cost),
             material,
+            pickupAddress,
             image_urls: uploadedImageUrls,
             video_url: uploadedVideoUrl,
             updated_at: new Date().toISOString(),
@@ -187,23 +197,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             width: Number(width),
             height: Number(height),
             weight: Number(weight),
+            
           })
           .eq("id", productId);
 
         if (artworkError) throw artworkError;
-
-        // Update pickup address in orders
-        const { error: orderError } = await supabase
-          .from("orders")
-          .update({
-            pickup_address: pickupAddress.trim(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("artwork_id", productId);
-
-        if (orderError) throw orderError;
-
-        alert("Artwork & pickup address updated successfully!");
       } else {
         // Insert new artwork
         const { data: newArtwork, error: artworkError } = await supabase
@@ -215,6 +213,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             category,
             cost: Number(cost),
             material,
+            pickupAddress,
             image_urls: uploadedImageUrls,
             video_url: uploadedVideoUrl,
             created_at: new Date().toISOString(),
@@ -227,27 +226,13 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           .single();
 
         if (artworkError) throw artworkError;
-
-        // also insert pickup address into orders
-        const { error: orderError } = await supabase
-          .from("orders")
-          .insert({
-            artwork_id: newArtwork.id,
-            pickup_address: pickupAddress.trim(),
-            created_at: new Date().toISOString(),
-          });
-
-        if (orderError) throw orderError;
-
-        alert("Artwork & pickup address saved successfully!");
       }
 
-
-      // Reset or redirect
       setTitle("");
       setDescription("");
       setCategory("");
       setCost("");
+      setPickupAddress("")
       setMaterial("");
       setImages([]);
       setPreviewUrls([]);
@@ -304,17 +289,52 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           ))}
         </select>
 
-        <input type="number" value={length} onChange={e => setLength(e.target.value)}
-          required min="1" placeholder="Length (cm) *after packing" />
+        <div className="flex flex-col gap-3 mb-6">
+          <label className="text-base font-semibold text-gray-700 mb-1 flex items-center gap-2">
+            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 8h8M8 16h8" /></svg>
+            Artwork Dimensions <span className="text-xs text-gray-400">(after packing)</span>
+          </label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <input
+              type="number"
+              value={length}
+              onChange={e => setLength(e.target.value)}
+              min="1"
+              required
+              placeholder="Length (cm)"
+              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
+            />
+            <input
+              type="number"
+              value={width}
+              onChange={e => setWidth(e.target.value)}
+              min="1"
+              required
+              placeholder="Width/Thickness (cm)"
+              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
+            />
+            <input
+              type="number"
+              value={height}
+              onChange={e => setHeight(e.target.value)}
+              min="1"
+              required
+              placeholder="Height (cm)"
+              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
+            />
+            <input
+              type="number"
+              value={weight}
+              onChange={e => setWeight(e.target.value)}
+              min="0.1"
+              step="any"
+              required
+              placeholder="Weight (kg)"
+              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
+            />
+          </div>
+        </div>
 
-        <input type="number" value={width} onChange={e => setWidth(e.target.value)}
-          required min="1" placeholder="Width/Thickness(cm) *after packing" />
-
-        <input type="number" value={height} onChange={e => setHeight(e.target.value)}
-          required min="1" placeholder="Height (cm) **after packing" />
-
-        <input type="number" value={weight} onChange={e => setWeight(e.target.value)}
-          required min="1" placeholder="dead Weight (kg) **after packing" />
 
         <label>Cost (INR)</label>
         <input

@@ -107,10 +107,11 @@ export default function ArtistProfile() {
       setMyEmail(userData?.user?.email || '');
       setIsOwner(myUserId && myUserId === artistData.user_id);
 
+
       // fetch role
       if (userData?.user) {
         const { data: roleData } = await supabase
-          .from("profiles")
+          .from("user")
           .select("role")
           .eq("id", userData.user.id)
           .single();
@@ -129,7 +130,7 @@ export default function ArtistProfile() {
       setLoadingArtworks(true);
       const { data } = await supabase
         .from("artworks")
-        .select("id, title, category, cost, image_urls, availability, rating, review, reviewer_email, shipment_status")
+        .select("id, title, category, cost, image_urls, availability, rating, review, shipment_status")
         .eq("artist_id", artistId);
 
       setArtworks(data || []);
@@ -153,7 +154,7 @@ export default function ArtistProfile() {
           setAverageRating(avg);
         }
         const revs = delivered.map(a => ({
-          email: a.reviewer_email,
+
           rating: a.rating,
           review: a.review,
         }));
@@ -215,24 +216,35 @@ export default function ArtistProfile() {
           <h2 className="text-xl font-bold text-slate-900">
             {isOwner ? "Your Artworks" : "Artworks by this artist"}
           </h2>
-          <div className="flex space-x-2">
-            {userRole === "artist" && (
+          <div className="flex gap-4 items-center mt-2">
+            {isOwner && (
               <button
                 onClick={() => navigate("/upload-work")}
-                className="px-4 py-2 border rounded bg-blue-500 text-white"
+                className="inline-flex items-center px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-150"
               >
-                Add New Artwork
+                <svg
+                  className="w-5 h-5 mr-2 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Upload Artwork
               </button>
             )}
-            {(userRole === "artist" || userRole === "admin") && (
+            {(isOwner || userRole === "admin") && (
               <button
                 onClick={() => navigate("/artist-dashboard")}
-                className="px-4 py-2 border rounded bg-indigo-500 text-white"
+                className="inline-flex items-center px-5 py-2 rounded-xl font-bold bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 hover:scale-105 transition-transform duration-150"
               >
+                
                 Dashboard
               </button>
             )}
           </div>
+
         </div>
 
         {loadingArtworks ? (

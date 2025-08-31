@@ -32,15 +32,14 @@ export default function Orders() {
       .from('orders')
       .select(`
         id,
-        artwork_id,
         amount,
         status,
         ordered_at,
         quantity,
-        artworks ( title, image_urls ),
-        artists ( name )
-        tracking_id, 
+        tracking_id,
+        artwork:artworks (title,image_urls,artist:artists (name))
       `)
+
       .eq('user_id', user.id)
       .eq('status', selectedCategory)
       .order('ordered_at', { ascending: false });
@@ -164,10 +163,10 @@ export default function Orders() {
                   <p className="mt-2">
                     <span
                       className={`badge-primary ${order.status === 'pending'
-                          ? 'badge-primary'
-                          : order.status === 'completed'
-                            ? 'badge-secondary'
-                            : 'badge-red-500 text-white'
+                        ? 'badge-primary'
+                        : order.status === 'completed'
+                          ? 'badge-secondary'
+                          : 'badge-red-500 text-white'
                         }`}
                     >
                       {order.status.charAt(0).toUpperCase() +

@@ -129,7 +129,7 @@ function MainDashboard() {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url');
+          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url,availability');
 
         if (!error && data) {
           setArtworks(data);
