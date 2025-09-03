@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 
 function TopPanel() {
@@ -9,6 +9,8 @@ function TopPanel() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [artistProfile, setArtistProfile] = useState(null);
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
 
   const navigate = useNavigate();
   const adminMenuRef = useRef();
@@ -25,7 +27,7 @@ function TopPanel() {
           .from('user')
           .select('id, email, role')
           .eq('id', authUser.id)
-          .single();
+          .single()
 
         if (profileError || !userProfile) {
           setIsAdmin(false);
@@ -41,7 +43,7 @@ function TopPanel() {
               .from('artists')
               .select('id')
               .eq('user_id', authUser.id)
-              .single();
+              .single()
 
             setArtistProfile(artistData || null);
           }
@@ -112,7 +114,7 @@ function TopPanel() {
     if (user) {
       navigate(path);
     } else {
-      navigate('/user-login');
+      setShowLoginModal(true);
     }
     setMenuOpen(false);
     setAdminMenuOpen(false);
@@ -125,15 +127,19 @@ function TopPanel() {
 
   return (
     <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-artistryhub">
-      <nav className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="artistryhub-logo no-print">
-          <span className="logo-icon">🎨</span>
+          
           ArtistryHub
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-8">
+          <button onClick={() => navOrLogin('/feed')} className="nav-link">
+            Explore Arts 
+          </button>
+
           <Link to="/main-dashboard" className="nav-link">
             🏠 Home
           </Link>
@@ -152,7 +158,7 @@ function TopPanel() {
 
               {artistProfile && (
                 <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
-                  👤 My Profile
+                  👤 <br/>My Profile
                 </Link>
               )}
 
@@ -169,11 +175,11 @@ function TopPanel() {
               <button
                 onClick={handleAdminDashboard}
                 className="w-full text-left px-3 py-2 nav-link rounded-lg"
-                
+
               >
                 ⚙️📊 Admin Dashboard
               </button>
-              
+
             </div>
           )}
 
@@ -182,49 +188,45 @@ function TopPanel() {
               <span className="text-sm text-slate-600">
                 Welcome, {user.email?.split('@')[0]}
               </span>
-              
-                <button onClick={handleLogout} className="btn-secondary">
-                  Logout
-                </button>
-              
+
+              <button onClick={handleLogout} className="btn-secondary "> 
+                Logout
+              </button>
+
             </div>
           ) : (
-            <div className="relative" ref={loginDropdownRef}>
-              <button
-                onClick={toggleLoginDropdown}
-                className="btn-primary"
-                type="button"
+            <div className="flex items-center gap-2 relative">
+              {/* Dropdown Login */}
+              <div className="relative">
+                <button
+                  onClick={toggleLoginDropdown}
+                  className="btn-primary flex items-center gap-2 px-5 py-2"
+                  type="button"
+                >
+                  Login <span className="ml-1">▾</span>
+                </button>
+                {loginDropdownOpen &&
+                  <div className="absolute top-full left-0 mt-2 w-40 bg-white border rounded-xl shadow-xl z-50 overflow-hidden">
+                    <button
+                      onClick={() => { setLoginDropdownOpen(false); navigate('/user-login'); }}
+                      className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
+                    >User Login</button>
+                    <button
+                      onClick={() => { setLoginDropdownOpen(false); navigate('/admin-login'); }}
+                      className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
+                    >Admin Login</button>
+                  </div>
+                }
+              </div>
+              <Link
+                to="/signup"
+                className="btn-outline px-5 py-2 hover:border-purple-400 hover:text-purple-700 transition ml-2"
               >
-                Login ▾
-              </button>
-              {loginDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-36 bg-white border rounded shadow-md z-50">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginDropdownOpen(false);
-                      navigate('/user-login');
-                    }}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  >
-                    User Login
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLoginDropdownOpen(false);
-                      navigate('/admin-login');
-                    }}
-                    className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                  >
-                    Admin Login
-                  </button>
-                </div>
-              )}
-              <Link to="/signup" className="btn-outline ml-4">
                 Sign Up
               </Link>
             </div>
+
+
           )}
         </div>
 
@@ -235,19 +237,16 @@ function TopPanel() {
         >
           <div className="w-6 h-6 flex flex-col justify-center space-y-1">
             <span
-              className={`block h-0.5 w-6 bg-gray-600 transition-transform ${
-                menuOpen ? 'rotate-45 translate-y-1' : ''
-              }`}
+              className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? 'rotate-45 translate-y-1' : ''
+                }`}
             ></span>
             <span
-              className={`block h-0.5 w-6 bg-gray-600 transition-opacity ${
-                menuOpen ? 'opacity-0' : ''
-              }`}
+              className={`block h-0.5 w-6 bg-gray-600 transition-opacity ${menuOpen ? 'opacity-0' : ''
+                }`}
             ></span>
             <span
-              className={`block h-0.5 w-6 bg-gray-600 transition-transform ${
-                menuOpen ? '-rotate-45 -translate-y-1' : ''
-              }`}
+              className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? '-rotate-45 -translate-y-1' : ''
+                }`}
             ></span>
           </div>
         </button>
@@ -353,6 +352,25 @@ function TopPanel() {
           </div>
         </div>
       )}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
+            <h2 className="text-lg font-bold mb-4">Please Login</h2>
+            <p className="mb-6">Login to use this feature.</p>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={() => {
+                setShowLoginModal(false);
+                navigate('/main-dashboard'); // redirect on modal close
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+
     </header>
   );
 }

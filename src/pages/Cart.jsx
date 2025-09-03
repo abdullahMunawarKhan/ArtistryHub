@@ -56,7 +56,7 @@ function Cart() {
       .from('artworks')
       .select('availability, artist_id')
       .eq('id', artworkId)
-      .single();
+      
     if (error) {
       alert('Unable to verify availability. Please try again.');
       return;
@@ -88,7 +88,7 @@ function Cart() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4">
+    <div className="min-h-[90vh] mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
       <ul>
         {cartItems.map(item => (

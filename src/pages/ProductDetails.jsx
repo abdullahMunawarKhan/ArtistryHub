@@ -8,7 +8,7 @@ function StarRating({ value }) {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
       {[...Array(full)].map((_, i) => (
-        <svg key={`f-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#F59E0B"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7"/></svg>
+        <svg key={`f-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#F59E0B"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" /></svg>
       ))}
       {half && (
         <svg width={16} height={16} viewBox="0 0 20 20">
@@ -18,11 +18,11 @@ function StarRating({ value }) {
               <stop offset="50%" stopColor="#E5E7EB" />
             </linearGradient>
           </defs>
-          <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" fill="url(#half-grad-pd)"/>
+          <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" fill="url(#half-grad-pd)" />
         </svg>
       )}
       {[...Array(5 - full - (half ? 1 : 0))].map((_, i) => (
-        <svg key={`e-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#E5E7EB"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7"/></svg>
+        <svg key={`e-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#E5E7EB"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" /></svg>
       ))}
     </span>
   );
@@ -38,10 +38,13 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true);
   const [idx, setIdx] = useState(0);
   const [user, setUser] = useState(null);
+  const [likedArtworks, setLikedArtworks] = useState([]);
+  const [isLiked, setIsLiked] = useState(false);
   const [inCart, setInCart] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
+  
 
   useEffect(() => {
     async function fetchArtwork() {
@@ -53,13 +56,24 @@ export default function ProductDetails() {
       }
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url')
+        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url,likes')
         .eq('id', artworkId)
         .single();
       if (!error) setArtwork(data);
       setLoading(false);
 
       if (auth?.user) {
+        // Fetch user's liked artworks
+        const { data: userData } = await supabase
+          .from('user')
+          .select('liked_artworks')
+          .eq('id', auth.user.id)
+          .single();
+
+        const liked = userData?.liked_artworks || [];
+        setLikedArtworks(liked);
+        setIsLiked(liked.includes(artworkId));
+
         const { data: cartRows } = await supabase
           .from('cart')
           .select('id')
@@ -107,6 +121,7 @@ export default function ProductDetails() {
     }
   }
 
+
   function buyNow() {
     if (artwork && !isAvailable) {
       alert('This artwork is currently not available for ordering.');
@@ -114,9 +129,51 @@ export default function ProductDetails() {
     }
     navigate('/order-process', { state: { artworkId: artwork.id, artistId: artwork.artist_id } });
   }
+  async function toggleLike() {
+    if (!user) {
+      alert('Please log in to use the like feature.');
+      return;
+    }
+
+    let updatedLikesCount = artwork.likes || 0;
+    let updatedLikedArtworks;
+
+    try {
+      if (!isLiked) {
+        updatedLikedArtworks = [...likedArtworks, artwork.id];
+        updatedLikesCount++;
+      } else {
+        updatedLikedArtworks = likedArtworks.filter(id => id !== artwork.id);
+        updatedLikesCount--;
+      }
+
+      // Update user's liked_artworks in user table
+      const { error: updateUserError } = await supabase
+        .from('user')
+        .update({ liked_artworks: updatedLikedArtworks })
+        .eq('id', user.id);
+      if (updateUserError) throw updateUserError;
+
+      // Update artwork likes count
+      const { error: updateArtError } = await supabase
+        .from('artworks')
+        .update({ likes: updatedLikesCount })
+        .eq('id', artwork.id);
+      if (updateArtError) throw updateArtError;
+
+      setLikedArtworks(updatedLikedArtworks);
+      setIsLiked(!isLiked);
+      setArtwork({ ...artwork, likes: updatedLikesCount });
+    } catch (error) {
+      alert('Failed to update like status.');
+      console.error('Toggle like error:', error);
+    }
+  }
+
+  
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="min-h-[90vh] max-w-5xl mx-auto p-6">
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-4">
           <div className="w-full h-80 bg-slate-50 rounded-xl flex items-center justify-center overflow-hidden cursor-zoom-in" onClick={() => setViewerOpen(true)}>
@@ -138,14 +195,41 @@ export default function ProductDetails() {
         </div>
 
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{artwork.title}</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-slate-900">{artwork.title}</h1>
+            <button
+              onClick={toggleLike}
+              onDoubleClick={toggleLike}
+              className="flex items-center justify-center p-0 ml-2 cursor-pointer transition-all duration-200 active:scale-95"
+              aria-label="Like button"
+              title={isLiked ? 'Unlike' : 'Like'}
+              style={{ width: 40, height: 40 }}
+            >
+              <svg
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill={isLiked ? 'red' : 'none'}
+                stroke={isLiked ? 'red' : '#a1a1aa'}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
+              </svg>
+            </button>
+          </div>
+
           <div className="text-slate-600">Category: {artwork.category}</div>
           <div className="text-slate-600">Material: {artwork.material || 'N/A'}</div>
           <div className="mt-2 text-slate-700 flex items-center gap-3">
             <span>
               Artist: <button className="text-blue-600 hover:text-blue-700 font-semibold" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>{artwork.artists?.name ?? 'Artist'}</button>
             </span>
-            <StarRating value={4.5} />
+            {/* Star Rating */}
+            <div className="mb-4">
+              <StarRating value={artwork.avg_rating ?? 0} />
+            </div>
           </div>
           <p className="text-xl font-bold mt-2">₹{artwork.cost}</p>
           <p className="mt-1 text-slate-700">
@@ -188,6 +272,23 @@ export default function ProductDetails() {
             )}
             <div className="relative">
               <img src={current} alt={`large-${idx}`} className="max-w-[80vw] max-h-[80vh] object-contain rounded" style={{ transform: `scale(${zoom})`, transition: 'transform .2s' }} />
+              {/* Watermark */}
+              <div className="absolute top-4 left-4 pointer-events-none select-none"
+                style={{
+                  background: "rgba(255,255,255,0.65)",
+                  padding: "6px 16px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  fontSize: "18px",
+                  color: "#333",
+                  textShadow: "0 2px 8px rgba(0,0,0,0.13)",
+                  zIndex: 15,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+              </div>
+
               <button className="absolute top-1/2 -translate-y-1/2 left-2 bg-blue-600 text-white rounded-full w-8 h-8 font-bold" onClick={() => { setIdx(i => (i === 0 ? images.length - 1 : i - 1)); setZoom(1); }}>&lt;</button>
               <button className="absolute top-1/2 -translate-y-1/2 right-2 bg-blue-600 text-white rounded-full w-8 h-8 font-bold" onClick={() => { setIdx(i => (i + 1) % images.length); setZoom(1); }}>&gt;</button>
               <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/95 px-6 py-2 rounded-xl flex gap-3 items-center">
@@ -205,8 +306,23 @@ export default function ProductDetails() {
       {showVideo && artwork.video_url && (
         <div className="fixed inset-0 bg-slate-900/90 z-[30000] flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
           <div className="relative bg-white rounded-2xl p-4 min-w-[320px] max-w-[96vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
-            <video src={artwork.video_url} controls className="w-full max-h-[70vh] rounded-xl shadow-construction" />
-            
+            <video src={artwork.video_url} controls  autoPlay className="w-full max-h-[70vh] rounded-xl shadow-construction" />
+            {/* Watermark */}
+            <div className="absolute top-4 left-4 pointer-events-none select-none"
+              style={{
+                background: "rgba(255,255,255,0.65)",
+                padding: "6px 16px",
+                borderRadius: "8px",
+                fontWeight: "bold",
+                fontSize: "18px",
+                color: "#333",
+                textShadow: "0 2px 8px rgba(0,0,0,0.13)",
+                zIndex: 15,
+                whiteSpace: "nowrap",
+              }}
+            >
+              @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+            </div>
             <button className="absolute top-3 right-4 text-blue-600 text-2xl font-bold" onClick={() => setShowVideo(false)}>&times;</button>
           </div>
         </div>

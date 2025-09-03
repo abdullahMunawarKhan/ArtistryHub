@@ -53,7 +53,7 @@ function AdminLogin() {
           .from('user')
           .select('role')
           .eq('id', data.user.id)
-          .single();
+
 
         if (profileError || !userProfile) {
           setLoginError('User profile not found.');
@@ -74,7 +74,7 @@ function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-6">
+    <div className="min-h-[90vh] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-6">
       <div className="w-full max-w-sm glass-card backdrop-blur-lg p-8 rounded-2xl shadow-xl">
         <h2 className="text-3xl font-bold text-gradient-primary text-center mb-6">
           Admin Sign In

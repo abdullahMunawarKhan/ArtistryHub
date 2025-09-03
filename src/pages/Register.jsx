@@ -49,6 +49,9 @@ Artist Registration Terms and Conditions
 
 8. Commission Structure
    Platform commission rates apply as per current pricing policy.
+
+9. Shipment charges 
+   As our team will come to your doorstep for picking product so 50 rupess will be dedected from your payment per order along with platfrom charges.
 `;
 
 const FormField = ({ 
@@ -315,7 +318,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
+    <div className="min-h-[90vh] bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">

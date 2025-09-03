@@ -43,47 +43,71 @@ function MainDashboard() {
   const [user, setUser] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [currentArtwork, setCurrentArtwork] = useState(null);
+  const [likedArtworks, setLikedArtworks] = useState([]);
+  const [showLikedOnly, setShowLikedOnly] = useState(false);
 
-  // Fetch logged-in user profile and cart items
+  // Function to filter artworks by liked status (true to show liked only, false to show all)
+  function filterArtworksByLiked(artworks, likedArtworks, showLikedOnly) {
+    if (!showLikedOnly) return artworks;
+    return artworks.filter(artwork => likedArtworks.includes(artwork.id));
+  }
+
+  // JSX toggle button to toggle filter by liked
+  function LikedFilterToggle({ showLikedOnly, setShowLikedOnly }) {
+    return (
+      <button
+        onClick={() => setShowLikedOnly(!showLikedOnly)}
+        className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
+        aria-pressed={showLikedOnly}
+        type="button"
+      >
+        {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
+      </button>
+    );
+  }
+
+  // Fetch logged-in user profile, cart, and liked artworks
   useEffect(() => {
     async function fetchUserAndProfile() {
       setLoadingProfile(true);
-      
+
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        
-        // Allow visitors to view the page without login
+        const {
+          data: { user: authUser }
+        } = await supabase.auth.getUser();
+
         if (!authUser) {
-          console.log('No authenticated user, allowing guest access');
+          setUser(null);
+          setUserProfile(null);
+          setCartItems([]);
+          setLikedArtworks([]);
+          setLoadingProfile(false);
           return;
         }
 
-        console.log('Authenticated user found:', authUser.id);
         setUser(authUser);
 
         const { data: profileData, error: profileError } = await supabase
           .from('user')
-          .select('id, email, role')
-          .eq('id', authUser.id)
-          .single();
+          .select('id, email, role, liked_artworks')
+          .eq('id', authUser.id);
 
-        if (profileError || !profileData) {
+        if (profileError) {
           console.error('Profile fetch error:', profileError);
-          // Don't return here, let the user continue as guest
-          return;
+          setUserProfile(null);
+          setLikedArtworks([]);
+        } else if (profileData && profileData.length > 0) {
+          setUserProfile(profileData[0]);
+          setLikedArtworks(profileData[0].liked_artworks || []);
+        } else {
+          setUserProfile(null);
+          setLikedArtworks([]);
         }
 
-        console.log('Profile fetched successfully:', profileData);
-        setUserProfile(profileData);
-        
-        // Fetch cart items
         await fetchCart(authUser.id);
-        
       } catch (error) {
         console.error('Error in fetchUserAndProfile:', error);
       } finally {
-        // Always set loading to false, regardless of success or error
         setLoadingProfile(false);
       }
     }
@@ -94,15 +118,31 @@ function MainDashboard() {
       if (session?.user) {
         setUser(session.user);
         fetchCart(session.user.id);
+        // Fetch liked artworks on auth change
+        fetchUserLikedArtworks(session.user.id);
       } else {
         setUser(null);
         setUserProfile(null);
         setCartItems([]);
+        setLikedArtworks([]);
       }
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [navigate]);
+  }, []);
+
+  async function fetchUserLikedArtworks(userId) {
+    const { data, error } = await supabase
+      .from('user')
+      .select('liked_artworks')
+      .eq('id', userId);
+
+    if (!error && data && data.length > 0 && data[0].liked_artworks) {
+      setLikedArtworks(data[0].liked_artworks);
+    } else {
+      setLikedArtworks([]);
+    }
+  }
 
   async function fetchCart(userId) {
     try {
@@ -129,7 +169,7 @@ function MainDashboard() {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url,availability');
+          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url, availability, likes');
 
         if (!error && data) {
           setArtworks(data);
@@ -142,7 +182,6 @@ function MainDashboard() {
         setArtworks([]);
       }
     }
-
     fetchArtworks();
   }, []);
 
@@ -155,12 +194,10 @@ function MainDashboard() {
       navigate('/user-login');
       return;
     }
-
     if (cartItems.includes(artwork.id)) {
       navigate('/cart');
       return;
     }
-
     try {
       const { error } = await supabase
         .from('cart')
@@ -184,19 +221,71 @@ function MainDashboard() {
       navigate('/user-login');
       return;
     }
-    
     if (artwork.availability === true) {
       navigate('/order-process', {
-        state: { artworkId: artwork.id, artistId: artwork.artist_id }
+        state: { artworkId: artwork.id, artistId: artwork.artist_id },
       });
     } else {
       setShowModal(true);
     }
   }
 
-  const filteredArtworks = selectedTag
-    ? artworks.filter(artwork => artwork.category === selectedTag)
-    : artworks;
+  async function toggleLike(artwork) {
+    if (!user) {
+      alert('Please log in to use the like feature.');
+      return;
+    }
+
+    const currentlyLiked = likedArtworks.includes(artwork.id);
+    let updatedLikesCount = artwork.likes || 0;
+    let updatedLikedArtworks;
+
+    try {
+      if (!currentlyLiked) {
+        // Like artwork
+        updatedLikedArtworks = [...likedArtworks, artwork.id];
+        updatedLikesCount++;
+      } else {
+        // Unlike artwork
+        updatedLikedArtworks = likedArtworks.filter(id => id !== artwork.id);
+        updatedLikesCount--;
+      }
+
+      // Update user's liked_artworks JSONB column
+      const { error: updateUserError } = await supabase
+        .from('user')
+        .update({ liked_artworks: updatedLikedArtworks })
+        .eq('id', user.id);
+
+      if (updateUserError) throw updateUserError;
+
+      // Update artworks like count
+      const { error: updateArtError } = await supabase
+        .from('artworks')
+        .update({ likes: updatedLikesCount })
+        .eq('id', artwork.id);
+
+      if (updateArtError) throw updateArtError;
+
+      // Update local states to reflect change
+      setLikedArtworks(updatedLikedArtworks);
+      // Update artworks state to reflect updated likes count for this artwork
+      setArtworks(artworks.map(a =>
+        a.id === artwork.id ? { ...a, likes: updatedLikesCount } : a));
+    } catch (error) {
+      alert('Failed to update like status.');
+      console.error('Toggle like error:', error);
+    }
+  }
+
+  const filteredArtworks = artworks
+    .filter(artwork => {
+      // Filter by category if selected
+      if (selectedTag && artwork.category !== selectedTag) return false;
+      // Filter by liked only if toggle is ON
+      if (showLikedOnly && !likedArtworks.includes(artwork.id)) return false;
+      return true;
+    });
 
   if (loadingProfile) {
     return (
@@ -210,7 +299,7 @@ function MainDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 pt-20">
+    <div className="min-h-[90vh] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 pt-20">
       {/* Header Section */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="text-center mb-6">
@@ -239,7 +328,26 @@ function MainDashboard() {
               {tag}
             </button>
           ))}
+
+          {/* Show liked filter only if user is logged in */}
+          {user && (
+            <button
+              onClick={() => {
+                const newShowLiked = !showLikedOnly;
+                setShowLikedOnly(newShowLiked);
+                if (newShowLiked) {
+                  setSelectedTag(''); // Reset to All Categories when filtering liked
+                }
+              }}
+              className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
+              aria-pressed={showLikedOnly}
+              type="button"
+            >
+              {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
+            </button>
+          )}
         </div>
+
         <br />
 
         {/* Artworks Grid */}
@@ -249,13 +357,14 @@ function MainDashboard() {
               ? artwork.image_urls[0]
               : artwork.image_urls;
             const isInCart = cartItems.includes(artwork.id);
+            const isLiked = likedArtworks.includes(artwork.id);
 
             return (
-              <div key={artwork.id} className="artistryhub-card group hover:scale-105 transition-all duration-300">
+              <div key={artwork.id} className="artistryhub-card group hover:scale-105 transition-all duration-300"
+                onClick={() => navigate(`/product?id=${artwork.id}`)}>
                 {/* Artwork Image */}
                 <div
                   className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative"
-                  onClick={() => openModal(artwork)}
                 >
                   {firstImage ? (
                     <img
@@ -279,15 +388,66 @@ function MainDashboard() {
 
                 {/* Artwork Info */}
                 <div className="p-6">
-                  <h3 className="font-bold text-lg text-slate-800 mb-2 line-clamp-2">
-                    {artwork.title}
-                  </h3>
 
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-lg text-slate-800 line-clamp-2">
+                      {artwork.title}
+                    </h3>
+                    {/* Like Button with heart */}
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        toggleLike(artwork);
+                      }}
+                      onDoubleClick={e => {
+                        e.stopPropagation();
+                        toggleLike(artwork);
+                      }}
+                      className="flex items-center justify-center transition-all duration-200 p-0 ml-2 hover:bg-transparent active:scale-95"
+                      aria-label="Like button"
+                      title={isLiked ? 'Unlike' : 'Like'}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        boxShadow: 'none',
+                        width: 'auto',
+                        height: 'auto',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <svg
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill={isLiked ? 'red' : 'none'}
+                        stroke={isLiked ? 'red' : '#a1a1aa'}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        style={{
+                          transition: 'fill 0.2s, stroke 0.2s',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: 0,
+                          boxShadow: 'none'
+                        }}
+                      >
+                        <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
+                      </svg>
+                    </button>
+
+                  </div>
                   {/* Artist Info */}
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-sm text-slate-500">by</span>
                     <button
-                      onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}
+                      onClick={e => {
+                        e.stopPropagation();
+                        navigate(`/artist-profile?id=${artwork.artist_id}`);
+                      }}
                       className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
                     >
                       {artwork.artists?.name || 'Unknown Artist'}
@@ -296,7 +456,7 @@ function MainDashboard() {
 
                   {/* Star Rating */}
                   <div className="mb-4">
-                    <StarRating value={4.5} />
+                    <StarRating value={artwork.avg_rating ?? 0} />
                   </div>
 
                   {/* Price */}
@@ -314,25 +474,34 @@ function MainDashboard() {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center flex-wrap w-full py-2">
                     <button
-                      onClick={() => handleAddToCart(artwork)}
-                      className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all duration-200 ${
-                        isInCart
-                          ? 'bg-green-100 text-green-700 border border-green-200'
-                          : 'btn-outline text-sm'
-                      }`}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleAddToCart(artwork);
+                      }}
+                      className={`flex-1 min-w-[110px] py-2 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart
+                        ? 'bg-green-100 text-green-700 border border-green-200'
+                        : 'btn-outline text-sm hover:bg-purple-50 hover:text-black hover:border-purple-200'
+                        }`}
+                      style={{ flexBasis: '40%' }}
                     >
                       {isInCart ? '✓ In Cart' : '🛒 Add to Cart'}
                     </button>
 
                     <button
-                      onClick={() => handleBuy(artwork)}
-                      className="flex-1 btn-primary text-sm"
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleBuy(artwork);
+                      }}
+                      className="flex-1 min-w-[110px] btn-primary text-sm transition-all duration-200 hover:scale-105"
+                      style={{ flexBasis: '40%' }}
                     >
                       Buy Now
                     </button>
+
                   </div>
+
                 </div>
               </div>
             );

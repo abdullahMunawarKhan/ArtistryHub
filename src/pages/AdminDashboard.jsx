@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
+
 // Timer component for order countdown (until 24hrs since placed)
 function OrderTimer({ orderedAt }) {
   const [remaining, setRemaining] = useState(0);
@@ -86,7 +87,7 @@ function AdminDashboard() {
             id, title, image_urls, cost, length, width, height, weight,pickupAddress,availability
           ),
           artists (
-            id, name, email, mobile
+            id, name, email, mobile,artwork_count, paintings_sold
           )
         `)
         .eq('shipment_status', orderTag);
@@ -202,43 +203,50 @@ function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8">
+    <div className="min-h-[90vh] bg-gray-100 p-4 md:p-8">
       <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center text-blue-800">Admin Dashboard</h2>
       {/* Artist Management */}
       <div className="mb-14">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Artist Management</h3>
         <div className="overflow-x-auto rounded shadow bg-white">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full text-sm table-fixed">
             <thead className="bg-gray-200">
               <tr>
-                <th className="p-2">Name</th>
-                <th className="p-2">Email</th>
-                <th className="p-2">Mobile</th>
-                <th className="p-2">Location</th>
-                <th className="p-2">ID Proof</th>
-                <th className="p-2">Remove</th>
+                <th className="p-2 w-48 text-left align-middle">Name</th>
+                <th className="p-2 w-60 text-left align-middle">Email</th>
+                <th className="p-2 w-36 text-left align-middle">Mobile</th>
+                <th className="p-2 w-32 text-left align-middle">Location</th>
+                <th className="p-2 w-24 text-left align-middle">Uploaded Artworks</th> {/* New */}
+                <th className="p-2 w-24 text-left align-middle">Paintings Sold</th> {/* New */}
+                <th className="p-2 w-24 text-left align-middle">ID Proof</th>
               </tr>
             </thead>
             <tbody>
               {artistList.map(artist => (
                 <tr key={artist.id} className="border-b">
-                  <td className="p-2">{artist.name}</td>
-                  <td className="p-2">{artist.email}</td>
-                  <td className="p-2">{artist.mobile}</td>
-                  <td className="p-2">{artist.location}</td>
-                  <td className="p-2">
+                  <td
+                    className="p-2 align-middle cursor-pointer"
+                    onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
+                  >
+                    {artist.name}
+                  </td>
+                  <td className="p-2 align-middle">{artist.email}</td>
+                  <td className="p-2 align-middle">{artist.mobile}</td>
+                  <td className="p-2 align-middle">{artist.location}</td>
+                  <td className="p-2 align-middle">{artist.artwork_count || 0}</td> {/* New */}
+                  <td className="p-2 align-middle">{artist.paintings_sold || 0}</td> {/* New */}
+                  <td className="p-2 align-middle">
                     {artist.id_proof_url ? (
                       <a href={artist.id_proof_url} target="_blank" rel="noopener noreferrer">
-                        <img src={artist.id_proof_url} alt="ID Proof"
-                          className="w-16 h-16 object-cover rounded-lg hover:scale-105 cursor-pointer border" />
+                        <img
+                          src={artist.id_proof_url}
+                          alt="ID Proof"
+                          className="w-16 h-16 object-cover rounded-lg border hover:scale-105 transition-transform duration-150"
+                        />
                       </a>
-                    ) : <span className="text-gray-400">N/A</span>}
-                  </td>
-                  <td className="p-2">
-                    <button
-                      className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
-                      onClick={() => handleDeleteArtist(artist.id)}
-                    >Remove</button>
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -247,11 +255,12 @@ function AdminDashboard() {
         </div>
       </div>
 
+
       {/* Order Management */}
       <div className="mb-14">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Order Management</h3>
         <div className="flex gap-3 mb-4">
-          {['pending', 'confirm', 'delivered', 'shipped'].map(tag => (
+          {['pending', 'confirm','shipped', 'delivered'].map(tag => (
             <button
               key={tag}
               className={`px-4 py-1 rounded ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}

@@ -58,7 +58,7 @@ export default function OrderProcess() {
         .from("artworks")
         .select("id, title, cost, availability, image_urls")
         .eq("id", artworkId)
-        .single();
+        
       setLoading(false);
       if (error || !data) {
         alert("Failed to load artwork");
@@ -112,7 +112,7 @@ export default function OrderProcess() {
               {
                 user_id: user.id,
                 artwork_id: artwork.id,
-                quantity,
+                
                 amount: totalCost,
                 delivery_fee: DELIVERY_FEE,
                 status: "paid",
@@ -194,7 +194,7 @@ export default function OrderProcess() {
   const isAvailable = artwork.availability !== false;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white bg-opacity-90 rounded-xl shadow-construction-lg">
+    <div className="min-h-[90vh] max-w-2xl mx-auto p-6 bg-white bg-opacity-90 rounded-xl shadow-construction-lg">
       <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-6 font-['Nova_Round',cursive]">
         Purchase "{artwork.title}"
       </h1>
@@ -211,17 +211,7 @@ export default function OrderProcess() {
         Availability: {isAvailable ? "Available" : "Not Available"}
       </p>
 
-      <label className="block mb-4">
-        <span className="text-gray-700 font-semibold mb-1 block">Quantity</span>
-        <input
-          type="number"
-          min={1}
-          value={quantity}
-          onChange={(e) => setQuantity(Math.max(1, Number(e.target.value)))}
-          className="form-input w-24 rounded-md border-yellow-400 focus:ring-yellow-400"
-          disabled={!isAvailable}
-        />
-      </label>
+      
 
       <label className="block mb-4">
         <span className="form-label font-semibold">Full Name</span>

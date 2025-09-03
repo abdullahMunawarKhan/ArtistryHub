@@ -59,7 +59,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         .from("artists")
         .select("id")
         .eq("user_id", user.id)
-        .single();
+
       setArtistId(artist?.id || null);
     }
     loadUserAndArtist();
@@ -197,7 +197,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             width: Number(width),
             height: Number(height),
             weight: Number(weight),
-            
+
           })
           .eq("id", productId);
 
@@ -223,9 +223,24 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             weight: Number(weight),
           })
           .select()
-          .single();
+
 
         if (artworkError) throw artworkError;
+        const { data: artistData, error: fetchError } = await supabase
+          .from("artists")
+          .select("artwork_count")
+          .eq("id", artistId)
+          .single();
+
+        if (!fetchError && artistData) {
+          const newCount = (artistData.artwork_count || 0) + 1;
+          const { error: updateError } = await supabase
+            .from("artists")
+            .update({ artwork_count: newCount })
+            .eq("id", artistId);
+          if (updateError) console.error("Artwork count update failed:", updateError);
+        }
+
       }
 
       setTitle("");
@@ -354,7 +369,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           placeholder="Enter material"
           style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
         />
-        <label>Pickup Address(provide precise and also include pin code) *</label>
+        <label>Pickup Address(<b>with Pin code</b>) and try to provide precise *</label>
         <textarea
           value={pickupAddress}
           onChange={(e) => setPickupAddress(e.target.value)}
@@ -371,7 +386,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           }}
         />
 
-        <label>Upload Images (Max 3, each under 10MB)</label>
+        <label>Upload Images (Max 3, each under 10MB) <br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
         <input type="file" multiple accept="image/*" onChange={handleImageChange} style={{ marginBottom: 16 }} />
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
           {previewUrls.map((url, i) => (
@@ -379,7 +394,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           ))}
         </div>
 
-        <label>Upload Video (optional, max 50MB)</label>
+        <label>Upload Video (optional, max 50MB)<br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
         <input type="file" accept="video/*" onChange={handleVideoChange} style={{ marginBottom: 16 }} />
         {videoPreview && (
           <video src={videoPreview} controls style={{ width: 320, borderRadius: 8, marginBottom: 16 }} />

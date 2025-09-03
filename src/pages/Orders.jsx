@@ -98,7 +98,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white bg-opacity-80 rounded-xl shadow-construction-lg">
+    <div className=" min-h-[90vh] max-w-4xl mx-auto p-6 bg-white bg-opacity-80 rounded-xl shadow-construction-lg">
       <h1 className="text-4xl font-bold text-gradient mb-6 font-['Nova_Round',cursive]">
         Your Orders
       </h1>

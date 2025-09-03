@@ -17,6 +17,7 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
+
 /* ArtistryHub Brand Colors */
 :root {
   --primary: #8b5cf6;
@@ -418,3 +419,96 @@ body {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* Smooth scrolling for reel container */
+.reel-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.reel-container::-webkit-scrollbar {
+  display: none;
+}
+
+.reel-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Video element styling */
+.reel-video {
+  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+}
+
+/* Heart animation for double-tap like */
+@keyframes heartPop {
+  0% {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(45deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+.heart-animation {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ff3040;
+  animation: heartPop 1s ease-out forwards;
+  pointer-events: none;
+  z-index: 30;
+}
+
+/* Button hover effects */
+.action-button {
+  transition: all 0.2s ease-in-out;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.action-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+/* Text truncation */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Performance optimizations */
+.reel-item {
+  will-change: transform;
+  contain: layout style paint;
+}
+
+.video-overlay {
+  will-change: opacity;
+}
+
