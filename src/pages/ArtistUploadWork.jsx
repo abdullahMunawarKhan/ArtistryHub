@@ -86,7 +86,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         setCost(data.cost?.toString() || "");
         setMaterial(data.material || "");
         setPreviewUrls(Array.isArray(data.image_urls) ? data.image_urls : data.image_urls ? [data.image_urls] : []);
-        setVideoPreview(data.video_url || "");
+        // setVideoPreview(data.video_url || "");
         setLength(data.length || " ");
         setHeight(data.Height || " ");
         setWeight(data.weight || " ");
@@ -105,16 +105,16 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     setPreviewUrls(validFiles.map((file) => URL.createObjectURL(file)));
   }
 
-  function handleVideoChange(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 50 * 1024 * 1024) {
-      alert("Video size must be less than 50MB");
-      return;
-    }
-    setVideo(file);
-    setVideoPreview(URL.createObjectURL(file));
-  }
+  // function handleVideoChange(e) {
+  //   const file = e.target.files[0];
+  //   if (!file) return;
+  //   if (file.size > 50 * 1024 * 1024) {
+  //     alert("Video size must be less than 50MB");
+  //     return;
+  //   }
+  //   setVideo(file);
+  //   setVideoPreview(URL.createObjectURL(file));
+  // }
 
   async function uploadImages() {
     let urls = [];
@@ -128,13 +128,13 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     return urls;
   }
 
-  async function uploadVideo() {
-    if (!video) return videoPreview || "";
-    const filename = `artworks/videos/${Date.now()}_${video.name}`;
-    await supabase.storage.from("artist-assets").upload(filename, video, { upsert: true });
-    const { data } = supabase.storage.from("artist-assets").getPublicUrl(filename);
-    return data.publicUrl;
-  }
+  // async function uploadVideo() {
+  //   if (!video) return videoPreview || "";
+  //   const filename = `artworks/videos/${Date.now()}_${video.name}`;
+  //   await supabase.storage.from("artist-assets").upload(filename, video, { upsert: true });
+  //   const { data } = supabase.storage.from("artist-assets").getPublicUrl(filename);
+  //   return data.publicUrl;
+  // }
 
 
 
@@ -177,7 +177,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       const uploadedImageUrls = images.length > 0 ? await uploadImages() : previewUrls;
 
       // Upload video if changed or new uploaded
-      const uploadedVideoUrl = video ? await uploadVideo() : videoPreview;
+      // const uploadedVideoUrl = video ? await uploadVideo() : videoPreview;
 
       if (productId) {
         // Update existing artwork
@@ -191,7 +191,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             material,
             pickupAddress,
             image_urls: uploadedImageUrls,
-            video_url: uploadedVideoUrl,
+            // video_url: uploadedVideoUrl,
             updated_at: new Date().toISOString(),
             length: Number(length),
             width: Number(width),
@@ -215,7 +215,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             material,
             pickupAddress,
             image_urls: uploadedImageUrls,
-            video_url: uploadedVideoUrl,
+            // video_url: uploadedVideoUrl,
             created_at: new Date().toISOString(),
             length: Number(length),
             width: Number(width),
@@ -394,11 +394,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           ))}
         </div>
 
-        <label>Upload Video (optional, max 50MB)<br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
+        {/* <label>Upload Video (optional, max 50MB)<br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
         <input type="file" accept="video/*" onChange={handleVideoChange} style={{ marginBottom: 16 }} />
         {videoPreview && (
           <video src={videoPreview} controls style={{ width: 320, borderRadius: 8, marginBottom: 16 }} />
-        )}
+        )} */}
 
         <button
           type="submit"
@@ -475,7 +475,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 }}
                 aria-label="Zoom out"
               >
-                –
+                
               </button>
               <span style={{ color: 'white', fontWeight: 600 }}>{(zoom * 100).toFixed(0)}%</span>
               <button

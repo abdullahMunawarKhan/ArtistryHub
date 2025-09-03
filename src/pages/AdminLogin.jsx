@@ -53,7 +53,7 @@ function AdminLogin() {
           .from('user')
           .select('role')
           .eq('id', data.user.id)
-
+          .single();
 
         if (profileError || !userProfile) {
           setLoginError('User profile not found.');

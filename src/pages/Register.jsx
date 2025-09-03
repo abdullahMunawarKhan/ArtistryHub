@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  UserIcon, 
-  PhoneIcon, 
-  EnvelopeIcon, 
-  MapPinIcon, 
-  AcademicCapIcon, 
+import {
+  UserIcon,
+  PhoneIcon,
+  EnvelopeIcon,
+  MapPinIcon,
+  AcademicCapIcon,
   IdentificationIcon,
   PhotoIcon,
   DocumentIcon,
@@ -54,16 +54,16 @@ Artist Registration Terms and Conditions
    As our team will come to your doorstep for picking product so 50 rupess will be dedected from your payment per order along with platfrom charges.
 `;
 
-const FormField = ({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  type = 'text', 
-  required = false, 
+const FormField = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = 'text',
+  required = false,
   icon: Icon,
   placeholder = '',
-  options = null 
+  options = null
 }) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -71,7 +71,7 @@ const FormField = ({
       {label}
       {required && <span className="text-red-500">*</span>}
     </label>
-    
+
     {options ? (
       <select
         name={name}
@@ -98,14 +98,14 @@ const FormField = ({
   </div>
 );
 
-const FileUpload = ({ 
-  label, 
-  accept, 
-  onChange, 
-  preview, 
-  icon: Icon, 
+const FileUpload = ({
+  label,
+  accept,
+  onChange,
+  preview,
+  icon: Icon,
   required = false,
-  description = '' 
+  description = ''
 }) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
@@ -114,7 +114,7 @@ const FileUpload = ({
       {required && <span className="text-red-500">*</span>}
     </label>
     {description && <p className="text-xs text-gray-500">{description}</p>}
-    
+
     <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors">
       <input
         type="file"
@@ -124,17 +124,17 @@ const FileUpload = ({
         id={label.replace(/\s+/g, '-').toLowerCase()}
         required={required}
       />
-      <label 
+      <label
         htmlFor={label.replace(/\s+/g, '-').toLowerCase()}
         className="cursor-pointer block"
       >
         {preview ? (
           <div className="space-y-2">
             {preview.startsWith('data:image') || preview.includes('image') ? (
-              <img 
-                src={preview} 
-                alt="Preview" 
-                className="w-24 h-24 mx-auto rounded-lg object-cover border-2 border-gray-200" 
+              <img
+                src={preview}
+                alt="Preview"
+                className="w-24 h-24 mx-auto rounded-lg object-cover border-2 border-gray-200"
               />
             ) : (
               <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
@@ -175,6 +175,9 @@ export default function Register() {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
   const location = useLocation();
+  const [qrCodeFile, setQrCodeFile] = useState(null);
+  const [qrCodePreview, setQrCodePreview] = useState(null);
+
 
   useEffect(() => {
     (async () => {
@@ -220,7 +223,7 @@ export default function Register() {
   const handleFile = (e, setter, previewSetter) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     setter(file);
     if (file.type.startsWith('image/')) {
       previewSetter(URL.createObjectURL(file));
@@ -231,30 +234,31 @@ export default function Register() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!form.name.trim()) newErrors.name = 'Name is required';
     if (!form.mobile.trim()) newErrors.mobile = 'Mobile number is required';
     if (!form.email.trim()) newErrors.email = 'Email is required';
     if (!form.location.trim()) newErrors.location = 'Location is required';
-    if (!form.qualification.trim()) newErrors.qualification = 'Qualification is required';
-    
+    // if (!form.qualification.trim()) newErrors.qualification = 'Qualification is required';
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (form.email && !emailRegex.test(form.email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+
     // Mobile validation
     const mobileRegex = /^[6-9]\d{9}$/;
     if (form.mobile && !mobileRegex.test(form.mobile)) {
       newErrors.mobile = 'Please enter a valid 10-digit mobile number';
     }
-    
+
     if (!isEdit) {
       if (!profileImage) newErrors.profileImage = 'Profile image is required';
       if (!idFile) newErrors.idFile = 'ID proof document is required';
+      if (!qrCodeFile) newErrors.qrCodeFile = 'Payment QR code image is required';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -275,12 +279,13 @@ export default function Register() {
 
   const confirmSubmit = async () => {
     if (!termsAccepted) return alert('Please accept the terms and conditions to proceed.');
-    
+
     setLoading(true);
     try {
       const profileUrl = await uploadFile(profileImage, 'profiles');
       const idUrl = await uploadFile(idFile, 'id-proofs');
-      
+      const qrCodeUrl = await uploadFile(qrCodeFile, 'qr-codes');
+
       let error;
       if (isEdit) {
         ({ error } = await supabase
@@ -289,6 +294,7 @@ export default function Register() {
             ...form,
             profile_image_url: profileUrl || profilePreview,
             id_proof_url: idUrl || idPreview,
+            artist_qr: qrCodeUrl || qrCodePreview,
           })
           .eq('user_id', userId));
       } else {
@@ -299,17 +305,18 @@ export default function Register() {
             ...form,
             profile_image_url: profileUrl,
             id_proof_url: idUrl,
+            artist_qr: qrCodeUrl,
             registered_at: new Date().toISOString(),
           }]));
       }
-      
+
       if (error) throw error;
-      
+
       // Success message
       setShowTerms(false);
       alert(isEdit ? '🎉 Profile updated successfully!' : '🎉 Registration completed successfully!');
       navigate('/main-dashboard');
-      
+
     } catch (err) {
       console.error('Registration error:', err);
       alert('Error: ' + err.message);
@@ -326,7 +333,7 @@ export default function Register() {
             {isEdit ? '✏️ Edit Artist Profile' : '🎨 Artist Registration'}
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            {isEdit 
+            {isEdit
               ? 'Update your artist profile information and documents'
               : 'Join our community of talented artists and showcase your work to the world'
             }
@@ -337,7 +344,7 @@ export default function Register() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <form onSubmit={handleSubmit} className="space-y-8">
-              
+
               {/* Personal Information */}
               <div>
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
@@ -355,7 +362,7 @@ export default function Register() {
                     required
                   />
                   {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                  
+
                   <FormField
                     label="Mobile Number"
                     name="mobile"
@@ -366,7 +373,7 @@ export default function Register() {
                     required
                   />
                   {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
-                  
+
                   <FormField
                     label="Email Address"
                     name="email"
@@ -378,7 +385,7 @@ export default function Register() {
                     required
                   />
                   {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                  
+
                   <FormField
                     label="Location"
                     name="location"
@@ -406,10 +413,10 @@ export default function Register() {
                     onChange={handleChange}
                     icon={AcademicCapIcon}
                     placeholder="e.g., Bachelor of Fine Arts"
-                    required
+
                   />
                   {errors.qualification && <p className="text-red-500 text-sm mt-1">{errors.qualification}</p>}
-                  
+
                   <FormField
                     label="ID Proof Type"
                     name="id_proof_type"
@@ -441,7 +448,7 @@ export default function Register() {
                     />
                     {errors.profileImage && <p className="text-red-500 text-sm mt-1">{errors.profileImage}</p>}
                   </div>
-                  
+
                   <div>
                     <FileUpload
                       label={`${form.id_proof_type} Document`}
@@ -454,6 +461,19 @@ export default function Register() {
                     />
                     {errors.idFile && <p className="text-red-500 text-sm mt-1">{errors.idFile}</p>}
                   </div>
+                  <div>
+                    <FileUpload
+                      label="Payment QR Code"
+                      accept="image/*"
+                      onChange={(e) => handleFile(e, setQrCodeFile, setQrCodePreview)}
+                      preview={qrCodePreview}
+                      icon={PhotoIcon}
+                      required={!isEdit}  // optionally required if new registration
+                      description="Upload your payment QR code image (JPG, PNG)"
+                    />
+                    {errors.qrCodeFile && <p className="text-red-500 text-sm mt-1">{errors.qrCodeFile}</p>}
+                  </div>
+
                 </div>
               </div>
 
@@ -497,13 +517,13 @@ export default function Register() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 overflow-y-auto max-h-96">
               <pre className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
                 {TERMS_TEXT}
               </pre>
             </div>
-            
+
             <div className="p-6 border-t bg-gray-50">
               <div className="flex items-center mb-4">
                 <input
@@ -517,7 +537,7 @@ export default function Register() {
                   I have read and accept the terms and conditions
                 </label>
               </div>
-              
+
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setShowTerms(false)}
