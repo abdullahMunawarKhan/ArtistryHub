@@ -180,7 +180,7 @@ function App() {
                   <p className="flex flex-col">
                     <span>
                       <span className="font-semibold">Mobile Number:</span>{" "}
-                      <span className="italic text-gray-400">+91 9922526531</span>
+                      <span className="italic text-gray-400">+91 8180826531</span>
                     </span>
                     <span className="italic text-gray-400"> +91 7498890871</span>
                   </p>

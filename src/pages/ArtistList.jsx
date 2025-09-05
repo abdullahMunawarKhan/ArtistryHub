@@ -179,6 +179,7 @@ function ArtistList() {
   const [user, setUser] = useState(null);
   const [filterTag, setFilterTag] = useState('All'); // 'All' or 'Following'
   const [followingIds, setFollowingIds] = useState([]); // user's following F
+  const [searchTerm, setSearchTerm] = useState(''); // new state for search term
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -223,11 +224,11 @@ function ArtistList() {
   }, []);
 
   // Filter artists based on filterTag
-  const filteredArtists =
-    filterTag === 'All'
-      ? artists
-      : artists.filter((artist) => followingIds.includes(artist.id));
-
+  const filteredArtists = artists
+    .filter(artist => filterTag === 'All' || followingIds.includes(artist.id))
+    .filter(artist =>
+      artist.name.toLowerCase().includes(searchTerm.toLowerCase().trim())
+    );
 
   if (loading) {
     return (
@@ -246,9 +247,29 @@ function ArtistList() {
     });
   }
 
+  function handleFollowChange(artistId, isFollowing) {
+    setFollowingIds((prev) => {
+      if (isFollowing) {
+        return prev.includes(artistId) ? prev : [...prev, artistId];
+      } else {
+        return prev.filter(id => id !== artistId);
+      }
+    });
+  }
+
   return (
     <div className="p-8 bg-gray-100 min-h-[90vh]">
-      <h1 className="text-3xl font-bold text-gradient-primary mb-6">Artist Directory</h1>
+      <div className="flex items-center mb-6 space-x-4">
+        <h1 className="text-3xl font-bold text-gradient-primary">Artist Directory</h1>
+        <input
+          type="text"
+          placeholder="Search artist by name"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="p-2 rounded-xl border border-gray-300 max-w-sm flex-grow"
+        />
+      </div>
+
 
       {/* Filter buttons */}
       <div className="mb-6 flex gap-4">

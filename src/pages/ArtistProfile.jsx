@@ -337,7 +337,33 @@ export default function ArtistProfile() {
       alert("Failed to update availability: " + err.message);
     }
   };
+  async function likeArtwork(artworkId) {
+    const { data, error } = await supabase
+      .from('artworks')
+      .update({})
+      .increment('liked_count', 1)
+      .eq('id', artworkId);
 
+    if (error) {
+      console.error('Error liking artwork:', error.message);
+    } else {
+      console.log('Artwork liked, new count:', data[0].liked_count);
+    }
+  }
+  // Decrement like count by 1
+  async function unlikeArtwork(artworkId) {
+    const { data, error } = await supabase
+      .from('artworks')
+      .update({})
+      .increment('liked_count', -1)
+      .eq('id', artworkId);
+
+    if (error) {
+      console.error('Error unliking artwork:', error.message);
+    } else {
+      console.log('Artwork unliked, new count:', data[0].liked_count);
+    }
+  }
   if (loadingArtist) {
     return <div>Loading artist information...</div>;
   }

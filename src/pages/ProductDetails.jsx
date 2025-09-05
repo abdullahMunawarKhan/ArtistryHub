@@ -5,442 +5,334 @@ import { supabase } from '../utils/supabase';
 function StarRating({ value }) {
   const full = Math.floor(value || 0);
   const half = (value || 0) % 1 >= 0.25;
-  
   return (
-    <div className="flex items-center">
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
       {[...Array(full)].map((_, i) => (
-        <span key={i} className="text-yellow-500">★</span>
+        <svg key={`f-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#F59E0B"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" /></svg>
       ))}
       {half && (
-        <span className="text-yellow-500">☆</span>
+        <svg width={16} height={16} viewBox="0 0 20 20">
+          <defs>
+            <linearGradient id="half-grad-pd">
+              <stop offset="50%" stopColor="#F59E0B" />
+              <stop offset="50%" stopColor="#E5E7EB" />
+            </linearGradient>
+          </defs>
+          <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" fill="url(#half-grad-pd)" />
+        </svg>
       )}
       {[...Array(5 - full - (half ? 1 : 0))].map((_, i) => (
-        <span key={i} className="text-gray-300">☆</span>
+        <svg key={`e-${i}`} width={16} height={16} viewBox="0 0 20 20" fill="#E5E7EB"><polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" /></svg>
       ))}
-    </div>
+    </span>
   );
 }
 
-function ComingSoonModal({ isVisible, onClose }) {
-  useEffect(() => {
-    if (isVisible) {
-      const timer = setTimeout(() => {
-        onClose();
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isVisible, onClose]);
-
-  if (!isVisible) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-2">Coming Soon</h2>
-        <p>This feature will be available soon!</p>
-      </div>
-    </div>
-  );
-}
-
-// New component for artwork card in horizontal scroll
-function ArtworkCard({ artwork, onClick }) {
-  return (
-    <div 
-      className="flex-shrink-0 w-48 bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-200"
-      onClick={onClick}
-    >
-      <div className="aspect-square overflow-hidden">
-        <img 
-          src={artwork.image_url} 
-          alt={artwork.title}
-          className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-        />
-      </div>
-      <div className="p-3">
-        <h3 className="font-semibold text-sm truncate mb-1">{artwork.title}</h3>
-        <p className="text-lg font-bold text-green-600">₹{artwork.cost}</p>
-        {artwork.artist_name && (
-          <p className="text-xs text-gray-600 truncate mt-1">by {artwork.artist_name}</p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-
-
-function ProductDetails() {
+export default function ProductDetails() {
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const artworkId = params.get('id');
+
   const [artwork, setArtwork] = useState(null);
-  const [artist, setArtist] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  
-  // New states for artwork sections
-  const [artistArtworks, setArtistArtworks] = useState([]);
-  const [relatedArtworks, setRelatedArtworks] = useState([]);
-  const [artistArtworksLoading, setArtistArtworksLoading] = useState(true);
-  const [relatedArtworksLoading, setRelatedArtworksLoading] = useState(true);
+  const [idx, setIdx] = useState(0);
+  const [user, setUser] = useState(null);
+  const [likedArtworks, setLikedArtworks] = useState([]);
+  const [isLiked, setIsLiked] = useState(false);
+  const [inCart, setInCart] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [showVideo, setShowVideo] = useState(false);
 
-  const artworkId = useMemo(() => {
-    const params = new URLSearchParams(location.search);
-    return params.get('artwork_id');
-  }, [location.search]);
 
-  const isAvailable = useMemo(() => artwork?.availability, [artwork]);
-
-  // Fetch main artwork details
   useEffect(() => {
-    if (!artworkId) return;
+    async function fetchArtwork() {
+      const { data: auth } = await supabase.auth.getUser();
+      setUser(auth?.user || null);
+      if (!artworkId) {
+        navigate('/main-dashboard');
+        return;
+      }
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url,likes,liked_count')
+        .eq('id', artworkId)
+        .single();
+      if (!error) setArtwork(data);
+      setLoading(false);
 
-    const fetchArtworkDetails = async () => {
-      setLoading(true);
-      try {
-        // Fetch artwork with artist details
-        const { data: artworkData, error: artworkError } = await supabase
-          .from('artworks')
-          .select(`
-            *,
-            artists (
-              id,
-              name,
-              location,
-              email,
-              mobile,
-              experience,
-              avg_rating,
-              followers,
-              paintings_sold
-            )
-          `)
-          .eq('id', artworkId)
+      if (auth?.user) {
+        // Fetch user's liked artworks
+        const { data: userData } = await supabase
+          .from('user')
+          .select('liked_artworks')
+          .eq('id', auth.user.id)
           .single();
 
-        if (artworkError) throw artworkError;
-        
-        setArtwork(artworkData);
-        setArtist(artworkData.artists);
-      } catch (error) {
-        console.error('Error fetching artwork details:', error);
-      } finally {
-        setLoading(false);
+        const liked = userData?.liked_artworks || [];
+        setLikedArtworks(liked);
+        setIsLiked(liked.includes(artworkId));
+
+        const { data: cartRows } = await supabase
+          .from('cart')
+          .select('id')
+          .eq('user_id', auth.user.id)
+          .eq('artwork_id', artworkId)
+          .limit(1)
+          .maybeSingle();
+        setInCart(!!cartRows);
       }
-    };
-
-    fetchArtworkDetails();
-  }, [artworkId]);
-
-  // Fetch more artworks by the same artist
-  useEffect(() => {
-    if (!artwork?.artist_id) return;
-
-    const fetchArtistArtworks = async () => {
-      setArtistArtworksLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('artworks')
-          .select(`
-            id,
-            title,
-            cost,
-            image_url,
-            artist_id,
-            artists (name)
-          `)
-          .eq('artist_id', artwork.artist_id)
-          .neq('id', artworkId) // Exclude current artwork
-          .limit(10);
-
-        if (error) throw error;
-        
-        // Add artist name to artwork objects for easier access
-        const artworksWithArtist = data.map(art => ({
-          ...art,
-          artist_name: art.artists?.name
-        }));
-        
-        setArtistArtworks(artworksWithArtist);
-      } catch (error) {
-        console.error('Error fetching artist artworks:', error);
-        setArtistArtworks([]);
-      } finally {
-        setArtistArtworksLoading(false);
-      }
-    };
-
-    fetchArtistArtworks();
-  }, [artwork?.artist_id, artworkId]);
-
-  // Fetch related artworks by category
-  useEffect(() => {
-    if (!artwork?.category) return;
-
-    const fetchRelatedArtworks = async () => {
-      setRelatedArtworksLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('artworks')
-          .select(`
-            id,
-            title,
-            cost,
-            image_url,
-            artist_id,
-            artists (id, name)
-          `)
-          .eq('category', artwork.category)
-          .neq('id', artworkId) // Exclude current artwork
-          .neq('artist_id', artwork.artist_id) // Exclude same artist artworks
-          .limit(10);
-
-        if (error) throw error;
-        
-        // Add artist name and id to artwork objects
-        const artworksWithArtist = data.map(art => ({
-          ...art,
-          artist_name: art.artists?.name,
-          artist_id: art.artists?.id
-        }));
-        
-        setRelatedArtworks(artworksWithArtist);
-      } catch (error) {
-        console.error('Error fetching related artworks:', error);
-        setRelatedArtworks([]);
-      } finally {
-        setRelatedArtworksLoading(false);
-      }
-    };
-
-    fetchRelatedArtworks();
-  }, [artwork?.category, artworkId, artwork?.artist_id]);
-
-  const handleArtworkClick = (clickedArtworkId) => {
-    navigate(`/product-details?artwork_id=${clickedArtworkId}`);
-  };
-
-  const handleArtistClick = (artistId) => {
-    navigate(`/artist-profile?artist_id=${artistId}`);
-  };
+    }
+    fetchArtwork();
+  }, [artworkId, navigate]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl">Loading artwork details...</div>
-      </div>
-    );
+    return <div className="max-w-5xl mx-auto p-6">Loading...</div>;
   }
-
   if (!artwork) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-xl text-red-500">Artwork not found</div>
-      </div>
-    );
+    return <div className="max-w-5xl mx-auto p-6">Artwork not found.</div>;
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto p-4">
-        {/* Main Product Details Section */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-          <div className="md:flex">
-            {/* Artwork Image */}
-            <div className="md:w-1/2">
-              <img
-                src={artwork.image_url}
-                alt={artwork.title}
-                className="w-full h-96 md:h-full object-cover"
-              />
-            </div>
-            
-            {/* Artwork Details */}
-            <div className="md:w-1/2 p-6">
-              <h1 className="text-3xl font-bold mb-2">{artwork.title}</h1>
-              
-              {/* Artist Info */}
-              {artist && (
-                <div className="mb-4">
-                  <button
-                    onClick={() => handleArtistClick(artist.id)}
-                    className="text-blue-600 hover:text-blue-800 font-semibold hover:underline"
-                  >
-                    by {artist.name}
-                  </button>
-                  {artist.avg_rating > 0 && (
-                    <div className="flex items-center mt-1">
-                      <StarRating value={artist.avg_rating} />
-                      <span className="ml-2 text-sm text-gray-600">
-                        ({artist.avg_rating.toFixed(1)})
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Price */}
-              <div className="text-3xl font-bold text-green-600 mb-4">
-                ₹{artwork.cost}
-              </div>
-
-              {/* Availability */}
-              <div className="mb-4">
-                <span className="font-semibold">Availability: </span>
-                {isAvailable ? (
-                  <span className="text-green-600 font-semibold">Yes</span>
-                ) : (
-                  <span className="text-red-600 font-semibold">No</span>
-                )}
-              </div>
-
-              {/* Category */}
-              <div className="mb-4">
-                <span className="font-semibold">Category: </span>
-                <span className="bg-gray-100 px-2 py-1 rounded text-sm">
-                  {artwork.category}
-                </span>
-              </div>
-
-              {/* Description */}
-              <div className="mb-6">
-                <h3 className="font-semibold mb-2">Description</h3>
-                <p className="text-gray-700 leading-relaxed">{artwork.description}</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="space-y-3">
-                <button 
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-                  onClick={() => setShowModal(true)}
-                >
-                  Purchase Now
-                </button>
-                <button 
-                  className="w-full border border-blue-600 text-blue-600 py-3 px-6 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-                  onClick={() => setShowModal(true)}
-                >
-                  Add to Cart
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* More Artworks by This Artist Section */}
-        {artist && (
-          <HorizontalArtworkSection
-            title={`More artworks by ${artist.name}`}
-            artworks={artistArtworks}
-            loading={artistArtworksLoading}
-            onArtworkClick={handleArtworkClick}
-            onArtistClick={handleArtistClick}
-          />
-        )}
-
-        {/* Related Artworks Section */}
-        <HorizontalArtworkSection
-          title={`Related ${artwork.category} artworks`}
-          artworks={relatedArtworks}
-          loading={relatedArtworksLoading}
-          onArtworkClick={handleArtworkClick}
-          onArtistClick={handleArtistClick}
-          showArtistName={true}
-        />
-
-        {/* Coming Soon Modal */}
-        <ComingSoonModal 
-          isVisible={showModal} 
-          onClose={() => setShowModal(false)} 
-        />
-      </div>
-    </div>
+  const images = Array.isArray(artwork.image_urls) ? artwork.image_urls : (artwork.image_urls ? [artwork.image_urls] : []);
+  const current = images[idx];
+  const isAvailable = !(
+    artwork.availability === false ||
+    artwork.availability === 0 ||
+    artwork.availability === 'false' ||
+    artwork.availability === 'False' ||
+    artwork.availability === 'NO' ||
+    artwork.availability === 'No'
   );
-}
 
-// Enhanced Horizontal Artwork Section Component
-function HorizontalArtworkSection({ title, artworks, loading, onArtworkClick, onArtistClick, showArtistName = false }) {
-  if (loading) {
-    return (
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-        <div className="flex space-x-4 overflow-x-auto pb-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex-shrink-0 w-48 h-72 bg-gray-200 rounded-lg animate-pulse"></div>
-          ))}
-        </div>
-      </div>
-    );
+  async function addToCart() {
+    if (!user) {
+      navigate('/user-login');
+      return;
+    }
+    const { error } = await supabase
+      .from('cart')
+      .insert([{ user_id: user.id, artwork_id: artwork.id, quantity: 1 }]);
+    if (!error) {
+      setInCart(true);
+      alert('Added to cart!');
+    } else {
+      alert('Error adding to cart');
+    }
   }
 
-  if (artworks.length === 0) {
-    return (
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-        <p className="text-gray-500 bg-gray-100 p-4 rounded-lg">No artworks found in this section.</p>
-      </div>
-    );
+
+  function buyNow() {
+    if (artwork && !isAvailable) {
+      alert('This artwork is currently not available for ordering.');
+      return;
+    }
+    navigate('/order-process', { state: { artworkId: artwork.id, artistId: artwork.artist_id } });
   }
+  async function toggleLike() {
+    if (!user) {
+      alert('Please log in to use the like feature.');
+      return;
+    }
+
+    // Compute new liked_artworks array and new liked_count
+    const isNowLiked = !isLiked;
+    const updatedLikedArtworks = isNowLiked
+      ? [...likedArtworks, artwork.id]
+      : likedArtworks.filter(id => id !== artwork.id);
+
+    const newLikedCount = (artwork.liked_count || 0) + (isNowLiked ? 1 : -1);
+
+    try {
+      // 1. Update user's liked_artworks
+      const { error: userErr } = await supabase
+        .from('user')
+        .update({ liked_artworks: updatedLikedArtworks })
+        .eq('id', user.id);
+      if (userErr) throw userErr;
+
+      // 2. Update artwork's liked_count
+      const { error: artErr } = await supabase
+        .from('artworks')
+        .update({ liked_count: newLikedCount })
+        .eq('id', artwork.id);
+      if (artErr) throw artErr;
+
+      // 3. Reflect changes in local state
+      setLikedArtworks(updatedLikedArtworks);
+      setIsLiked(isNowLiked);
+      setArtwork({ ...artwork, liked_count: newLikedCount });
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      alert('Failed to update like status. Please try again.');
+    }
+  }
+
+
 
   return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-      <div 
-        className="flex space-x-4 overflow-x-auto pb-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-200"
-        style={{ scrollbarWidth: 'thin' }}
-      >
-        {artworks.map((artwork) => (
-          <div key={artwork.id} className="flex-shrink-0 w-48">
-            <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1">
-              {/* Clickable Image */}
-              <div 
-                className="aspect-square overflow-hidden cursor-pointer"
-                onClick={() => onArtworkClick(artwork.id)}
+    <div className="min-h-[90vh] max-w-5xl mx-auto p-6 flex items-center justify-center">
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-slate-200 p-4">
+          <div className="w-full h-80 bg-slate-50 rounded-xl flex items-center justify-center overflow-hidden cursor-zoom-in" onClick={() => setViewerOpen(true)}>
+            {current ? (
+              <img src={current} alt={artwork.title} className="w-full h-full object-contain" />
+            ) : (
+              <div className="text-slate-500">No image</div>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="flex gap-2 mt-3">
+              {images.map((img, i) => (
+                <button key={i} onClick={() => setIdx(i)} className={`w-16 h-16 rounded-lg overflow-hidden border ${i === idx ? 'border-yellow-400' : 'border-slate-200'}`}>
+                  <img src={img} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-2xl font-bold text-slate-900">{artwork.title}</h1>
+            <button
+              onClick={toggleLike}
+              onDoubleClick={toggleLike}
+              className="flex items-center justify-center p-0 ml-2 cursor-pointer transition-all duration-200 active:scale-95"
+              aria-label="Like button"
+              title={isLiked ? 'Unlike' : 'Like'}
+              style={{ width: 40, height: 40 }}
+            >
+              <svg
+                width="30"
+                height="30"
+                viewBox="0 0 24 24"
+                fill={isLiked ? 'red' : 'none'}
+                stroke={isLiked ? 'red' : '#a1a1aa'}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <img 
-                  src={artwork.image_url} 
-                  alt={artwork.title}
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                />
-              </div>
-              
-              <div className="p-3">
-                {/* Clickable Title */}
-                <h3 
-                  className="font-semibold text-sm truncate mb-1 cursor-pointer hover:text-blue-600 transition-colors"
-                  onClick={() => onArtworkClick(artwork.id)}
-                >
-                  {artwork.title}
-                </h3>
-                
-                {/* Clickable Cost */}
-                <p 
-                  className="text-lg font-bold text-green-600 cursor-pointer hover:text-green-700 transition-colors"
-                  onClick={() => onArtworkClick(artwork.id)}
-                >
-                  ₹{artwork.cost}
-                </p>
-                
-                {/* Clickable Artist Name (for related artworks) */}
-                {showArtistName && artwork.artist_name && (
-                  <button
-                    className="text-xs text-gray-600 truncate mt-1 hover:text-blue-600 transition-colors artist-name-click"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onArtistClick(artwork.artist_id);
-                    }}
-                  >
-                    by {artwork.artist_name}
-                  </button>
-                )}
-              </div>
+                <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
+              </svg>
+              <span className="ml-1 text-sm font-medium">
+                {artwork.liked_count ?? 0}
+              </span>
+            </button>
+          </div>
+
+          <div className="text-slate-600">Category: {artwork.category}</div>
+          <div className="text-slate-600">Material: {artwork.material || 'N/A'}</div>
+          <div className="mt-2 text-slate-700 flex items-center gap-3">
+            <span>
+              Artist: <button className="text-blue-600 hover:text-blue-700 font-semibold" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>{artwork.artists?.name ?? 'Artist'}</button>
+            </span>
+            {/* Star Rating */}
+            <div className="mb-4">
+              <StarRating value={artwork.avg_rating ?? 0} />
             </div>
           </div>
-        ))}
+          <p className="text-xl font-bold mt-2">₹{artwork.cost}</p>
+          <p className="mt-1 text-slate-700">
+            Availability: {isAvailable ? (
+              <span className="font-semibold text-green-700">Yes</span>
+            ) : (
+              <span className="font-semibold text-red-700">No</span>
+            )}
+          </p>
+          <p className="mt-3 text-slate-700">{artwork.description}</p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button className="btn-primary px-5 py-2" onClick={buyNow}>Buy Now</button>
+            {inCart ? (
+              <button className="btn-secondary px-5 py-2" onClick={() => navigate('/cart')}>View Cart</button>
+            ) : (
+              <button className="btn-secondary px-5 py-2" onClick={addToCart}>Add to Cart</button>
+            )}
+            <div className="flex flex-col items-center">
+              <span className="text-xs text-red-500 -mb-1">
+                <span style={{ color: 'red' }}>*</span>
+                Will be available soon
+              </span>
+              <button className="btn-outline px-5 py-2" disabled>See Creation Video</button>
+            </div>
+            <button className="btn-outline px-5 py-2" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>View Reviews</button>
+          </div>
+
+        </div>
       </div>
+
+      {/* Image Viewer Modal */}
+      {viewerOpen && (
+        <div className="fixed inset-0 bg-black/90 z-[20000] flex items-center justify-center p-4 select-none" onClick={() => setViewerOpen(false)}>
+          <div className="relative max-w-[95vw] max-h-[90vh] flex gap-3" onClick={(e) => e.stopPropagation()}>
+            {/* Sidebar thumbnails */}
+            {images.length > 1 && (
+              <div className="hidden md:flex flex-col gap-2 pr-2 overflow-y-auto">
+                {images.map((img, i) => (
+                  <button key={i} onClick={() => { setIdx(i); setZoom(1); }} className={`w-16 h-16 rounded overflow-hidden border ${i === idx ? 'border-yellow-400' : 'border-slate-500/40'}`}>
+                    <img src={img} alt={`side-${i}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="relative">
+              <img src={current} alt={`large-${idx}`} className="max-w-[80vw] max-h-[80vh] object-contain rounded" style={{ transform: `scale(${zoom})`, transition: 'transform .2s' }} />
+              {/* Watermark */}
+              <div className="absolute top-4 left-4 pointer-events-none select-none"
+                style={{
+                  background: "rgba(255,255,255,0.65)",
+                  padding: "6px 16px",
+                  borderRadius: "8px",
+                  fontWeight: "bold",
+                  fontSize: "18px",
+                  color: "#333",
+                  textShadow: "0 2px 8px rgba(0,0,0,0.13)",
+                  zIndex: 15,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+              </div>
+
+              <button className="absolute top-1/2 -translate-y-1/2 left-2 bg-blue-600 text-white rounded-full w-8 h-8 font-bold" onClick={() => { setIdx(i => (i === 0 ? images.length - 1 : i - 1)); setZoom(1); }}>&lt;</button>
+              <button className="absolute top-1/2 -translate-y-1/2 right-2 bg-blue-600 text-white rounded-full w-8 h-8 font-bold" onClick={() => { setIdx(i => (i + 1) % images.length); setZoom(1); }}>&gt;</button>
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 bg-white/95 px-6 py-2 rounded-xl flex gap-3 items-center">
+                <button className={`font-bold text-lg px-2 rounded bg-slate-200 ${zoom > 1 ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} disabled={zoom <= 1} onClick={() => setZoom(z => Math.max(1, z - 0.25))}>-</button>
+                <span className="font-bold text-base">{(zoom * 100).toFixed(0)}%</span>
+                <button className={`font-bold text-lg px-2 rounded bg-slate-200 ${zoom < 3 ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`} disabled={zoom >= 3} onClick={() => setZoom(z => Math.min(3, z + 0.25))}>+</button>
+              </div>
+              <button className="absolute top-2 right-2 text-white text-3xl" onClick={() => setViewerOpen(false)}>&times;</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video Modal */}
+      {showVideo && artwork.video_url && (
+        <div className="fixed inset-0 bg-slate-900/90 z-[30000] flex items-center justify-center p-4" onClick={() => setShowVideo(false)}>
+          <div className="relative bg-white rounded-2xl p-4 min-w-[320px] max-w-[96vw] max-h-[85vh]" onClick={(e) => e.stopPropagation()}>
+            <video src={artwork.video_url} controls autoPlay className="w-full max-h-[70vh] rounded-xl shadow-construction" />
+            {/* Watermark */}
+            <div className="absolute top-4 left-4 pointer-events-none select-none"
+              style={{
+                background: "rgba(255,255,255,0.65)",
+                padding: "6px 16px",
+                borderRadius: "8px",
+                fontWeight: "bold",
+                fontSize: "18px",
+                color: "#333",
+                textShadow: "0 2px 8px rgba(0,0,0,0.13)",
+                zIndex: 15,
+                whiteSpace: "nowrap",
+              }}
+            >
+              @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+            </div>
+            <button className="absolute top-3 right-4 text-blue-600 text-2xl font-bold" onClick={() => setShowVideo(false)}>&times;</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default ProductDetails;

@@ -169,7 +169,7 @@ function MainDashboard() {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url, availability, likes');
+          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url, availability, likes, liked_count');
 
         if (!error && data) {
           setArtworks(data);
@@ -237,46 +237,50 @@ function MainDashboard() {
     }
 
     const currentlyLiked = likedArtworks.includes(artwork.id);
-    let updatedLikesCount = artwork.likes || 0;
-    let updatedLikedArtworks;
+    const updatedLikedArtworks = currentlyLiked
+      ? likedArtworks.filter(id => id !== artwork.id)
+      : [...likedArtworks, artwork.id];
 
-    try {
-      if (!currentlyLiked) {
-        // Like artwork
-        updatedLikedArtworks = [...likedArtworks, artwork.id];
-        updatedLikesCount++;
-      } else {
-        // Unlike artwork
-        updatedLikedArtworks = likedArtworks.filter(id => id !== artwork.id);
-        updatedLikesCount--;
-      }
+    // 1) Update user.liked_artworks
+    const { data: userData, error: userErr } = await supabase
+      .from('user')
+      .update({ liked_artworks: updatedLikedArtworks })
+      .eq('id', user.id)
+      .select('liked_artworks')
+      .single();
 
-      // Update user's liked_artworks JSONB column
-      const { error: updateUserError } = await supabase
-        .from('user')
-        .update({ liked_artworks: updatedLikedArtworks })
-        .eq('id', user.id);
-
-      if (updateUserError) throw updateUserError;
-
-      // Update artworks like count
-      const { error: updateArtError } = await supabase
-        .from('artworks')
-        .update({ likes: updatedLikesCount })
-        .eq('id', artwork.id);
-
-      if (updateArtError) throw updateArtError;
-
-      // Update local states to reflect change
-      setLikedArtworks(updatedLikedArtworks);
-      // Update artworks state to reflect updated likes count for this artwork
-      setArtworks(artworks.map(a =>
-        a.id === artwork.id ? { ...a, likes: updatedLikesCount } : a));
-    } catch (error) {
-      alert('Failed to update like status.');
-      console.error('Toggle like error:', error);
+    if (userErr) {
+      console.error('Error updating user liked_artworks:', userErr);
+      alert('Failed to update your likes.');
+      return;
     }
+    console.log('User liked_artworks after update:', userData.liked_artworks);
+
+    // 2) Atomically update artworks.liked_count
+    // inside toggleLike()
+    const newCount = currentlyLiked
+      ? artwork.liked_count - 1
+      : artwork.liked_count + 1
+
+    const { data: artData, error: artErr } = await supabase
+      .from('artworks')
+      .update({ liked_count: newCount })
+      .eq('id', artwork.id)
+      .select('liked_count')
+      .single()
+
+    console.log('Artwork liked_count after update:', artData.liked_count);
+
+    // 3) Sync local state
+    setLikedArtworks(userData.liked_artworks);
+    setArtworks(artworks.map(a =>
+      a.id === artwork.id
+        ? { ...a, liked_count: artData.liked_count }
+        : a
+    ));
   }
+
+
 
   const filteredArtworks = artworks
     .filter(artwork => {
@@ -437,8 +441,8 @@ function MainDashboard() {
                       >
                         <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
                       </svg>
+                      <span>{artwork.liked_count ?? 0}</span>
                     </button>
-
                   </div>
                   {/* Artist Info */}
                   <div className="flex items-center gap-2 mb-3">
