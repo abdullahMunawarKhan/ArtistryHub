@@ -140,26 +140,28 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
 
   return (
     <div className="flex items-center gap-4 my-2">
-      <button
-        onClick={(e) => {
-          stopPropagationHandler?.(e); // Prevent card click
-          toggleFollow();
-        }}
-        onDoubleClick={(e) => {
-          stopPropagationHandler?.(e);
-          toggleFollow();
-        }}
-        disabled={processing}
-        className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
+      {(user && user.role === 'user') && (
+        <button
+          onClick={(e) => {
+            stopPropagationHandler?.(e);
+            toggleFollow();
+          }}
+          onDoubleClick={(e) => {
+            stopPropagationHandler?.(e);
+            toggleFollow();
+          }}
+          disabled={processing}
+          className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
           ${following
-            ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
-            : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
-          }`}
-        style={{ minWidth: '110px', textAlign: 'center' }}
-        title={following ? 'Unfollow artist' : 'Follow artist'}
-      >
-        {following ? 'Following' : 'Follow'}
-      </button>
+              ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
+              : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
+            }`}
+          style={{ minWidth: '110px', textAlign: 'center' }}
+          title={following ? 'Unfollow artist' : 'Follow artist'}
+        >
+          {following ? 'Following' : 'Follow'}
+        </button>
+      )}
       <span
         className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600"
         style={{ letterSpacing: '0.03em' }}
@@ -168,6 +170,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
       </span>
     </div>
   );
+
 }
 
 function ArtistList() {

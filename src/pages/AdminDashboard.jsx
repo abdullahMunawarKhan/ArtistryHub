@@ -86,6 +86,9 @@ function AdminDashboard() {
   const [artistRegs, setArtistRegs] = useState([]);
   const [artworksAdded, setArtworksAdded] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
+  const [extraDeliveryChargesInput, setExtraDeliveryChargesInput] = useState('');
+  const [totalEarnings, setTotalEarnings] = useState([]);
+  const [earningsLoading, setEarningsLoading] = useState(false);
   const navigate = useNavigate();
 
   // Admin authentication
@@ -174,7 +177,7 @@ function AdminDashboard() {
         .select(`
           *,
           artworks (
-            id, title, image_urls, cost, length, width, height, weight,pickupAddress,availability,shipment_status,artist_payment,
+            id, title, image_urls, cost, base_price,length, width, height, weight,pickupAddress,availability,shipment_status,artist_payment,
     artist_utr,
     artist_id
           ),
@@ -187,17 +190,13 @@ function AdminDashboard() {
     }
     fetchOrders();
   }, [orderTag]);
-
-  async function handleDeleteArtist(artistId) {
-    if (!window.confirm('Are you sure you want to delete this artist and all their artworks/assets?')) return;
-    const { data: artworks } = await supabase.from('artworks').select('*').eq('artist_id', artistId);
-    for (const artwork of artworks || []) {
-      // Delete images from storage if using Supabase Storage API
+  useEffect(() => {
+    if (selectedSection === 'earnings') {
+      fetchTotalEarnings();
     }
-    await supabase.from('artworks').delete().eq('artist_id', artistId);
-    await supabase.from('artists').delete().eq('id', artistId);
-    setArtistList(artistList.filter(a => a.id !== artistId));
-  }
+  }, [selectedSection]);
+
+
   async function updatePaintingsSoldIfConfirmed(artworkId, newShipmentStatus) {
     if (newShipmentStatus === "confirm") {
       // Fetch the artwork to get artist_id
@@ -298,18 +297,71 @@ function AdminDashboard() {
     e.preventDefault();
     if (!trackingInput) return;
     setModalLoading(true);
+    const extraCharges = parseFloat(extraDeliveryChargesInput) || 0;
     const { error } = await supabase
       .from('orders')
-      .update({ tracking_id: trackingInput, shipment_status: 'shipped' })
+      .update({ tracking_id: trackingInput, shipment_status: 'shipped', extra_delivery_charges: extraCharges })
       .eq('id', selectedOrder.id);
     if (!error) {
-      setSelectedOrder({ ...selectedOrder, shipment_status: 'shipped', tracking_id: trackingInput });
-      setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: 'shipped', tracking_id: trackingInput } : o));
+      setSelectedOrder({ ...selectedOrder, shipment_status: 'shipped', tracking_id: trackingInput, extra_delivery_charges: extraCharges });
+      setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: 'shipped', tracking_id: trackingInput, extra_delivery_charges: extraCharges } : o));
       setTrackingModalOpen(false);
       setTrackingInput('');
+      setExtraDeliveryChargesInput('');
     }
     setModalLoading(false);
   }
+  const fetchTotalEarnings = async () => {
+    setEarningsLoading(true);
+    try {
+      const { data: ordersData, error } = await supabase
+        .from('orders')
+        .select(`
+        id,
+        amount,
+        extra_delivery_charges,
+        earning,
+        artworks (
+          id,
+          title,
+          image_urls,
+          base_price
+        )
+      `)
+        .not('artworks', 'is', null);
+
+      if (error) {
+        console.error('Error fetching earnings:', error);
+        return;
+      }
+
+      // Process earnings data
+      const processedEarnings = ordersData.map(order => {
+        const razorpayCommission = order.amount * 0.02;
+        const calculatedEarning = order.amount -
+          order.artworks.base_price -
+          razorpayCommission -
+          (order.extra_delivery_charges || 0);
+
+        return {
+          id: order.id,
+          artworkImage: order.artworks.image_urls,
+          title: order.artworks.title,
+          amount: order.amount,
+          basePrice: order.artworks.base_price,
+          earning: calculatedEarning,
+          razorpayCommission,
+          extraDeliveryCharges: order.extra_delivery_charges || 0
+        };
+      });
+
+      setTotalEarnings(processedEarnings);
+    } catch (error) {
+      console.error('Error fetching earnings:', error);
+    } finally {
+      setEarningsLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -348,7 +400,7 @@ function AdminDashboard() {
             {/* Analytics Charts */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {[{
-                title: 'User Sign-ups',
+                title: 'Users ',
                 data: signups
               }, {
                 title: 'Artist Registrations',
@@ -357,7 +409,7 @@ function AdminDashboard() {
                 title: 'Artworks Added',
                 data: artworksAdded
               }, {
-                title: 'Pending Orders',
+                title: 'dilevered Orders',
                 data: pendingOrders
               }].map((chart, i) => (
                 <div
@@ -543,6 +595,7 @@ function AdminDashboard() {
                     <th className="p-2">Artist Name</th>
                     <th className="p-2">Artist QR</th>
                     <th className="p-2">Shipment Status</th>
+                    <th className="p-2">amount</th>
                     <th className="p-2">Payment Status</th>
                   </tr>
                 </thead>
@@ -589,6 +642,7 @@ function AdminDashboard() {
                           )}
                         </td>
                         <td className="p-2">{artwork.shipment_status}</td>
+                        <td className="p-2">{artwork.base_price}</td>
                         <td className="p-2">
                           <button
                             className={`px-3 py-1 rounded text-white ${artwork.artist_payment === "pending" ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600"}`}
@@ -597,6 +651,77 @@ function AdminDashboard() {
                           >
                             {artwork.artist_payment.charAt(0).toUpperCase() + artwork.artist_payment.slice(1)}
                           </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {selectedSection === 'earnings' && (
+          <div className="mb-14 animate-fadeIn">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Total Earnings ({totalEarnings.length})
+            </h3>
+            <div className="overflow-x-auto rounded shadow bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-200">
+                  <tr>
+                    <th className="p-2">Artwork Image</th>
+                    <th className="p-2">Title</th>
+                    <th className="p-2">Amount</th>
+                    <th className="p-2">Base Price</th>
+                    <th className="p-2">Earning</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {earningsLoading ? (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center">
+                        <div className="flex justify-center items-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                          <span className="ml-2">Loading earnings...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : totalEarnings.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-4 text-center text-gray-500">
+                        No earnings data available.
+                      </td>
+                    </tr>
+                  ) : (
+                    totalEarnings.map((earning, index) => (
+                      <tr key={earning.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">
+                          {earning.artworkImage && (
+                            <img
+                              src={Array.isArray(earning.artworkImage)
+                                ? earning.artworkImage[0]
+                                : earning.artworkImage}
+                              className="w-16 h-16 object-cover rounded border"
+                              alt={earning.title || "Artwork"}
+                            />
+                          )}
+                        </td>
+                        <td className="p-2 font-medium">
+                          {earning.title || "N/A"}
+                        </td>
+                        <td className="p-2">
+                          ₹{earning.amount?.toLocaleString() || 0}
+                        </td>
+                        <td className="p-2">
+                          ₹{earning.basePrice?.toLocaleString() || 0}
+                        </td>
+                        <td className="p-2">
+                          <span
+                            className={`font-semibold ${earning.earning < 0 ? 'text-red-600' : 'text-green-600'
+                              }`}
+                          >
+                            ₹{earning.earning?.toLocaleString() || 0}
+                          </span>
                         </td>
                       </tr>
                     ))
@@ -623,19 +748,26 @@ function AdminDashboard() {
             }, {
               key: 'artist',
               label: 'Artist Management',
-              icon: '🎨',   // 🎤 🎭 🎶 also possible
+              icon: '🎨',  
               activeColor: 'blue'
             }, {
               key: 'order',
               label: 'Order Management',
-              icon: '📦',   // 📝 🛒 also good fits
+              icon: '🛒',   
               activeColor: 'blue'
             }, {
               key: 'payment',
               label: 'Artist Payments',
-              icon: '💳',   // 💰 🪙 🤑
+              icon: '💳',   
               activeColor: 'blue'
-            }].map((btn, i) => (
+            },
+            {
+              key: 'earnings',
+              label: 'Total Earnings',
+              icon: '💰',
+              activeColor: 'blue'
+            }
+            ].map((btn, i) => (
               <button
                 key={i}
                 onClick={() => setSelectedSection(btn.key)}
@@ -756,12 +888,22 @@ function AdminDashboard() {
             {selectedOrder.shipment_status === 'pending' && (
               <OrderTimer orderedAt={selectedOrder.ordered_at} />
             )}
-            {/* Tracking ID Display */}
+            {/* Tracking ID and extra charges Display */}
+
             {['shipped', 'delivered'].includes(selectedOrder.shipment_status) && (
-              <div className="mb-2 text-green-700">
-                <strong>Tracking ID:</strong> {selectedOrder.tracking_id || ''}
-              </div>
+              <>
+                <div className="mb-2 text-green-700">
+                  <strong>Tracking ID:</strong> {selectedOrder.tracking_id || ''}
+                </div>
+                {selectedOrder.extra_delivery_charges !== undefined && (
+                  <div className="mb-2 text-green-700">
+                    <strong>Extra Delivery Charges:</strong> ₹ {selectedOrder.extra_delivery_charges.toFixed(2)}
+                  </div>
+                )}
+              </>
             )}
+
+
             {/* Change Status button */}
             {(selectedOrder.shipment_status === 'pending' ||
               selectedOrder.shipment_status === 'confirm') && (
@@ -786,6 +928,17 @@ function AdminDashboard() {
                   onChange={e => setTrackingInput(e.target.value)}
                   className="border rounded px-2 py-1 w-full mb-2"
                   disabled={modalLoading}
+                />
+                <label className="text-sm font-semibold mb-2 block">Extra Delivery Charges (₹):</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={extraDeliveryChargesInput}
+                  onChange={e => setExtraDeliveryChargesInput(e.target.value)}
+                  className="border rounded px-2 py-1 w-full mb-2"
+                  disabled={modalLoading}
+                  placeholder="Enter extra delivery charges"
                 />
                 <button
                   type="submit"

@@ -164,28 +164,36 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
     setProcessing(false);
   }
   return (
-    <div className="flex items-center gap-4">
-      <button
-        onClick={toggleFollow}
-        onDoubleClick={toggleFollow}
-        disabled={processing}
-        className={`px-5 py-2 text-sm font-semibold rounded-lg transition duration-300 border
-      ${following
-            ? 'bg-white-500 text-black border-grey-500 shadow-md'
-            : 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700 active:bg-blue-800'
-          }`}
-        style={{ minWidth: '100px', textAlign: 'center' }}
-        title={following ? 'Unfollow artist' : 'Follow artist'}
+    <div className="flex items-center gap-4 my-2">
+      {(user && user.role === 'user') && (
+        <button
+          onClick={(e) => {
+            stopPropagationHandler?.(e);
+            toggleFollow();
+          }}
+          onDoubleClick={(e) => {
+            stopPropagationHandler?.(e);
+            toggleFollow();
+          }}
+          disabled={processing}
+          className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
+          ${following
+              ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
+              : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
+            }`}
+          style={{ minWidth: '110px', textAlign: 'center' }}
+          title={following ? 'Unfollow artist' : 'Follow artist'}
+        >
+          {following ? 'Following' : 'Follow'}
+        </button>
+      )}
+      <span
+        className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600"
+        style={{ letterSpacing: '0.03em' }}
       >
-        {following ? 'Following' : 'Follow'}
-      </button>
-      <span className="text-sm font-medium select-none whitespace-nowrap bg-red-600 text-white px-2 py-0.5 rounded">
         {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
       </span>
     </div>
-
-
-
   );
 
 }
@@ -454,12 +462,12 @@ export default function ArtistProfile() {
         {(isOwner || userRole === "admin") && (
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm space-y-4 mx-auto w-full max-w-sm">
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Mobile</p>
-              <p className="font-semibold text-gray-800 break-words">{artist.mobile}</p>
+              <p className="font-semibold text-xs text-black-500 font-medium mb-1">Mobile</p>
+              <p className="text-gray-800 break-words">{artist.mobile}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Email</p>
-              <p className="font-semibold text-gray-800 break-words truncate">{artist.email}</p>
+              <p className="font-semibold text-xs text-black-500 font-medium mb-1">Email</p>
+              <p className="text-gray-800 break-words truncate">{artist.email}</p>
             </div>
           </div>
         )}

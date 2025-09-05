@@ -1,6 +1,7 @@
 import { UserCircle, Briefcase, Palette } from "lucide-react";
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Link } from "react-router-dom";
 import TopPanel from './components/TopPanel';
 import Welcome from './pages/Welcome';
 import MainDashboard from './pages/MainDashboard';
@@ -20,9 +21,11 @@ import ProductDetails from './pages/ProductDetails';
 import TrackOrder from './pages/TrackOrder';
 import ArtistDashboard from './pages/ArtistDashboard';
 import VideoFeed from './components/VideoFeed';
+import Feedback from './pages/Feedback';
 
 function App() {
   const location = useLocation();
+
   const isWelcomePage = location.pathname === '/';
 
   return (
@@ -59,6 +62,7 @@ function App() {
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/artist-dashboard" element={<ArtistDashboard />} />
             <Route path="/feed" element={<VideoFeed />} />
+            <Route path="feedback-form" element={<Feedback />} />
           </Routes>
         </div>
       </main>
@@ -86,12 +90,12 @@ function App() {
                 <li className="flex items-center gap-2">
                   <UserCircle className="w-5 h-5 text-yellow-400" />
                   <span className="font-semibold text-white">Founder, CEO & CTO:</span>
-                  <span className="text-gray-300">Abdullah Munawar Khan</span>
+                  <span className="font-semibold text-yellow-400 text-base ml-7">Abdullah Munawar Khan</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-yellow-400" />
                   <span className="font-semibold text-white">Founder,CFO & CMO :</span>
-                  <span className="text-gray-300">Ayush Ghojge</span>
+                  <span className="font-semibold text-yellow-400 text-base ml-7">Ayush Ghojge</span>
                 </li>
               </ul>
             </div>
@@ -102,7 +106,7 @@ function App() {
                 <Palette className="w-5 h-5 text-yellow-400" />
                 <p className="text-sm text-gray-400">About the Developer:</p>
               </div>
-              <p className="font-semibold text-yellow-400 text-base ml-7">
+              <p className="font-semibold text-base ml-7">
                 Abdullah Munawar Khan
               </p>
             </div>
@@ -200,8 +204,15 @@ function App() {
                 </a>
               </div>
             </div>
+            <div className="mt-6">
+              <Link
+                to="/feedback-form"
+                className="text-blue-400 hover:text-blue-200 font-semibold underline"
+              >
+                Please provide us your valuable feedback
+              </Link>
+            </div>
           </div>
-
         </div>
 
         {/* Bottom Bar */}
@@ -216,3 +227,8 @@ function App() {
 }
 
 export default App;
+
+
+
+
+

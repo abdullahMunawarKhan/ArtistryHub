@@ -42,7 +42,7 @@ function ArtistDashboard() {
       setLoadingPayments(true);
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, image_urls, cost, artist_payment, artist_id')
+        .select('id, title, image_urls, cost, artist_payment, artist_id,base_price')
         .eq('artist_id', artistId)
         .eq('shipment_status', 'delivered')
         .order('created_at', { ascending: false });
@@ -71,14 +71,16 @@ function ArtistDashboard() {
           shipment_status,
           ordered_at,
           quantity,
-          amount,
+          
           shipping_address,
           user_id,
           artwork:artworks (
             id,
             title,
             image_urls,
-            artist_id
+            artist_id,
+            base_price,
+            cost 
           )
         `)
         .not('shipment_status', 'is', null)
@@ -226,9 +228,60 @@ function ArtistDashboard() {
       </div>
     );
   }
+  function OrdersTable({ orders }) {
+    if (orders.length === 0) {
+      return (
+        <table className="w-full border text-sm">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-3 px-2">Title</th>
+              <th className="py-3 px-2">Base Price</th>
+              <th className="py-3 px-2">Selling Cost</th>
+              <th className="py-3 px-2">Ordered</th>
+              <th className="py-3 px-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan={5} className="text-center py-8 text-gray-600">
+                No orders found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      );
+    }
+
+    return (
+      <table className="w-full border text-sm">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="py-3 px-2">Title</th>
+            <th className="py-3 px-2">Base Price</th>
+            <th className="py-3 px-2">Selling Cost</th>
+            <th className="py-3 px-2">Ordered</th>
+            <th className="py-3 px-2">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {orders.map(order => (
+            <tr key={order.id} className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
+              onClick={() => navigate(`/product-details?id=${order.artwork?.id}`)}>
+              <td className="text-blue-700 underline">{order.artwork?.title || 'Unknown'}</td>
+              <td>₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}</td>
+              <td>₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}</td>
+              <td>{new Date(order.ordered_at).toLocaleDateString()}</td>
+              <td>{order.shipment_status?.toUpperCase() || '-'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
 
   function OrderCard({ order }) {
-    const { artwork, shipment_status, ordered_at, quantity, amount, shipping_address } = order;
+    const { artwork, shipment_status, ordered_at, amount, shipping_address } = order;
     const statusInfo = {
       pending: {
         message: 'Be ready with packaging',
@@ -284,11 +337,12 @@ function ArtistDashboard() {
               {artwork?.title || 'Unknown Artwork'}
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
+
               <div>
-                <span className="font-medium">Quantity:</span> {quantity}
+                <span className="font-medium">Base Price:</span> ₹{artwork?.base_price?.toFixed(2) ?? 'N/A'}
               </div>
               <div>
-                <span className="font-medium">Amount:</span> ₹{amount?.toFixed(2)}
+                <span className="font-medium">Selling Cost:</span> ₹{artwork?.cost?.toFixed(2) ?? 'N/A'}
               </div>
               <div>
                 <span className="font-medium">Ordered:</span> {new Date(ordered_at).toLocaleDateString()}
@@ -328,10 +382,6 @@ function ArtistDashboard() {
         <h2 className="text-xl font-semibold mb-4">Payment Analysis</h2>
         {loadingPayments ? (
           <div>Loading...</div>
-        ) : artworks.length === 0 ? (
-          <div className="text-gray-600 py-8 text-center">
-            <span>No delivered artworks found for payment analysis.</span>
-          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full border text-sm">
@@ -339,51 +389,57 @@ function ArtistDashboard() {
                 <tr className="bg-gray-100">
                   <th className="py-3 px-2">Item</th>
                   <th className="py-3 px-2">Image</th>
+                  <th className="py-3 px-2">Base Price (payment amount)</th>
                   <th className="py-3 px-2">Cost</th>
-                  <th className="py-3 px-2">Pickup Charges</th>
-                  <th className="py-3 px-2">Platform Fee (7.5%)</th>
-                  <th className="py-3 px-2">Payment (to be received)</th>
                   <th className="py-3 px-2">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {artworks.map(artwork => {
-                  const platformFee = artwork.cost * 0.075;
-                  const payment = artwork.cost - pickupCharge - platformFee;
-                  return (
-                    <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
-                      <td
-                        className="text-blue-700 underline cursor-pointer"
-                        onClick={() => navigate(`/product-details?id=${artwork.id}`)}
-                      >
-                        {artwork.title}
-                      </td>
-                      <td>
-                        <img
-                          src={Array.isArray(artwork.image_urls)
-                            ? artwork.image_urls[0]
-                            : artwork.image_urls}
-                          alt={artwork.title}
-                          className="w-12 h-12 rounded cursor-pointer"
+                {artworks.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="text-gray-600 py-8 text-center">
+                      No delivered artworks found for payment analysis.
+                    </td>
+                  </tr>
+                ) : (
+                  artworks.map(artwork => {
+
+
+                    return (
+                      <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
+                        <td
+                          className="text-blue-700 underline cursor-pointer"
                           onClick={() => navigate(`/product-details?id=${artwork.id}`)}
-                        />
-                      </td>
-                      <td>₹{artwork.cost}</td>
-                      <td>₹{pickupCharge}</td>
-                      <td>₹{platformFee.toFixed(2)}</td>
-                      <td>₹{payment.toFixed(2)}</td>
-                      <td>
-                        <span className={
-                          artwork.artist_payment === 'successful'
-                            ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
-                            : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
-                        }>
-                          {artwork.artist_payment || 'Pending'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        >
+                          {artwork.title}
+                        </td>
+                        <td>
+                          <img
+                            src={Array.isArray(artwork.image_urls)
+                              ? artwork.image_urls
+                              : artwork.image_urls}
+                            alt={artwork.title}
+                            className="w-12 h-12 rounded cursor-pointer"
+                            onClick={() => navigate(`/product-details?id=${artwork.id}`)}
+                          />
+                        </td>
+                        <td>₹{artwork.base_price}</td>
+                        <td>₹{artwork.cost}</td>
+                        
+
+                        <td>
+                          <span className={
+                            artwork.artist_payment === 'successful'
+                              ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
+                              : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
+                          }>
+                            {artwork.artist_payment || 'Pending'}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -391,6 +447,7 @@ function ArtistDashboard() {
       </div>
     );
   }
+
 
   if (!user) {
     return (
@@ -419,11 +476,10 @@ function ArtistDashboard() {
                   <button
                     key={filter.value}
                     onClick={() => setSelectedFilter(filter.value)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                      selectedFilter === filter.value
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+                    className={`py-2 px-1 border-b-2 font-medium text-sm ${selectedFilter === filter.value
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
                   >
                     {filter.label}
                   </button>
@@ -437,27 +493,10 @@ function ArtistDashboard() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <span className="ml-3 text-gray-600">Loading ordered artworks...</span>
             </div>
-          ) : orderedArtworks.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 mb-4">
-                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8l-1 1m-6 0l-1-1" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
-              <p className="text-gray-500">
-                {selectedFilter === 'all'
-                  ? "You don't have any ordered artworks yet."
-                  : `No orders with "${selectedFilter}" status found.`}
-              </p>
-            </div>
           ) : (
-            <div className="space-y-4">
-              {orderedArtworks.map((order) => (
-                <OrderCard key={order.id} order={order} />
-              ))}
-            </div>
+            <OrdersTable orders={orderedArtworks} />
           )}
+
         </div>
         {/* Payment Analysis Section */}
         <PaymentTable />
@@ -467,3 +506,5 @@ function ArtistDashboard() {
 }
 
 export default ArtistDashboard;
+
+

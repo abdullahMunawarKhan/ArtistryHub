@@ -31,7 +31,7 @@ export default function OrderProcess() {
   const artworkId = state?.artworkId;
 
   const [artwork, setArtwork] = useState(null);
-  const [quantity, setQuantity] = useState(1);
+
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [form, setForm] = useState({
@@ -58,9 +58,11 @@ export default function OrderProcess() {
         .from("artworks")
         .select("id, title, cost, availability, image_urls")
         .eq("id", artworkId)
-        
+        .single()
       setLoading(false);
-      if (error || !data) {
+
+      // Correct: Safely set only the object
+      if (error || !data || data.length === 0) {
         alert("Failed to load artwork");
         navigate("/main-dashboard");
         return;
@@ -70,8 +72,7 @@ export default function OrderProcess() {
     loadArtwork();
   }, [artworkId, navigate]);
 
-  const totalCost =
-    artwork && quantity > 0 ? artwork.cost * quantity + DELIVERY_FEE : 0;
+  const totalCost = artwork ? artwork.cost + DELIVERY_FEE : 0;
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -112,7 +113,7 @@ export default function OrderProcess() {
               {
                 user_id: user.id,
                 artwork_id: artwork.id,
-                
+
                 amount: totalCost,
                 delivery_fee: DELIVERY_FEE,
                 status: "paid",
@@ -194,130 +195,148 @@ export default function OrderProcess() {
   const isAvailable = artwork.availability !== false;
 
   return (
-    <div className="min-h-[90vh] max-w-2xl mx-auto p-6 bg-white bg-opacity-90 rounded-xl shadow-construction-lg">
-      <h1 className="text-4xl md:text-5xl font-bold text-gradient mb-6 font-['Nova_Round',cursive]">
-        Purchase "{artwork.title}"
-      </h1>
-      <p className="text-lg mb-2 font-semibold text-gray-800">
-        Price per piece: <span className="text-yellow-600">₹{artwork.cost}</span>
-      </p>
-      <p className="mb-2 text-gray-700">
-        Shipping Fee: <span className="font-semibold text-yellow-700">₹{DELIVERY_FEE.toFixed(2)}</span>
-      </p>
-      <p
-        className={`mb-6 font-semibold ${isAvailable ? "text-green-600" : "text-red-600"
-          }`}
-      >
-        Availability: {isAvailable ? "Available" : "Not Available"}
-      </p>
+    <div className="min-h-[90vh] flex items-center justify-center bg-gradient-to-tr from-yellow-50 to-white">
+      <div className="w-full max-w-5xl bg-white rounded-xl shadow-construction-lg overflow-hidden flex flex-col md:flex-row">
 
-      
+        {/* --- LEFT SECTION: IMAGE + SHIPPING/BILLING --- */}
+        <div className="md:w-1/2 w-full p-6 flex flex-col items-center">
+          {/* IMAGE */}
+          {artwork.image_urls && artwork.image_urls.length > 0 ? (
+            <img
+              src={artwork.image_urls[0]}
+              alt={artwork.title}
+              className="w-full max-h-72 object-contain rounded-xl shadow-md mb-6"
+            />
+          ) : (
+            <div className="w-full h-72 flex items-center justify-center text-gray-400 bg-gray-50 rounded-xl mb-6">
+              No image available
+            </div>
+          )}
+          
+          <div className="w-full flex flex-col gap-3">
+            <h1 className="text-3xl md:text-4xl font-bold text-gradient mb-3 font-['Nova_Round',cursive]">
+              Purchase <span className="text-yellow-700">{artwork.title}</span>
+            </h1>
+            <p className="text-lg mb-1 font-semibold text-gray-800">
+              Price: <span className="text-yellow-600">₹ {artwork.cost}</span>
+            </p>
+            <p className="mb-1 text-gray-700">
+              Shipping Fee: <span className="font-semibold text-yellow-700">₹{DELIVERY_FEE.toFixed(2)}</span>
+            </p>
+            <p className={`mb-2 font-semibold ${isAvailable ? "text-green-600" : "text-red-600"}`}>
+              Availability: {isAvailable ? "Available" : "Not Available"}
+            </p>
 
-      <label className="block mb-4">
-        <span className="form-label font-semibold">Full Name</span>
-        <input
-          type="text"
-          name="fullName"
-          value={form.fullName}
-          onChange={handleChange}
-          className="form-input"
-          required
-          placeholder="Your full name"
-        />
-      </label>
+          </div>
+        </div>
 
-      <label className="block mb-4">
-        <span className="form-label font-semibold">Shipping Address provide precise *inlcude Pin code </span>
-        <textarea
-          name="shippingAddress"
-          value={form.shippingAddress}
-          onChange={handleChange}
-          className="form-input"
-          rows={3}
-          required
-          placeholder="Shipping address"
-        ></textarea>
-      </label>
+        
+        <div className="md:w-1/2 w-full p-6 flex flex-col justify-center">
 
-      <label className="block mb-4">
-        <span className="form-label font-semibold">Billing Address</span>
-        <textarea
-          name="billingAddress"
-          value={form.billingAddress}
-          onChange={handleChange}
-          className="form-input"
-          rows={3}
-          required
-          placeholder="Billing address"
-        ></textarea>
-      </label>
-
-      <label className="block mb-4">
-        <span className="form-label font-semibold">Mobile Number</span>
-        <input
-          type="tel"
-          name="mobile"
-          value={form.mobile}
-          onChange={handleChange}
-          className="form-input"
-          required
-          placeholder="10-digit mobile number"
-        />
-      </label>
-
-      <label className="block mb-6">
-        <span className="form-label font-semibold">Alternate Mobile Number (optional)</span>
-        <input
-          type="tel"
-          name="altMobile"
-          value={form.altMobile}
-          onChange={handleChange}
-          className="form-input"
-          placeholder="Alternate mobile number"
-        />
-      </label>
-
-      <label className="inline-flex items-center mb-6">
-        <input
-          type="checkbox"
-          className="form-checkbox text-yellow-500"
-          checked={policiesChecked}
-          onChange={() => setPoliciesChecked(!policiesChecked)}
-        />
-        <span className="ml-2 text-gray-700">
-          I have read and accept the{" "}
-          <button
-            type="button"
-            onClick={() => setShowPolicies(true)}
-            className="text-yellow-600 underline font-semibold"
-          >
-            policies
-          </button>
-        </span>
-      </label>
-
-      <p className="text-xl font-semibold mb-6 text-gray-800">
-        Total:{" "}
-        <span className="text-yellow-600 font-bold">₹{totalCost.toFixed(2)}</span>{" "}
-        (including delivery)
-      </p>
-
-      <div className="flex space-x-4">
-        <button
-          onClick={handlePayment}
-          disabled={!isAvailable || processing}
-          className={`btn-primary ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          {processing ? "Processing..." : "Pay Now"}
-        </button>
-        <button
-          onClick={() => navigate(-1)}
-          className="btn-outline"
-        >
-          Cancel
-        </button>
+          
+          <form className="space-y-3" onSubmit={e => { e.preventDefault(); handlePayment(); }}>
+            <label className="block">
+              <span className="form-label font-semibold">Full Name</span>
+              <input
+                type="text"
+                name="fullName"
+                value={form.fullName}
+                onChange={handleChange}
+                className="form-input"
+                required
+                placeholder="Your full name"
+              />
+            </label>
+            <label className="block">
+              <span className="form-label font-semibold">Mobile Number</span>
+              <input
+                type="tel"
+                name="mobile"
+                value={form.mobile}
+                onChange={handleChange}
+                className="form-input"
+                required
+                placeholder="10-digit mobile number"
+              />
+            </label>
+            <label className="block">
+              <span className="form-label font-semibold">Alternate Mobile Number (optional)</span>
+              <input
+                type="tel"
+                name="altMobile"
+                value={form.altMobile}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Alternate mobile number"
+              />
+            </label>
+            {/* SHIPPING & BILLING  */}
+            <label className="block">
+              <span className="form-label font-semibold">Shipping Address* (include Pin code)</span>
+              <textarea
+                name="shippingAddress"
+                value={form.shippingAddress}
+                onChange={handleChange}
+                className="form-input"
+                rows={2}
+                required
+                placeholder="Shipping address"
+              ></textarea>
+            </label>
+            <label className="block">
+              <span className="form-label font-semibold">Billing Address</span>
+              <textarea
+                name="billingAddress"
+                value={form.billingAddress}
+                onChange={handleChange}
+                className="form-input"
+                rows={2}
+                required
+                placeholder="Billing address"
+              ></textarea>
+            </label>
+            <label className="inline-flex items-center mb-2">
+              <input
+                type="checkbox"
+                className="form-checkbox text-yellow-500"
+                checked={policiesChecked}
+                onChange={() => setPoliciesChecked(!policiesChecked)}
+              />
+              <span className="ml-2 text-gray-700">
+                I have read and accept the
+                <button
+                  type="button"
+                  onClick={() => setShowPolicies(true)}
+                  className="text-yellow-600 underline font-semibold ml-1"
+                >
+                  policies
+                </button>
+              </span>
+            </label>
+            <p className="text-xl font-semibold mb-2 text-gray-800">
+              Total: <span className="text-yellow-600 font-bold">₹{totalCost.toFixed(2)}</span> (including delivery)
+            </p>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                disabled={!isAvailable || processing}
+                className={`btn-primary ${!isAvailable ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {processing ? "Processing..." : "Pay Now"}
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="btn-outline"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
+      {/* POLICIES MODAL */}
       {showPolicies && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-6">
           <div className="bg-white rounded-xl p-6 max-w-lg w-full shadow-construction overflow-auto max-h-[80vh]">
@@ -348,4 +367,5 @@ export default function OrderProcess() {
       )}
     </div>
   );
+
 }

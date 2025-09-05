@@ -6,12 +6,13 @@ function Welcome() {
   const navigate = useNavigate();
 
   // Navigate to dashboard when button is clicked
-  const handleEnter = () => {
+  const handleEnter = (event) => {
+    if (event) event.stopPropagation();
     navigate("/main-dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-artistryhub relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-artistryhub relative overflow-hidden" onClick={() => navigate("/main-dashboard")}>
       {/* Background decorative elements */}
       <div className="absolute inset-0">
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full animate-float"></div>
@@ -50,6 +51,7 @@ function Welcome() {
             >
               Enter Gallery
             </button>
+
           </div>
         </div>
 
@@ -67,12 +69,12 @@ function Welcome() {
             <p className="text-slate-600">Display your artwork and build your artistic portfolio</p>
           </div>
           <div className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-              <div className="text-4xl mb-4">🤝</div>
-              <h3 className="text-xl font-semibold text-slate-800 mb-2">Connect & Create</h3>
-              <p className="text-slate-600">Build meaningful connections in the art community</p>
+            <div className="text-4xl mb-4">🤝</div>
+            <h3 className="text-xl font-semibold text-slate-800 mb-2">Connect & Create</h3>
+            <p className="text-slate-600">Build meaningful connections in the art community</p>
           </div>
         </div>
-      
+
 
         {/*Stats section*/}
         {/* <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-3xl mx-auto">
@@ -93,10 +95,10 @@ function Welcome() {
             <div className="text-sm text-slate-600">Countries</div>
           </div>
         </div> */}
-      </div>  
+      </div>
 
       {/* Footer */}
-      
+
 
       {/* Additional decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full pointer-events-none">

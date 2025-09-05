@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 
+function roundToNearest9(num) {
+  let rounded = Math.round(num);
+  const lastDigit = rounded % 10;
+  if (lastDigit === 9) return rounded;
+  if (lastDigit < 9) return rounded + (9 - lastDigit);
+  return rounded + (19 - lastDigit);
+}
+
 export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -49,6 +57,10 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const [width, setWidth] = useState("");
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
+  const [basePrice, setBasePrice] = useState("");
+  const [pickupCharges] = useState(50); // fixed value
+  const [platformFees, setPlatformFees] = useState(0);
+
 
   useEffect(() => {
     async function loadUserAndArtist() {
@@ -64,6 +76,20 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     }
     loadUserAndArtist();
   }, []);
+  useEffect(() => {
+    const base = Number(basePrice);
+    if (!isNaN(base) && base >= 0) {
+      const fees = 0.075 * base;
+      setPlatformFees(fees);
+      const totalCost = roundToNearest9(base + pickupCharges + fees);
+      setCost(totalCost.toString());
+    } else {
+      setPlatformFees(0);
+      setCost("");
+    }
+  }, [basePrice, pickupCharges]);
+
+
 
   useEffect(() => {
     if (!productId) return;
@@ -168,6 +194,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       alert("All dimensions are required.");
       return;
     }
+    if (!basePrice || isNaN(Number(basePrice)) || Number(basePrice) < 0) {
+      alert("Valid base price is required and cannot be negative.");
+      return;
+    }
+
 
 
     setLoading(true);
@@ -187,6 +218,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             title: title.trim(),
             description,
             category,
+            base_price: Number(basePrice),
             cost: Number(cost),
             material,
             pickupAddress,
@@ -211,6 +243,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             title: title.trim(),
             description,
             category,
+            base_price: Number(basePrice),
             cost: Number(cost),
             material,
             pickupAddress,
@@ -269,144 +302,227 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   // Existing zoom handling and image viewer...
 
   return (
-    <div style={{ maxWidth: 720, margin: "2rem auto", padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.1)", borderRadius: 10, backgroundColor: "white", fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" }}>
-      <h2 style={{ marginBottom: 24, color: "#222" }}>{productId ? "Edit Artwork" : "Upload Artwork"}</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Title *</label>
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Enter title"
-          required
-          style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
-        />
+    <div className="pt-20 max-w-6xl mx-auto p-6 bg-white shadow-xl rounded-2xl">
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+        {productId ? "Edit Artwork" : "Upload Artwork"}
+      </h2>
 
-        <label>Description</label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="Enter description"
-          rows={3}
-          style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
-        />
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Top Section: Responsive grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Side */}
+          <div className="space-y-5">
+            {/* Title */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Title *</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter title"
+                required
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-        <label>Category</label>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-          style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15, cursor: "pointer" }}
-        >
-          <option value="">Select category</option>
-          {selectableCategories.map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </select>
+            {/* Description */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Enter description"
+                rows={3}
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
 
-        <div className="flex flex-col gap-3 mb-6">
-          <label className="text-base font-semibold text-gray-700 mb-1 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" /><path d="M8 8h8M8 16h8" /></svg>
-            Artwork Dimensions <span className="text-xs text-gray-400">(after packing)</span>
-          </label>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <input
-              type="number"
-              value={length}
-              onChange={e => setLength(e.target.value)}
-              min="1"
-              required
-              placeholder="Length (cm)"
-              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
-            />
-            <input
-              type="number"
-              value={width}
-              onChange={e => setWidth(e.target.value)}
-              min="1"
-              required
-              placeholder="Width/Thickness (cm)"
-              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
-            />
-            <input
-              type="number"
-              value={height}
-              onChange={e => setHeight(e.target.value)}
-              min="1"
-              required
-              placeholder="Height (cm)"
-              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
-            />
-            <input
-              type="number"
-              value={weight}
-              onChange={e => setWeight(e.target.value)}
-              min="0.1"
-              step="any"
-              required
-              placeholder="Weight (kg)"
-              className="rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-400 px-4 py-2 text-sm font-medium shadow-sm"
-            />
+            {/* Category */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Category *</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select category</option>
+                {selectableCategories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Material */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">Material</label>
+              <input
+                type="text"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                placeholder="Enter material"
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {/* Pickup Address */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-1">
+                Pickup Address <span className="text-red-500">*</span>{" "}
+                <span className="text-xs text-gray-400">(with Pin code, precise)</span>
+              </label>
+              <textarea
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder="Enter pickup address"
+                rows={3}
+                required
+                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
+
+          {/* Right Side */}
+          <div className="space-y-6">
+            {/* Dimensions */}
+            <div>
+              <label className="block font-semibold text-gray-700 mb-2">
+                Artwork Dimensions <span className="text-xs text-gray-400">(after packing)</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  value={length}
+                  onChange={e => setLength(e.target.value)}
+                  placeholder="Length (cm)"
+                  min="1"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  value={width}
+                  onChange={e => setWidth(e.target.value)}
+                  placeholder="Width (cm)"
+                  min="1"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  value={height}
+                  onChange={e => setHeight(e.target.value)}
+                  placeholder="Height (cm)"
+                  min="1"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+                <input
+                  type="number"
+                  value={weight}
+                  onChange={e => setWeight(e.target.value)}
+                  placeholder="Weight (kg)"
+                  min="0.1"
+                  step="any"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Price & Cost */}
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <label className="sm:w-40 font-medium text-gray-700">Base Price *</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={basePrice}
+                  onChange={(e) => setBasePrice(e.target.value)}
+                  required
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <label className="sm:w-40 font-medium text-gray-700">Pickup Charges</label>
+                <input
+                  type="text"
+                  value={pickupCharges}
+                  readOnly
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <label className="sm:w-40 font-medium text-gray-700">Platform Fees</label>
+                <input
+                  type="text"
+                  value={platformFees.toFixed(2)}
+                  readOnly
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <label className="sm:w-40 font-medium text-gray-700">Cost for Buyer</label>
+                <input
+                  type="text"
+                  value={cost}
+                  readOnly
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block font-semibold text-gray-700 mb-2">
+                Upload Images (Max 3, under 10MB) <br />
+                <span className="text-xs text-gray-500">
+                  *Don't upload with any social media ID tag or watermark — one will be provided by our platform
+                </span>
+              </label>
+              <input
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handleImageChange}
+                className="mb-4"
+              />
+              <div className="flex gap-3 flex-wrap">
+                {previewUrls.map((url, i) => (
+                  <img
+                    key={i}
+                    src={url}
+                    alt={`preview-${i}`}
+                    className="w-28 h-28 object-cover rounded-lg shadow cursor-pointer hover:scale-105 transition-transform"
+                    onClick={() => setImageViewerOpen(true)}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+
         </div>
 
 
-        <label>Cost (INR)</label>
-        <input
-          type="number"
-          value={cost}
-          onChange={(e) => setCost(e.target.value)}
-          placeholder="Enter cost"
-          required
-          style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
-        />
 
-        <label>Material</label>
-        <input
-          type="text"
-          value={material}
-          onChange={(e) => setMaterial(e.target.value)}
-          placeholder="Enter material"
-          style={{ width: "100%", padding: 12, marginBottom: 16, borderRadius: 6, border: "1px solid #ccc", fontSize: 15 }}
-        />
-        <label>Pickup Address(<b>with Pin code</b>) and try to provide precise *</label>
-        <textarea
-          value={pickupAddress}
-          onChange={(e) => setPickupAddress(e.target.value)}
-          placeholder="Enter pickup address"
-          rows={3}
-          required
-          style={{
-            width: "100%",
-            padding: 12,
-            marginBottom: 16,
-            borderRadius: 6,
-            border: "1px solid #ccc",
-            fontSize: 15
-          }}
-        />
 
-        <label>Upload Images (Max 3, each under 10MB) <br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
-        <input type="file" multiple accept="image/*" onChange={handleImageChange} style={{ marginBottom: 16 }} />
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          {previewUrls.map((url, i) => (
-            <img key={i} src={url} alt={`preview-${i}`} style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 6, cursor: "pointer" }} onClick={() => setImageViewerOpen(true)} />
-          ))}
-        </div>
 
-        {/* <label>Upload Video (optional, max 50MB)<br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
-        <input type="file" accept="video/*" onChange={handleVideoChange} style={{ marginBottom: 16 }} />
-        {videoPreview && (
-          <video src={videoPreview} controls style={{ width: 320, borderRadius: 8, marginBottom: 16 }} />
-        )} */}
-
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          style={{ width: "100%", padding: 14, backgroundColor: "#F59E0B", color: "white", fontWeight: "700", fontSize: 18, borderRadius: 8, border: "none", cursor: loading ? "not-allowed" : "pointer" }}
+          className="mx-auto block w-48 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-lg rounded-lg transition disabled:opacity-50"
         >
-          {loading ? (productId ? "Updating..." : "Uploading...") : productId ? "Update Artwork" : "Upload Artwork"}
+          {loading
+            ? (productId ? "Updating..." : "Uploading...")
+            : productId
+              ? "Update Artwork"
+              : "Upload Artwork"}
         </button>
+
       </form>
 
       {/* Image Viewer Modal */}
@@ -475,7 +591,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 }}
                 aria-label="Zoom out"
               >
-                
+
               </button>
               <span style={{ color: 'white', fontWeight: 600 }}>{(zoom * 100).toFixed(0)}%</span>
               <button
