@@ -54,12 +54,21 @@ export default function ProductDetails() {
         navigate('/main-dashboard');
         return;
       }
+      setLoading(true); // ensure loading is set at start
+
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url,liked_count,actual_length, actual_height')
+        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url, liked_count, actual_length, actual_height')
         .eq('id', artworkId)
         .single();
-      if (!error) setArtwork(data);
+
+      if (!error) {
+        setArtwork(data);
+      } else {
+        // Optional: handle error for debugging or user hint
+        console.error("Error fetching artwork:", error);
+        setArtwork(null);
+      }
       setLoading(false);
 
       if (auth?.user) {
@@ -341,4 +350,3 @@ export default function ProductDetails() {
     </div>
   );
 }
-

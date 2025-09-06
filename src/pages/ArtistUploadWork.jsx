@@ -265,6 +265,8 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             width: Number(width),
             height: Number(height),
             weight: Number(weight),
+            actual_length: Number(actualLength),
+            actual_height: Number(actualHeight),
           })
           .select()
 
