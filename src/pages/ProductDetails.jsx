@@ -56,7 +56,7 @@ export default function ProductDetails() {
       }
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url,likes,liked_count')
+        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url,liked_count,actual_length, actual_height')
         .eq('id', artworkId)
         .single();
       if (!error) setArtwork(data);
@@ -88,10 +88,11 @@ export default function ProductDetails() {
   }, [artworkId, navigate]);
 
   if (loading) {
-    return <div className="max-w-5xl mx-auto p-6">Loading...</div>;
+    return <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse">
+      Loading...</div>;
   }
   if (!artwork) {
-    return <div className="max-w-5xl mx-auto p-6">Artwork not found.</div>;
+    return <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse">Artwork not found.</div>;
   }
 
   const images = Array.isArray(artwork.image_urls) ? artwork.image_urls : (artwork.image_urls ? [artwork.image_urls] : []);
@@ -223,6 +224,10 @@ export default function ProductDetails() {
 
           <div className="text-slate-600">Category: {artwork.category}</div>
           <div className="text-slate-600">Material: {artwork.material || 'N/A'}</div>
+          <div className="text-slate-600">
+            Dimensions: <span className="font-medium">{artwork.actual_length ?? 'N/A'} cm (L)</span> × <span className="font-medium">{artwork.actual_height ?? 'N/A'} cm (H)</span>
+          </div>
+
           <div className="mt-2 text-slate-700 flex items-center gap-3">
             <span>
               Artist: <button className="text-blue-600 hover:text-blue-700 font-semibold" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>{artwork.artists?.name ?? 'Artist'}</button>
@@ -336,3 +341,4 @@ export default function ProductDetails() {
     </div>
   );
 }
+

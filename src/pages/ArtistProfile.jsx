@@ -337,35 +337,11 @@ export default function ArtistProfile() {
       alert("Failed to update availability: " + err.message);
     }
   };
-  async function likeArtwork(artworkId) {
-    const { data, error } = await supabase
-      .from('artworks')
-      .update({})
-      .increment('liked_count', 1)
-      .eq('id', artworkId);
 
-    if (error) {
-      console.error('Error liking artwork:', error.message);
-    } else {
-      console.log('Artwork liked, new count:', data[0].liked_count);
-    }
-  }
-  // Decrement like count by 1
-  async function unlikeArtwork(artworkId) {
-    const { data, error } = await supabase
-      .from('artworks')
-      .update({})
-      .increment('liked_count', -1)
-      .eq('id', artworkId);
 
-    if (error) {
-      console.error('Error unliking artwork:', error.message);
-    } else {
-      console.log('Artwork unliked, new count:', data[0].liked_count);
-    }
-  }
   if (loadingArtist) {
-    return <div>Loading artist information...</div>;
+    return <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse"
+    >Loading artist information...</div>;
   }
 
   return (
@@ -386,7 +362,7 @@ export default function ArtistProfile() {
                 Upload Artwork
               </button>
             )}
-            {(isOwner || userRole === "admin") && (
+            {isOwner && (
               <button
                 onClick={() => navigate("/artist-dashboard")}
                 className="inline-flex items-center px-5 py-2 rounded-xl font-bold bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 hover:scale-105 transition-transform duration-150"

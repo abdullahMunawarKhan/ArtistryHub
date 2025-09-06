@@ -60,6 +60,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const [basePrice, setBasePrice] = useState("");
   const [pickupCharges] = useState(50); // fixed value
   const [platformFees, setPlatformFees] = useState(0);
+  const [actualLength, setActualLength] = useState("");
+  const [actualHeight, setActualHeight] = useState("");
+
 
 
   useEffect(() => {
@@ -117,6 +120,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         setHeight(data.Height || " ");
         setWeight(data.weight || " ");
         setWidth(data.width || " ");
+        setActualLength(data.actual_length || "");
+        setActualHeight(data.actual_height || "");
+
       }
     }
     fetchArtwork();
@@ -190,8 +196,8 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       alert("Pickup address is required.");
       return;
     }
-    if (!length || !width || !height || !weight) {
-      alert("All dimensions are required.");
+    if (!length || !width || !height || !weight || !actualLength || !actualHeight) {
+      alert("All dimensions (actual and after packing) are required.");
       return;
     }
     if (!basePrice || isNaN(Number(basePrice)) || Number(basePrice) < 0) {
@@ -229,6 +235,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             width: Number(width),
             height: Number(height),
             weight: Number(weight),
+            actual_length: Number(actualLength),
+            actual_height: Number(actualHeight),
+
+
+
 
           })
           .eq("id", productId);
@@ -424,6 +435,34 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Weight (kg)"
                   min="0.1"
                   step="any"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block font-semibold text-gray-700 mb-2">Length (cm)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  value={actualLength}
+                  onChange={e => setActualLength(e.target.value)}
+                  placeholder="Actual"
+                  min="1"
+                  required
+                  className="border rounded-lg px-4 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block font-semibold text-gray-700 mb-2">Height (cm)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  value={actualHeight}
+                  onChange={e => setActualHeight(e.target.value)}
+                  placeholder="Actual"
+                  min="1"
                   required
                   className="border rounded-lg px-4 py-2 text-sm"
                 />
