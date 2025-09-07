@@ -419,7 +419,8 @@ export default function ArtistProfile() {
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={artwork.availability !== false} readOnly onClick={(e) => {
                         e.stopPropagation();
-                        onToggleClick(artwork.id, artwork.availability !== false);
+                        onToggleClick(artwork)
+
                       }} />
                       <span className={`${artwork.availability !== false ? "text-green-700" : "text-red-700"} font-semibold`}>
                         Availability: {artwork.availability !== false ? "Yes" : "No"}
