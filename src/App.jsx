@@ -49,8 +49,8 @@ function App() {
             <Route path="/signup" element={<Signup />} />
             <Route path="/user-login" element={<UserLogin />} />
             <Route path="/update-password" element={<UpdatePassword />} />
-            <Route path="/admin-login" element={<AdminLogin />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/frtfgau84hfdja" element={<AdminLogin />} />
+            <Route path="/dshakfgadsj" element={<AdminDashboard />} />
             <Route path="/artist-list" element={<ArtistList />} />
             <Route path="/artist-profile" element={<ArtistProfile />} />
             <Route path="/cart" element={<Cart />} />

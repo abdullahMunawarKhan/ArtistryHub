@@ -195,7 +195,7 @@ function UserLogin() {
       }
 
       // Check role and redirect accordingly
-      if (userProfile && userProfile.role === 'admin') {
+      if (userProfile && userProfile.role === 'efbv') {
         await supabase.auth.signOut(); // Sign out admin users
         setLoginError('Please use the admin login page to sign in.');
         setIsLoggingIn(false);

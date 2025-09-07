@@ -96,7 +96,7 @@ function AdminDashboard() {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        navigate('/admin-login');
+        navigate('/main-dashboard');
         return;
       }
       setUserEmail(user.email);
@@ -106,7 +106,7 @@ function AdminDashboard() {
         .eq('id', user.id)
         .single();
 
-      if (error || profile?.role !== 'admin') {
+      if (error || profile?.role !== 'efbv') {
         navigate('/main-dashboard');
         return;
       }
@@ -114,6 +114,7 @@ function AdminDashboard() {
     }
     checkAuth();
   }, [navigate]);
+
   useEffect(() => {
     async function loadAnalytics() {
       try {
@@ -123,17 +124,31 @@ function AdminDashboard() {
           fetchTimeSeries('artworks', 'created_at', period),
           fetchTimeSeries('orders', 'ordered_at', period),
         ]);
+        // Format each dataset as needed
+        setSignups((u || []).map(row => ({
+          timestamp: row.hour_bucket,
+          count: row.count
+        })));
+        setArtistRegs((a || []).map(row => ({
+          timestamp: row.hour_bucket,
+          count: row.count
+        })));
+        setArtworksAdded((w || []).map(row => ({
+          timestamp: row.hour_bucket,
+          count: row.count
+        })));
+        setPendingOrders((o || []).map(row => ({
+          timestamp: row.hour_bucket,
+          count: row.count
+        })));
         console.log('Signups:', u);      // ← log 'u', not 'signups'
         console.log('ArtistRegs:', a);
         console.log('ArtworksAdded:', w);
         console.log('PendingOrders:', o);
+        console.log('Analytics data structure:', analyticsData); // Add this 
 
-        setSignups(u);
-        setArtistRegs(a);
-        setArtworksAdded(w);
-        setPendingOrders(o);
       } catch (err) {
-        console.error('Error loading analytics:', err.message);
+        
       }
     }
 
@@ -321,14 +336,14 @@ function AdminDashboard() {
         amount,
         extra_delivery_charges,
         earning,
-        artworks (
+        orders_artwork_id_fkey:artworks (
           id,
           title,
           image_urls,
           base_price
         )
       `)
-        .not('artworks', 'is', null);
+        .not('orders_artwork_id_fkey:artworks', 'is', null); // Also update the not() clause
 
       if (error) {
         console.error('Error fetching earnings:', error);
@@ -373,6 +388,57 @@ function AdminDashboard() {
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-6">
+      {/* Right Side column menu */}
+      <div className="w-full md:w-72 bg-white rounded-2xl shadow-lg sticky top-4 h-fit animate-fadeIn">
+        <div className="p-6">
+          <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
+            Dashboard Sections
+          </h3>
+          <div className="space-y-3">
+            {[{
+              key: null,
+              label: 'Home',
+              icon: '🏠',
+              activeColor: 'green'
+            }, {
+              key: 'artist',
+              label: 'Artist Management',
+              icon: '🎨',
+              activeColor: 'blue'
+            }, {
+              key: 'order',
+              label: 'Order Management',
+              icon: '🛒',
+              activeColor: 'blue'
+            }, {
+              key: 'payment',
+              label: 'Artist Payments',
+              icon: '💳',
+              activeColor: 'blue'
+            },
+            {
+              key: 'earnings',
+              label: 'Total Earnings',
+              icon: '💰',
+              activeColor: 'blue'
+            }
+            ].map((btn, i) => (
+              <button
+                key={i}
+                onClick={() => setSelectedSection(btn.key)}
+                className={`w-full py-3 px-4 rounded-lg text-left font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
+                  ? `bg-${btn.activeColor}-600 text-white shadow-md`
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                  }`}
+              >
+                {btn.icon && <span className="text-xl">{btn.icon}</span>}
+                {btn.label}
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </div>
       {/* Left Side content area */}
       <div className="flex-1 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 min-h-[70vh] animate-fadeIn">
         <h2 className="text-3xl font-extrabold mb-10 text-center text-blue-800 tracking-tight drop-shadow-sm">
@@ -733,57 +799,7 @@ function AdminDashboard() {
         )}
       </div>
 
-      {/* Right Side column menu */}
-      <div className="w-full md:w-72 bg-white rounded-2xl shadow-lg sticky top-4 h-fit animate-fadeIn">
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
-            Dashboard Sections
-          </h3>
-          <div className="space-y-3">
-            {[{
-              key: null,
-              label: 'Home',
-              icon: '🏠',
-              activeColor: 'green'
-            }, {
-              key: 'artist',
-              label: 'Artist Management',
-              icon: '🎨',  
-              activeColor: 'blue'
-            }, {
-              key: 'order',
-              label: 'Order Management',
-              icon: '🛒',   
-              activeColor: 'blue'
-            }, {
-              key: 'payment',
-              label: 'Artist Payments',
-              icon: '💳',   
-              activeColor: 'blue'
-            },
-            {
-              key: 'earnings',
-              label: 'Total Earnings',
-              icon: '💰',
-              activeColor: 'blue'
-            }
-            ].map((btn, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedSection(btn.key)}
-                className={`w-full py-3 px-4 rounded-lg text-left font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
-                  ? `bg-${btn.activeColor}-600 text-white shadow-md`
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                  }`}
-              >
-                {btn.icon && <span className="text-xl">{btn.icon}</span>}
-                {btn.label}
-              </button>
-            ))}
-          </div>
 
-        </div>
-      </div>
 
       {/* ALL EXISTING MODALS PRESERVED BELOW */}
 

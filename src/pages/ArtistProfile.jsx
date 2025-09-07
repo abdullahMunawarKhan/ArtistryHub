@@ -84,7 +84,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
           .from('user')
           .select('following')
           .eq('id', user.id)
-          .single();
+          
 
         setFollowing(userData?.following?.includes(artistId) ?? false);
       }
@@ -93,7 +93,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
         .from('artists')
         .select('followers')
         .eq('id', artistId)
-        .single();
+        
 
       if (!error && artistData) {
         setFollowersCount(artistData.followers || 0);
@@ -115,8 +115,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
         .from('user')
         .select('following')
         .eq('id', user.id)
-        .single();
-
+        
       if (userError) throw userError;
 
       let currentFollowing = userData?.following || [];
@@ -168,11 +167,11 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
       {(user && user.role === 'user') && (
         <button
           onClick={(e) => {
-            stopPropagationHandler?.(e);
+            e.stopPropagation(); // ✅ Direct call
             toggleFollow();
           }}
           onDoubleClick={(e) => {
-            stopPropagationHandler?.(e);
+            e.stopPropagation(); // ✅ Direct call
             toggleFollow();
           }}
           disabled={processing}
@@ -239,19 +238,28 @@ export default function ArtistProfile() {
       setArtist(artistData);
 
       const { data: userData } = await supabase.auth.getUser();
-      setUser(userData?.user || null); // Set user state here
-      const myUserId = userData?.user?.id;
-      setMyEmail(userData?.user?.email || "");
+      const authUser = userData?.user;
+
+      if (!authUser) {
+        setUser(null);
+        return;
+      }
+
+      // Fetch full profile info with role
+      const { data: profile } = await supabase
+        .from('user')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      setUser({ ...authUser, ...profile }); // This ensures user.role exists
+
+      const myUserId = authUser.id;
+      setMyEmail(authUser.email || "");
       setIsOwner(myUserId && myUserId === artistData.user_id);
 
-      if (userData?.user) {
-        const { data: roleData } = await supabase
-          .from("user")
-          .select("role")
-          .eq("id", userData.user.id)
-          .single();
-        if (roleData?.role) setUserRole(roleData.role);
-      }
+      if (profile?.role) setUserRole(profile.role);
+
     }
 
     fetchArtistAndUser();
@@ -461,7 +469,7 @@ export default function ArtistProfile() {
         <h2 className="text-xl font-semibold text-center text-gray-900 mb-1">{artist.name}</h2>
         <p className="text-sm text-gray-600 text-center mb-6">{artist.location}</p>
 
-        {(isOwner || userRole === "admin") && (
+        {(isOwner || userRole === "efbv") && (
           <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm space-y-4 mx-auto w-full max-w-sm">
             <div>
               <p className="font-semibold text-xs text-black-500 font-medium mb-1">Mobile</p>
@@ -476,7 +484,12 @@ export default function ArtistProfile() {
 
         {/* Follow button */}
         <div className="mt-6">
-          <ArtistFollowButton artistId={artist.id} user={user} />
+          <ArtistFollowButton
+            artistId={artist.id}
+            user={user}
+            
+          />
+
         </div>
 
         {/* Reviews */}

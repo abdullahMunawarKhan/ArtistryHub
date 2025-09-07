@@ -44,6 +44,8 @@ export default function ProductDetails() {
   const [viewerOpen, setViewerOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
+  const [artistArtworks, setArtistArtworks] = useState([]);
+  const [relatedArtworks, setRelatedArtworks] = useState([]);
 
 
   useEffect(() => {
@@ -60,7 +62,7 @@ export default function ProductDetails() {
         .from('artworks')
         .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url, liked_count, actual_length, actual_height')
         .eq('id', artworkId)
-        .single();
+        
 
       if (!error) {
         setArtwork(data);
@@ -92,9 +94,39 @@ export default function ProductDetails() {
           .maybeSingle();
         setInCart(!!cartRows);
       }
+      if (data?.category) {
+        const { data: related } = await supabase
+          .from("artworks")
+          .select("id, title, cost, image_urls, artist_id, artists(name)")
+          .eq("category", data.category)
+          .neq("id", artworkId)   // exclude current artwork
+          .limit(12);
+
+        setRelatedArtworks(related || []);
+      }
+
     }
     fetchArtwork();
   }, [artworkId, navigate]);
+
+
+  useEffect(() => {
+    async function fetchArtistArtworks() {
+      if (!artwork?.artist_id) return;
+
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('id, title, cost, image_urls')
+        .eq('artist_id', artwork.artist_id)
+        .neq('id', artwork.id) // exclude current artwork
+        .limit(10);
+
+      if (!error) {
+        setArtistArtworks(data || []);
+      }
+    }
+    fetchArtistArtworks();
+  }, [artwork]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse">
@@ -181,7 +213,7 @@ export default function ProductDetails() {
 
 
   return (
-    <div className="min-h-[90vh] max-w-5xl mx-auto p-6 flex items-center justify-center">
+    <div className="min-h-[90vh] max-w-5xl mx-auto p-6 flex flex-col items-center">
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-slate-200 p-4">
           <div className="w-full h-80 bg-slate-50 rounded-xl flex items-center justify-center overflow-hidden cursor-zoom-in" onClick={() => setViewerOpen(true)}>
@@ -274,7 +306,92 @@ export default function ProductDetails() {
           </div>
 
         </div>
+
       </div>
+
+      {/* See More by This Artist */}
+      <div className="mt-10 w-full">
+        <h2 className="text-xl font-semibold mb-3">See more artwork by this artist</h2>
+        {artistArtworks.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+            {artistArtworks.map((item) => {
+              const img = Array.isArray(item.image_urls) ? item.image_urls[0] : item.image_urls;
+              return (
+                <div
+                  key={item.id}
+                  className="min-w-[200px] bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition"
+                  onClick={() => navigate(`/product-details?id=${item.id}`)}
+                >
+                  <div className="w-full h-40 rounded-t-xl overflow-hidden">
+                    <img src={img} alt={item.title} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-3">
+                    <h3 className="text-sm font-medium text-slate-900 truncate">{item.title}</h3>
+                    <p className="text-slate-600 font-semibold">₹{item.cost}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-slate-500 italic">No other artworks available.</p>
+        )}
+      </div>
+      {/* Related Artworks */}
+      <div className="mt-10 w-full">
+        <h2 className="text-xl font-semibold mb-3">See related artworks</h2>
+        {relatedArtworks.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide">
+            {relatedArtworks.map((item) => {
+              const img = Array.isArray(item.image_urls) ? item.image_urls[0] : item.image_urls;
+              return (
+                <div
+                  key={item.id}
+                  className="min-w-[200px] bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition"
+                >
+                  {/* Image clickable */}
+                  <div
+                    className="w-full h-40 rounded-t-xl overflow-hidden"
+                    onClick={() => navigate(`/product-details?id=${item.id}`)}
+                  >
+                    <img src={img} alt={item.title} className="w-full h-full object-cover" />
+                  </div>
+
+                  <div className="p-3">
+                    {/* Title clickable */}
+                    <h3
+                      className="text-sm font-medium text-slate-900 truncate hover:text-blue-600 cursor-pointer"
+                      onClick={() => navigate(`/product-details?id=${item.id}`)}
+                    >
+                      {item.title}
+                    </h3>
+
+                    {/* Cost clickable */}
+                    <p
+                      className="text-slate-600 font-semibold cursor-pointer hover:text-blue-600"
+                      onClick={() => navigate(`/product-details?id=${item.id}`)}
+                    >
+                      ₹{item.cost}
+                    </p>
+
+                    {/* Artist clickable */}
+                    <p
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium mt-1 cursor-pointer"
+                      onClick={() => navigate(`/artist-profile?id=${item.artist_id}`)}
+                    >
+                      {item.artists?.name ?? "Unknown Artist"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-slate-500 italic">No related artworks found.</p>
+        )}
+      </div>
+
+
 
       {/* Image Viewer Modal */}
       {viewerOpen && (

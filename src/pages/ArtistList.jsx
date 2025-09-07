@@ -52,7 +52,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
           .from('user')
           .select('following')
           .eq('id', user.id)
-          .single();
+          
 
         setFollowing(userData?.following?.includes(artistId) ?? false);
       }
@@ -61,7 +61,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
         .from('artists')
         .select('followers')
         .eq('id', artistId)
-        .single();
+        
 
       if (!error && artistData) {
         setFollowersCount(artistData.followers || 0);
@@ -83,7 +83,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
         .from('user')
         .select('following')
         .eq('id', user.id)
-        .single();
+        
 
       if (userError) throw userError;
 
@@ -108,7 +108,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropag
         .from('artists')
         .select('followers')
         .eq('id', artistId)
-        .single();
+        
 
       if (artistError) throw artistError;
 
@@ -184,11 +184,25 @@ function ArtistList() {
 
   useEffect(() => {
     async function fetchUser() {
-      const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      // Get authenticated user
+      const { data: authData } = await supabase.auth.getUser();
+      const authUser = authData?.user;
+      if (!authUser) {
+        setUser(null);
+        return;
+      }
+      // Fetch user profile from your user table using authUser.id
+      const { data: profile } = await supabase
+        .from('user')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+      // Merge profile and auth data
+      setUser({ ...authUser, ...profile });
     }
     fetchUser();
   }, []);
+
 
   useEffect(() => {
     async function fetchUserFollowing() {
@@ -200,7 +214,7 @@ function ArtistList() {
         .from('user')
         .select('following')
         .eq('id', user.id)
-        .single();
+        
       if (!error && userData?.following) {
         setFollowingIds(userData.following);
       } else {

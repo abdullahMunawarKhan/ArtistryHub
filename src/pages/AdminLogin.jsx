@@ -57,12 +57,12 @@ function AdminLogin() {
 
         if (profileError || !userProfile) {
           setLoginError('User profile not found.');
-        } else if (userProfile.role !== 'admin') {
+        } else if (userProfile.role !== 'efbv') {
           setLoginError('You are not authorized to access the admin dashboard.');
           // Optionally log out user
           await supabase.auth.signOut();
         } else {
-          navigate('/admin-dashboard');
+          navigate('/dshakfgadsj');
         }
       } else {
         setLoginError('Login failed. Please try again.');

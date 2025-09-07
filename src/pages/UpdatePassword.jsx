@@ -50,9 +50,9 @@ function UpdatePassword() {
             role = profile.role;
           }
         }
-        setSuccessMsg(`Password updated successfully! Redirecting ${role === 'admin' ? 'to admin' : 'to main'} dashboard...`);
+        setSuccessMsg(`Password updated successfully! Redirecting ${role === 'efbv' ? 'to admin' : 'to main'} dashboard...`);
         setTimeout(() => {
-          navigate(role === 'admin' ? '/admin-dashboard' : '/main-dashboard');
+          navigate(role === 'efbv' ? '/dshakfgadsj' : '/main-dashboard');
         }, 3000);
       }
     } catch {

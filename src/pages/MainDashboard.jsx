@@ -45,6 +45,8 @@ function MainDashboard() {
   const [showModal, setShowModal] = useState(false);
   const [likedArtworks, setLikedArtworks] = useState([]);
   const [showLikedOnly, setShowLikedOnly] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
 
   // Function to filter artworks by liked status (true to show liked only, false to show all)
   function filterArtworksByLiked(artworks, likedArtworks, showLikedOnly) {
@@ -288,6 +290,16 @@ function MainDashboard() {
       if (selectedTag && artwork.category !== selectedTag) return false;
       // Filter by liked only if toggle is ON
       if (showLikedOnly && !likedArtworks.includes(artwork.id)) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matches =
+          (artwork.title && artwork.title.toLowerCase().includes(q)) ||
+          (artwork.category && artwork.category.toLowerCase().includes(q)) ||
+          (artwork.description && artwork.description.toLowerCase().includes(q)) ||
+          (artwork.material && artwork.material.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
+
       return true;
     });
 
@@ -315,42 +327,63 @@ function MainDashboard() {
           </p>
         </div>
 
-        {/* Category Filter Tags */}
-        <div className="sticky top-[72px] z-30 bg-white/80 backdrop-blur-md flex flex-wrap gap-3 justify-center py-4 rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl">
-          <button
-            onClick={() => setSelectedTag('')}
-            className={`btn-chip ${!selectedTag ? 'active' : ''}`}
-          >
-            All Categories
-          </button>
-          {tags.map(tag => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag)}
-              className={`btn-chip ${selectedTag === tag ? 'active' : ''}`}
-            >
-              {tag}
-            </button>
-          ))}
 
-          {/* Show liked filter only if user is logged in */}
-          {user && (
+        {/* 🔹 Sticky Filter + Search Section */}
+        <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl px-4 py-4">
+          {/* Category Filter Tags */}
+          <div className="flex flex-wrap gap-3 justify-center mb-4">
             <button
               onClick={() => {
-                const newShowLiked = !showLikedOnly;
-                setShowLikedOnly(newShowLiked);
-                if (newShowLiked) {
-                  setSelectedTag(''); // Reset to All Categories when filtering liked
-                }
+                setSelectedTag('');
+                setShowLikedOnly(false);
               }}
-              className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
-              aria-pressed={showLikedOnly}
-              type="button"
+              className={`btn-chip ${!selectedTag && !showLikedOnly ? 'active' : ''}`}
             >
-              {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
+              All Categories
             </button>
-          )}
+
+            {tags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => {
+                  setSelectedTag(tag);
+                  setShowLikedOnly(false);
+                }}
+                className={`btn-chip ${selectedTag === tag ? 'active' : ''}`}
+              >
+                {tag}
+              </button>
+            ))}
+
+            {user && (
+              <button
+                onClick={() => {
+                  const newShowLiked = !showLikedOnly;
+                  setShowLikedOnly(newShowLiked);
+                  if (newShowLiked) setSelectedTag('');
+                }}
+                className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
+                aria-pressed={showLikedOnly}
+                type="button"
+              >
+                {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
+              </button>
+            )}
+          </div>
+
+          {/* 🔍 Search Bar */}
+          <div className="max-w-3xl mx-auto">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="🔍 Search artworks by title..."
+              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
+            />
+          </div>
         </div>
+
+
 
         <br />
 

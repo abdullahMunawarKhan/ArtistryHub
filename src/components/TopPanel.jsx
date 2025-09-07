@@ -33,9 +33,9 @@ function TopPanel() {
           setIsAdmin(false);
           setArtistProfile(null);
         } else {
-          setIsAdmin(userProfile.role === 'admin');
+          setIsAdmin(userProfile.role === 'efbv');
 
-          if (userProfile.role === 'admin') {
+          if (userProfile.role === 'efbv') {
             setArtistProfile(null);
           } else {
             // Fetch artist profile for normal users only
@@ -100,7 +100,7 @@ function TopPanel() {
 
   const handleAdminDashboard = () => {
     setAdminMenuOpen(false);
-    navigate('/admin-dashboard');
+    navigate('/dshakfgadsj');
   };
 
   const handleLogout = async () => {
@@ -121,23 +121,23 @@ function TopPanel() {
     setLoginDropdownOpen(false);
   };
 
-  const toggleLoginDropdown = () => {
-    setLoginDropdownOpen((prev) => !prev);
-  };
+
 
   return (
-    <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-artistryhub">
+    <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 
+                   border-b border-white/20 shadow-artistryhub py-2">
+
       <nav className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="artistryhub-logo no-print">
-          
+
           ArtistryHub
         </Link>
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-8">
           <button onClick={() => navOrLogin('/feed')} className="nav-link">
-            Explore Arts 
+            Explore Arts
           </button>
 
           <Link to="/main-dashboard" className="nav-link">
@@ -147,41 +147,29 @@ function TopPanel() {
             👨‍🎨 Artists
           </Link>
 
-          {!isAdmin && (
-            <>
-              <button onClick={() => navOrLogin('/cart')} className="nav-link">
-                🛒 Cart
+
+          <>
+            <button onClick={() => navOrLogin('/cart')} className="nav-link">
+              🛒 Cart
+            </button>
+            <button onClick={() => navOrLogin('/orders')} className="nav-link">
+              📦 Orders
+            </button>
+
+            {artistProfile && (
+              <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
+                👤 <br />My Profile
+              </Link>
+            )}
+
+            {!artistProfile && (
+              <button onClick={() => navOrLogin('/register')} className="nav-link">
+                ✨ Become Artist
               </button>
-              <button onClick={() => navOrLogin('/orders')} className="nav-link">
-                📦 Orders
-              </button>
+            )}
+          </>
 
-              {artistProfile && (
-                <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
-                  👤 <br/>My Profile
-                </Link>
-              )}
 
-              {!artistProfile && (
-                <button onClick={() => navOrLogin('/register')} className="nav-link">
-                  ✨ Become Artist
-                </button>
-              )}
-            </>
-          )}
-
-          {isAdmin && (
-            <div className="relative" ref={adminMenuRef}>
-              <button
-                onClick={handleAdminDashboard}
-                className="w-full text-left px-3 py-2 nav-link rounded-lg"
-
-              >
-                ⚙️📊 Admin Dashboard
-              </button>
-
-            </div>
-          )}
 
           {user ? (
             <div className="flex items-center space-x-4">
@@ -189,34 +177,23 @@ function TopPanel() {
                 Welcome, {user.email?.split('@')[0]}
               </span>
 
-              <button onClick={handleLogout} className="btn-secondary "> 
+              <button onClick={handleLogout} className="btn-secondary ">
                 Logout
               </button>
 
             </div>
           ) : (
             <div className="flex items-center gap-2 relative">
-              {/* Dropdown Login */}
+
               <div className="relative">
                 <button
-                  onClick={toggleLoginDropdown}
+                  onClick={() => { setLoginDropdownOpen(false); navigate('/user-login'); }}
                   className="btn-primary flex items-center gap-2 px-5 py-2"
                   type="button"
                 >
                   Login <span className="ml-1">▾</span>
                 </button>
-                {loginDropdownOpen &&
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-white border rounded-xl shadow-xl z-50 overflow-hidden">
-                    <button
-                      onClick={() => { setLoginDropdownOpen(false); navigate('/user-login'); }}
-                      className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
-                    >User Login</button>
-                    <button
-                      onClick={() => { setLoginDropdownOpen(false); navigate('/admin-login'); }}
-                      className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
-                    >Admin Login</button>
-                  </div>
-                }
+
               </div>
               <Link
                 to="/signup"
@@ -273,47 +250,40 @@ function TopPanel() {
 
             {user ? (
               <>
-                {!isAdmin && (
-                  <>
-                    <button
-                      onClick={() => navOrLogin('/cart')}
-                      className="block nav-link py-2 w-full text-left"
-                    >
-                      🛒 Cart
-                    </button>
-                    <button
-                      onClick={() => navOrLogin('/orders')}
-                      className="block nav-link py-2 w-full text-left"
-                    >
-                      📦 Orders
-                    </button>
-                    {artistProfile && (
-                      <Link
-                        to={`/artist-profile?id=${artistProfile.id}`}
-                        onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
-                        className="block nav-link py-2"
-                      >
-                        👤 My Profile
-                      </Link>
-                    )}
-                    {!artistProfile && (
-                      <button
-                        onClick={() => navOrLogin('/register')}
-                        className="block nav-link py-2 w-full text-left"
-                      >
-                        ✨ Become Artist
-                      </button>
-                    )}
-                  </>
-                )}
-                {isAdmin && (
+
+                <>
                   <button
-                    onClick={handleAdminDashboard}
+                    onClick={() => navOrLogin('/cart')}
                     className="block nav-link py-2 w-full text-left"
                   >
-                    ⚙️ Admin Dashboard
+                    🛒 Cart
                   </button>
-                )}
+                  <button
+                    onClick={() => navOrLogin('/orders')}
+                    className="block nav-link py-2 w-full text-left"
+                  >
+                    📦 Orders
+                  </button>
+                  {artistProfile && (
+                    <Link
+                      to={`/artist-profile?id=${artistProfile.id}`}
+                      onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
+                      className="block nav-link py-2"
+                    >
+                      👤 My Profile
+                    </Link>
+                  )}
+                  {!artistProfile && (
+                    <button
+                      onClick={() => navOrLogin('/register')}
+                      className="block nav-link py-2 w-full text-left"
+                    >
+                      ✨ Become Artist
+                    </button>
+                  )}
+                </>
+
+
                 <button onClick={handleLogout} className="block btn-secondary w-full mt-4">
                   Logout
                 </button>
@@ -328,18 +298,9 @@ function TopPanel() {
                   }}
                   className="block btn-primary w-full text-center"
                 >
-                  User Login
+                  Login
                 </button>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setLoginDropdownOpen(false);
-                    navigate('/admin-login');
-                  }}
-                  className="block btn-outline w-full text-center"
-                >
-                  Admin Login
-                </button>
+
                 <Link
                   to="/signup"
                   onClick={() => handleNav('/signup')}

@@ -64,7 +64,7 @@ const TrackOrder = () => {
           `
           )
           .eq("tracking_id", trackingId)
-          .single();
+          
 
         if (error) {
           console.error("Error fetching order:", error);
