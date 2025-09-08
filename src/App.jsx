@@ -29,7 +29,7 @@ function App() {
   const isWelcomePage = location.pathname === '/';
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-[calc(100vh-46px)] flex flex-col">
       {!isWelcomePage && <TopPanel />}
       <main
         className={`

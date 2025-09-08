@@ -12,12 +12,22 @@ function ArtistDashboard() {
   const [artworks, setArtworks] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
 
+  // NEW STATE: Track which section is selected
+  const [activeSection, setActiveSection] = useState('home');
+
   const shipmentFilters = [
     { label: 'All Orders', value: 'all' },
     { label: 'Pending', value: 'pending' },
     { label: 'Confirmed', value: 'confirm' },
     { label: 'Shipped', value: 'shipped' },
     { label: 'Delivered', value: 'delivered' },
+  ];
+
+  // Dashboard sections menu
+  const dashboardSections = [
+    { id: 'home', label: 'Home', icon: '🏠' },
+    { id: 'orders', label: 'Order Management', icon: '📦' },
+    { id: 'payments', label: 'Payment Analysis', icon: '💰' }
   ];
 
   // Load user and artist info
@@ -71,7 +81,6 @@ function ArtistDashboard() {
           shipment_status,
           ordered_at,
           quantity,
-          
           shipping_address,
           user_id,
           artwork:artworks (
@@ -228,6 +237,7 @@ function ArtistDashboard() {
       </div>
     );
   }
+
   function OrdersTable({ orders }) {
     if (orders.length === 0) {
       return (
@@ -279,175 +289,134 @@ function ArtistDashboard() {
     );
   }
 
-
-  function OrderCard({ order }) {
-    const { artwork, shipment_status, ordered_at, amount, shipping_address } = order;
-    const statusInfo = {
-      pending: {
-        message: 'Be ready with packaging',
-        color: 'yellow',
-        showScheduler: true
-      },
-      confirm: {
-        message: 'Pickup time and address will be notified shortly through SMS. Be ready with your package.',
-        color: 'blue',
-        showScheduler: false
-      },
-      shipped: {
-        message: 'SMS is sent to you. Check out and be ready timely.',
-        color: 'purple',
-        showScheduler: false
-      },
-      delivered: {
-        message: 'Your artwork has reached the customer! You will receive payment shortly. Enjoy the day and best wishes for the future! 🎉',
-        color: 'green',
-        showScheduler: false
-      }
-    }[shipment_status] || {
-      message: 'Status unknown',
-      color: 'gray',
-      showScheduler: false
-    };
-    const colorClasses = {
-      yellow: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-      blue: 'bg-blue-50 border-blue-200 text-blue-800',
-      purple: 'bg-purple-50 border-purple-200 text-purple-800',
-      green: 'bg-green-50 border-green-200 text-green-800',
-      gray: 'bg-gray-50 border-gray-200 text-gray-800'
-    };
-
-    return (
-      <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition mb-4 border border-gray-200">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Artwork Image */}
-          <div className="flex-shrink-0">
-            <img
-              src={artwork?.image_urls?.[0] || '/placeholder-image.jpg'}
-              alt={artwork?.title || 'Artwork'}
-              className="w-24 h-24 object-cover rounded-lg cursor-pointer"
-              onClick={() => navigate(`/product-details?id=${artwork?.id}`)}
-            />
-          </div>
-          {/* Order Details */}
-          <div className="flex-grow">
-            <h3
-              className="text-lg font-semibold text-blue-700 underline mb-2 cursor-pointer"
-              onClick={() => navigate(`/product-details?id=${artwork?.id}`)}
-            >
-              {artwork?.title || 'Unknown Artwork'}
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-3">
-
-              <div>
-                <span className="font-medium">Base Price:</span> ₹{artwork?.base_price?.toFixed(2) ?? 'N/A'}
-              </div>
-              <div>
-                <span className="font-medium">Selling Cost:</span> ₹{artwork?.cost?.toFixed(2) ?? 'N/A'}
-              </div>
-              <div>
-                <span className="font-medium">Ordered:</span> {new Date(ordered_at).toLocaleDateString()}
-              </div>
-              <div>
-                <span className={
-                  `inline-block px-2 py-1 rounded-full text-xs font-medium bg-${statusInfo.color}-100 text-${statusInfo.color}-800`
-                }>
-                  {shipment_status?.toUpperCase()}
-                </span>
-              </div>
-            </div>
-            {shipping_address && (
-              <div className="mb-3">
-                <span className="font-medium text-gray-700">Shipping to:</span>
-                <p className="text-sm text-gray-600">{shipping_address}</p>
-              </div>
-            )}
-            <div className={`p-3 rounded-lg border ${colorClasses[statusInfo.color]} mb-3`}>
-              <p className="text-sm font-medium">{statusInfo.message}</p>
-            </div>
-            {statusInfo.showScheduler && (
-              <PickupScheduler artwork={artwork} />
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const pickupCharge = 50;
-
-  // Payment Analysis Table
   function PaymentTable() {
     return (
-      <div className="bg-white rounded shadow-md p-6 mt-8">
-        <h2 className="text-xl font-semibold mb-4">Payment Analysis</h2>
-        {loadingPayments ? (
-          <div>Loading...</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border text-sm">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-3 px-2">Item</th>
-                  <th className="py-3 px-2">Image</th>
-                  <th className="py-3 px-2">Base Price (payment amount)</th>
-                  <th className="py-3 px-2">Cost</th>
-                  <th className="py-3 px-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {artworks.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-gray-600 py-8 text-center">
-                      No delivered artworks found for payment analysis.
+      <div className="overflow-x-auto">
+        <table className="w-full border text-sm">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-3 px-2">Item</th>
+              <th className="py-3 px-2">Image</th>
+              <th className="py-3 px-2">Base Price (payment amount)</th>
+              <th className="py-3 px-2">Cost</th>
+              <th className="py-3 px-2">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {artworks.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="text-gray-600 py-8 text-center">
+                  No delivered artworks found for payment analysis.
+                </td>
+              </tr>
+            ) : (
+              artworks.map(artwork => {
+                return (
+                  <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
+                    <td
+                      className="text-blue-700 underline cursor-pointer"
+                      onClick={() => navigate(`/product-details?id=${artwork.id}`)}
+                    >
+                      {artwork.title}
+                    </td>
+                    <td>
+                      <img
+                        src={Array.isArray(artwork.image_urls)
+                          ? artwork.image_urls[0]
+                          : artwork.image_urls}
+                        alt={artwork.title}
+                        className="w-12 h-12 rounded cursor-pointer"
+                        onClick={() => navigate(`/product-details?id=${artwork.id}`)}
+                      />
+                    </td>
+                    <td>₹{artwork.base_price}</td>
+                    <td>₹{artwork.cost}</td>
+                    <td>
+                      <span className={
+                        artwork.artist_payment === 'successful'
+                          ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
+                          : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
+                      }>
+                        {artwork.artist_payment || 'Pending'}
+                      </span>
                     </td>
                   </tr>
-                ) : (
-                  artworks.map(artwork => {
-
-
-                    return (
-                      <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
-                        <td
-                          className="text-blue-700 underline cursor-pointer"
-                          onClick={() => navigate(`/product-details?id=${artwork.id}`)}
-                        >
-                          {artwork.title}
-                        </td>
-                        <td>
-                          <img
-                            src={Array.isArray(artwork.image_urls)
-                              ? artwork.image_urls
-                              : artwork.image_urls}
-                            alt={artwork.title}
-                            className="w-12 h-12 rounded cursor-pointer"
-                            onClick={() => navigate(`/product-details?id=${artwork.id}`)}
-                          />
-                        </td>
-                        <td>₹{artwork.base_price}</td>
-                        <td>₹{artwork.cost}</td>
-                        
-
-                        <td>
-                          <span className={
-                            artwork.artist_payment === 'successful'
-                              ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
-                              : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
-                          }>
-                            {artwork.artist_payment || 'Pending'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                );
+              })
+            )}
+          </tbody>
+        </table>
       </div>
     );
   }
 
+  // NEW FUNCTION: Render content based on active section
+  function renderMainContent() {
+    switch (activeSection) {
+      case 'home':
+        return (
+          <div className="flex items-center justify-center min-h-96">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-gray-700 mb-4">Welcome to Artist Dashboard</h2>
+              <p className="text-lg text-gray-600">Click on sections from the menu to view tables</p>
+            </div>
+          </div>
+        );
+
+      case 'orders':
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Order Management</h2>
+            {/* Filter Tabs */}
+            <div className="mb-6">
+              <div className="border-b border-gray-200">
+                <nav className="-mb-px flex space-x-8">
+                  {shipmentFilters.map((filter) => (
+                    <button
+                      key={filter.value}
+                      onClick={() => setSelectedFilter(filter.value)}
+                      className={`py-2 px-1 border-b-2 font-medium text-sm ${selectedFilter === filter.value
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </div>
+            {/* Orders Table */}
+            {loadingOrders ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading ordered artworks...</span>
+              </div>
+            ) : (
+              <OrdersTable orders={orderedArtworks} />
+            )}
+          </div>
+        );
+
+      case 'payments':
+        return (
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Payment Analysis</h2>
+            {loadingPayments ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-3 text-gray-600">Loading payment data...</span>
+              </div>
+            ) : (
+              <PaymentTable />
+            )}
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  }
 
   if (!user) {
     return (
@@ -458,53 +427,45 @@ function ArtistDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Artist Dashboard</h1>
-          <p className="text-gray-600">Manage your ordered and payments</p>
-        </div>
-        {/* Order Management Section */}
-        <h2 className="text-xl font-semibold mb-4">Order Management</h2>
-        <div>
-          {/* Filter Tabs */}
-          <div className="mb-6">
-            <div className="border-b border-gray-200">
-              <nav className="-mb-px flex space-x-8">
-                {shipmentFilters.map((filter) => (
-                  <button
-                    key={filter.value}
-                    onClick={() => setSelectedFilter(filter.value)}
-                    className={`py-2 px-1 border-b-2 font-medium text-sm ${selectedFilter === filter.value
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                      }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </nav>
-            </div>
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="flex">
+        {/* LEFT SIDEBAR - 25% width */}
+        <div className="w-1/4 bg-white shadow-md min-h-screen">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-200">
+            <h1 className="text-xl font-bold text-gray-900">Artist Dashboard</h1>
+            <p className="text-sm text-gray-600 mt-1">Dashboard Sections</p>
           </div>
-          {/* Order Cards */}
-          {loadingOrders ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600">Loading ordered artworks...</span>
-            </div>
-          ) : (
-            <OrdersTable orders={orderedArtworks} />
-          )}
 
+          {/* Menu Items */}
+          <div className="p-4">
+            <nav className="space-y-2">
+              {dashboardSections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-3 ${activeSection === section.id
+                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                      : 'hover:bg-gray-100 text-gray-700'
+                    }`}
+                >
+                  <span className="text-lg">{section.icon}</span>
+                  <span className="font-medium">{section.label}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
         </div>
-        {/* Payment Analysis Section */}
-        <PaymentTable />
+
+        {/* RIGHT CONTENT AREA - 75% width */}
+        <div className="flex-1 p-8">
+          <div className="bg-white rounded-lg shadow-sm min-h-96 p-6">
+            {renderMainContent()}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
 export default ArtistDashboard;
-
-

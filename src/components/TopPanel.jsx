@@ -126,7 +126,7 @@ function TopPanel() {
   return (
     <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-artistryhub py-1">
 
-      <nav className="max-w-7xl mx-auto px-4 py-1 flex items-center justify-between min-h-[56px]">
+      <nav className="max-w-7xl mx-auto px-4 py-1 flex items-center justify-between min-h-[46px]">
         {/* Logo */}
         <Link to="/" className="artistryhub-logo no-print">
 
