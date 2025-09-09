@@ -1,6 +1,7 @@
 import { UserCircle, Briefcase, Palette } from "lucide-react";
 import React from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
+
 import { Link } from "react-router-dom";
 import TopPanel from './components/TopPanel';
 import Welcome from './pages/Welcome';
@@ -175,7 +176,7 @@ function App() {
                   </p>
                   <p>
                     <span className="font-semibold">Email:</span>{" "}
-                    <span className="italic text-gray-400">artistryhub460@gmail.com</span>
+                    <span className="italic text-gray-400">abdullahk4503@gmail.com</span>
                   </p>
                   <p className="flex flex-col">
                     <span>
@@ -218,7 +219,7 @@ function App() {
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 mt-6 pb-6 pt-4">
           <p className="text-center text-gray-500 text-xs md:text-sm">
-            &copy; 2025 <span className="text-yellow-400 font-semibold">ArtistryHub</span>. All rights reserved.
+            &copy; 2025 <span className="text-yellow-400 font-semibold">ScopeBrush</span>. All rights reserved.
           </p>
         </div>
       </footer>

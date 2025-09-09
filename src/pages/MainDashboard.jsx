@@ -315,73 +315,84 @@ function MainDashboard() {
   }
 
   return (
-    <div className="min-h-[90vh] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 pt-20">
+    <div className="min-h-[90vh] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 ">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl md:text-6xl font-bold text-gradient-primary mb-2">
-            🎨 Art Gallery
-          </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50">
+          <div className="flex items-center gap-4 mb-4 animate-fade-in">
+            <img
+              src="/logo2.png"
+              alt="ScopeBrush Logo"
+              className="h-16 w-16 rounded-full shadow-lg border-2 border-purple-300"
+              style={{ marginRight: 0, verticalAlign: "middle" }}
+            />
+            <h1 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-4xl md:text-6xl drop-shadow-lg">
+              Art Gallery
+            </h1>
+          </div>
+          <p className="text-xl md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
             Discover amazing artworks from talented artists around the world
           </p>
-        </div>
-
-
-        {/* 🔹 Sticky Filter + Search Section */}
-        <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl px-4 py-4">
-          {/* Category Filter Tags */}
-          <div className="flex flex-wrap gap-3 justify-center mb-4">
-            <button
-              onClick={() => {
-                setSelectedTag('');
-                setShowLikedOnly(false);
-              }}
-              className={`btn-chip ${!selectedTag && !showLikedOnly ? 'active' : ''}`}
-            >
-              All Categories
-            </button>
-
-            {tags.map(tag => (
+          {/* 🔹 Sticky Filter + Search Section */}
+          <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl px-4 py-4">
+            {/* Category Filter Tags */}
+            <div className="flex flex-wrap gap-3 justify-center mb-4">
               <button
-                key={tag}
                 onClick={() => {
-                  setSelectedTag(tag);
+                  setSelectedTag('');
                   setShowLikedOnly(false);
                 }}
-                className={`btn-chip ${selectedTag === tag ? 'active' : ''}`}
+                className={`btn-chip ${!selectedTag && !showLikedOnly ? 'active' : ''}`}
               >
-                {tag}
+                All Categories
               </button>
-            ))}
 
-            {user && (
-              <button
-                onClick={() => {
-                  const newShowLiked = !showLikedOnly;
-                  setShowLikedOnly(newShowLiked);
-                  if (newShowLiked) setSelectedTag('');
-                }}
-                className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
-                aria-pressed={showLikedOnly}
-                type="button"
-              >
-                {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
-              </button>
-            )}
-          </div>
+              {tags.map(tag => (
+                <button
+                  key={tag}
+                  onClick={() => {
+                    setSelectedTag(tag);
+                    setShowLikedOnly(false);
+                  }}
+                  className={`btn-chip ${selectedTag === tag ? 'active' : ''}`}
+                >
+                  {tag}
+                </button>
+              ))}
 
-          {/* 🔍 Search Bar */}
-          <div className="max-w-3xl mx-auto">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="🔍 Search artworks by title..."
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
-            />
+              {user && (
+                <button
+                  onClick={() => {
+                    const newShowLiked = !showLikedOnly;
+                    setShowLikedOnly(newShowLiked);
+                    if (newShowLiked) setSelectedTag('');
+                  }}
+                  className={`btn-chip ${showLikedOnly ? 'active bg-pink-300 text-white' : ''}`}
+                  aria-pressed={showLikedOnly}
+                  type="button"
+                >
+                  {showLikedOnly ? 'Showing Liked' : 'Show Liked Only'}
+                </button>
+              )}
+            </div>
+
+            {/* 🔍 Search Bar */}
+            <div className="max-w-3xl mx-auto">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="🔍 Search artworks by title..."
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
+              />
+            </div>
           </div>
         </div>
+
+
+
+
+
 
 
 
@@ -397,7 +408,7 @@ function MainDashboard() {
             const isLiked = likedArtworks.includes(artwork.id);
 
             return (
-              <div key={artwork.id} className="artistryhub-card group hover:scale-105 transition-all duration-300"
+              <div key={artwork.id} className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
                 onClick={() => navigate(`/product?id=${artwork.id}`)}>
                 {/* Artwork Image */}
                 <div

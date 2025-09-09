@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+// import { HashRouter as Router } from "react-router-dom";
+// instead of BrowserRouter
+
 
 // Visual StarRating for non-integer average
 function StarRating({ value }) {
@@ -32,6 +35,8 @@ function StarRating({ value }) {
     </span>
   );
 }
+
+
 
 function ConfirmationModal({ visible, onConfirm, onCancel, message }) {
   if (!visible) return null;
@@ -73,8 +78,6 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
   const [following, setFollowing] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
-  const [artworks, setArtworks] = useState([]);
-
 
   // Load initial following status and followers count
   useEffect(() => {
@@ -85,8 +88,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
         const { data: userData } = await supabase
           .from('user')
           .select('following')
-          .eq('id', user.id)
-          
+          .eq('id', user.id);
 
         setFollowing(userData?.following?.includes(artistId) ?? false);
       }
@@ -95,7 +97,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
         .from('artists')
         .select('followers')
         .eq('id', artistId)
-        
+        .single();
 
       if (!error && artistData) {
         setFollowersCount(artistData.followers || 0);
@@ -116,8 +118,8 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('following')
-        .eq('id', user.id)
-        
+        .eq('id', user.id);
+
       if (userError) throw userError;
 
       let currentFollowing = userData?.following || [];
@@ -147,7 +149,6 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
 
       const newFollowers = Math.max(0, (artistData.followers || 0) + followersCountChange);
 
-
       await supabase
         .from('artists')
         .update({ followers: newFollowers })
@@ -164,16 +165,18 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
 
     setProcessing(false);
   }
+
   return (
     <div className="flex items-center gap-4 my-2">
-      {(user && user.role === 'user') && (
+      {/* Show follow button only if user is NOT the artist */}
+      {!(user && String(user.id) === String(artistId)) && (
         <button
           onClick={(e) => {
-            e.stopPropagation(); // ✅ Direct call
+            e.stopPropagation();
             toggleFollow();
           }}
           onDoubleClick={(e) => {
-            e.stopPropagation(); // ✅ Direct call
+            e.stopPropagation();
             toggleFollow();
           }}
           disabled={processing}
@@ -188,6 +191,8 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
           {following ? 'Following' : 'Follow'}
         </button>
       )}
+
+      {/* Followers count always visible */}
       <span
         className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600"
         style={{ letterSpacing: '0.03em' }}
@@ -196,9 +201,62 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
       </span>
     </div>
   );
-
 }
 
+function ArtistProfileShare({ artistId }) {
+  const [copied, setCopied] = useState(false);
+  const profileUrl = `${window.location.origin}/artist-profile?id=${artistId}`;
+
+  const handleShare = async () => {
+    // Native share on supported devices
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Check out this artist",
+          text: "Take a look at this artist’s profile!",
+          url: profileUrl,
+        });
+      } catch (err) {
+        console.error("Share canceled or failed", err);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(profileUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error("Copy failed", err);
+        alert("Could not copy link. Please copy manually: " + profileUrl);
+      }
+    }
+  };
+
+  return (
+    <>
+      <button
+        onClick={handleShare}
+        className="absolute top-4 left-4 flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow transition"
+        aria-label="Share Profile"
+      >
+        {/* Arrow SVG */}
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 20 20"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10 11l-4-4m0 0l4-4m-4 4h10" />
+        </svg>
+        Share
+      </button>
+
+    </>
+
+  );
+}
 
 export default function ArtistProfile() {
   const navigate = useNavigate();
@@ -392,6 +450,7 @@ export default function ArtistProfile() {
             {artworks.map((artwork) => (
               <div key={artwork.id} className="bg-white rounded-xl border shadow p-3 relative cursor-pointer" onClick={() => navigate(`/product?id=${artwork.id}`)}>
                 {/* Edit button */}
+
                 {isOwner && (
                   <button
                     className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded"
@@ -411,7 +470,7 @@ export default function ArtistProfile() {
 
                 {/* Info */}
                 <div className="mt-2">
-                  <h3 className="font-semibold">{artwork.title}</h3>
+                  <h3 className="font-se      mibold">{artwork.title}</h3>
                   {!isOwner && <p className="text-sm text-slate-600">{artwork.category}</p>}
                   <p className="font-bold">₹{artwork.cost}</p>
                 </div>
@@ -438,21 +497,17 @@ export default function ArtistProfile() {
       </div>
 
       {/* ARTIST CARD: Top on mobile, right on desktop */}
-      <div className="w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-6 flex flex-col h-fit mb-6 md:mb-0">
-
-        {/* Edit profile */}
+      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-6 pt-20 flex flex-col h-fit mb-6 md:mb-0">
+        <ArtistProfileShare artistId={artist.id} />
         {isOwner && (
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
-              className="px-4 py-1 bg-blue-600 hover:bg-blue-700 transition text-white rounded text-sm font-medium"
-              aria-label="Edit Profile"
-            >
-              Edit
-            </button>
-          </div>
+          <button
+            onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
+            className="absolute top-4 right-4 px-4 py-1 bg-blue-600 hover:bg-blue-700 transition text-white rounded text-sm font-medium"
+            aria-label="Edit Profile"
+          >
+            Edit
+          </button>
         )}
-
         {/* Profile image */}
         <img
           src={artist.profile_image_url}
@@ -487,14 +542,14 @@ export default function ArtistProfile() {
         )}
 
         {/* Follow button */}
-        <div className="mt-6">
-          <ArtistFollowButton
-            artistId={artist.id}
-            user={user}
-            
-          />
 
-        </div>
+
+        <ArtistFollowButton
+          artistId={artist.id}
+          user={user}
+        />
+
+
 
         {/* Reviews */}
         <div className="mt-8 border-t border-gray-200 pt-5">

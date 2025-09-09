@@ -18,7 +18,7 @@ body {
 }
 
 
-/* ArtistryHub Brand Colors */
+/* ScopeBrush Brand Colors */
 :root {
   --primary: #8b5cf6;
   --primary-dark: #7c3aed;
@@ -38,7 +38,7 @@ body {
 @layer components {
 
   /* Logo and Brand */
-  .artistryhub-logo {
+  .ScopeBrush-logo {
     @apply flex items-center gap-3 font-bold text-2xl;
     font-family: 'Playfair Display', serif;
     background: linear-gradient(135deg, var(--primary), var(--accent));
@@ -100,7 +100,7 @@ body {
   }
 
   /* Card System */
-  .artistryhub-card {
+  .ScopeBrush-card {
     @apply bg-white/80 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
     box-shadow:
@@ -109,7 +109,7 @@ body {
       inset 0 1px 0 rgba(255, 255, 255, 0.5);
   }
 
-  .artistryhub-card:hover {
+  .ScopeBrush-card:hover {
     transform: translateY(-5px) scale(1.02);
     box-shadow:
       0 25px 50px rgba(0, 0, 0, 0.15),
@@ -269,21 +269,21 @@ body {
     background-clip: text;
   }
 
-  .shadow-artistryhub {
+  .shadow-ScopeBrush {
     box-shadow:
       0 20px 40px rgba(139, 92, 246, 0.15),
       0 10px 25px rgba(236, 72, 153, 0.1),
       0 5px 15px rgba(0, 0, 0, 0.05);
   }
 
-  .shadow-artistryhub-lg {
+  .shadow-ScopeBrush-lg {
     box-shadow:
       0 25px 50px rgba(139, 92, 246, 0.2),
       0 15px 35px rgba(236, 72, 153, 0.15),
       0 10px 25px rgba(0, 0, 0, 0.1);
   }
 
-  .bg-gradient-artistryhub {
+  .bg-gradient-ScopeBrush {
     background: linear-gradient(135deg,
         rgba(139, 92, 246, 0.05),
         rgba(236, 72, 153, 0.03),
@@ -370,7 +370,7 @@ body {
     @apply text-3xl;
   }
 
-  .artistryhub-logo {
+  .ScopeBrush-logo {
     @apply text-xl;
   }
 

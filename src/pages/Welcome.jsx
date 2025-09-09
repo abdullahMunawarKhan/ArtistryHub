@@ -12,7 +12,7 @@ function Welcome() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-artistryhub relative overflow-hidden" onClick={() => navigate("/main-dashboard")}>
+    <div className="min-h-screen bg-gradient-ScopeBrush relative overflow-hidden" onClick={() => navigate("/main-dashboard")}>
       {/* Background decorative elements */}
       <div className="absolute inset-0">
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full animate-float"></div>
@@ -30,8 +30,8 @@ function Welcome() {
 
           {/* Logo and Brand */}
           <div className="mb-10 text-center z-10">
-            <div className="artistryhub-logo text-6xl font-extrabold mb-3 animate-pulse text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-800 drop-shadow-lg">
-              ArtistryHub
+            <div className="ScopeBrush-logo text-6xl font-extrabold mb-3 animate-pulse text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-800 drop-shadow-lg">
+              ScopeBrush
             </div>
             <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full shadow-lg animate-fadeIn"></div>
           </div>

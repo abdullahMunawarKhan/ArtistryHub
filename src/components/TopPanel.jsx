@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 
+
 function TopPanel() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -126,18 +127,20 @@ function TopPanel() {
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-artistryhub">
+    <header className="bg-white/90 backdrop-blur-xl fixed top-0 inset-x-0 z-50 border-b border-white/20 shadow-ScopeBrush">
       <nav className="max-w-7xl mx-auto px-6 py-2 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="artistryhub-logo no-print">
-          
-          ArtistryHub
+        <Link to="/" className="ScopeBrush-logo no-print">
+          <img src="/logo2.png" alt="ScopeBrush Logo" style={{ height: '64px', marginRight: '16px', verticalAlign: 'middle' }} />
+          <span style={{ fontSize: '2rem', color: '#D740A1', fontWeight: 'bold' }}>ScopeBrush</span>
         </Link>
+
+
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-8">
           <button onClick={() => navOrLogin('/feed')} className="nav-link">
-            Explore Arts 
+            Explore Arts
           </button>
 
           <Link to="/main-dashboard" className="nav-link">
@@ -158,7 +161,7 @@ function TopPanel() {
 
               {artistProfile && (
                 <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
-                  👤 <br/>My Profile
+                  👤 <br />My Profile
                 </Link>
               )}
 
@@ -189,7 +192,7 @@ function TopPanel() {
                 Welcome, {user.email?.split('@')[0]}
               </span>
 
-              <button onClick={handleLogout} className="btn-secondary "> 
+              <button onClick={handleLogout} className="btn-secondary ">
                 Logout
               </button>
 
@@ -211,7 +214,7 @@ function TopPanel() {
                       onClick={() => { setLoginDropdownOpen(false); navigate('/user-login'); }}
                       className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
                     >User Login</button>
-                    
+
                   </div>
                 }
               </div>
@@ -327,7 +330,7 @@ function TopPanel() {
                 >
                   User Login
                 </button>
-                
+
                 <Link
                   to="/signup"
                   onClick={() => handleNav('/signup')}

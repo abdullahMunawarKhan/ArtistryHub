@@ -428,7 +428,7 @@ export default function ProductDetails() {
                   whiteSpace: "nowrap",
                 }}
               >
-                @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+                @{`ScopeBrush`} &nbsp; @{artwork.artists?.name}
               </div>
 
               <button className="absolute top-1/2 -translate-y-1/2 left-2 bg-blue-600 text-white rounded-full w-8 h-8 font-bold" onClick={() => { setIdx(i => (i === 0 ? images.length - 1 : i - 1)); setZoom(1); }}>&lt;</button>
@@ -463,7 +463,7 @@ export default function ProductDetails() {
                 whiteSpace: "nowrap",
               }}
             >
-              @{`ArtistryHub`} &nbsp; @{artwork.artists?.name}
+              @{`ScopeBrush`} &nbsp; @{artwork.artists?.name}
             </div>
             <button className="absolute top-3 right-4 text-blue-600 text-2xl font-bold" onClick={() => setShowVideo(false)}>&times;</button>
           </div>

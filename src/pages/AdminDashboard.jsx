@@ -89,6 +89,40 @@ function AdminDashboard() {
   const [extraDeliveryChargesInput, setExtraDeliveryChargesInput] = useState('');
   const [totalEarnings, setTotalEarnings] = useState([]);
   const [earningsLoading, setEarningsLoading] = useState(false);
+  const [artworkList, setArtworkList] = useState([]);
+  const [previewImage, setPreviewImage] = useState(null);       // URL of image to preview
+  const [showImageModal, setShowImageModal] = useState(false);
+  // for pin setup for each section
+  // const [showPinModal, setShowPinModal] = useState(false);
+  // const [pendingSection, setPendingSection] = useState(null);
+  // const [enteredPin, setEnteredPin] = useState('');
+  // const [pinError, setPinError] = useState('');
+  // const SECTION_PINS = {
+  //   artist: '1111',
+  //   order: '2222',
+  //   payment: '3333',
+  //   earnings: '4444',
+  //   artwork: '5555',
+  //   home:'6666'
+  // };
+  // Toggle modal visibility
+
+  useEffect(() => {
+    async function fetchArtworks() {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select(`
+        id,
+        title,
+        image_urls,
+        artist_id,
+        artists ( name )
+      `);
+      if (!error) setArtworkList(data || []);
+    }
+    fetchArtworks();
+  }, []);
+
   const navigate = useNavigate();
 
   // Admin authentication
@@ -148,7 +182,7 @@ function AdminDashboard() {
         console.log('Analytics data structure:', analyticsData); // Add this 
 
       } catch (err) {
-        
+
       }
     }
 
@@ -244,6 +278,30 @@ function AdminDashboard() {
         }
       }
     }
+    async function handleRemoveArtwork(artwork) {
+      // 1. Remove images from Supabase storage
+      if (Array.isArray(artwork.image_urls)) {
+        for (const url of artwork.image_urls) {
+          // Extract storage path from URL: e.g. 'artist-assets/…'
+          const { data: { Key } } = supabase.storage.from('artist-assets')
+            .remove([new URL(url).pathname.split('/').pop()]);
+        }
+      }
+
+      // 2. Remove artwork record
+      const { error } = await supabase
+        .from('artworks')
+        .delete()
+        .eq('id', artwork.id);
+
+      if (!error) {
+        // Update local state
+        setArtworkList(list => list.filter(a => a.id !== artwork.id));
+      } else {
+        console.error('Failed to delete artwork:', error);
+      }
+    }
+
   }
   const openPaymentModal = (artworkId) => {
     setCurrentArtworkId(artworkId);
@@ -396,14 +454,22 @@ function AdminDashboard() {
           </h3>
           <div className="space-y-3">
             {[{
-              key: null,
+              key: null,// 'home',
+
               label: 'Home',
               icon: '🏠',
               activeColor: 'green'
             }, {
               key: 'artist',
+
               label: 'Artist Management',
               icon: '🎨',
+              activeColor: 'blue'
+            },
+            {
+              key: 'artwork',
+              label: 'Artwork Management',
+              icon: '🖼️',
               activeColor: 'blue'
             }, {
               key: 'order',
@@ -424,8 +490,10 @@ function AdminDashboard() {
             }
             ].map((btn, i) => (
               <button
-                key={i}
-                onClick={() => setSelectedSection(btn.key)}
+                key={i} 
+                 onClick={() => setSelectedSection(btn.key)}
+                 //onClick={() => {setPendingSection(btn.key);  setShowPinModal(true);}}
+                  
                 className={`w-full py-3 px-4 rounded-lg text-left font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
                   ? `bg-${btn.activeColor}-600 text-white shadow-md`
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -439,13 +507,14 @@ function AdminDashboard() {
 
         </div>
       </div>
+                 
       {/* Left Side content area */}
       <div className="flex-1 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 min-h-[70vh] animate-fadeIn">
         <h2 className="text-3xl font-extrabold mb-10 text-center text-blue-800 tracking-tight drop-shadow-sm">
           Admin Dashboard
         </h2>
 
-        {!selectedSection && (
+        {!selectedSection&& (         //{selectedSection === 'home' && (
           <div className="flex flex-col gap-10 ">
             {/* Time Window Selector */}
             <div className="flex gap-3 justify-center flex-wrap">
@@ -557,6 +626,66 @@ function AdminDashboard() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {selectedSection === 'artwork' && (
+          <div className="mb-14 animate-fadeIn">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+              Artwork Management ({artworkList.length})
+            </h3>
+            <div className="overflow-x-auto rounded shadow bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-200 text-left">
+                  <tr>
+                    <th className="p-2">Title</th>
+                    <th className="p-2">Artist Name</th>
+                    <th className="p-2">Images</th>
+                    <th className="p-2">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {artworkList.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-4 text-center text-gray-500">
+                        No artworks available.
+                      </td>
+                    </tr>
+                  ) : (
+                    artworkList.map((art) => (
+                      <tr key={art.id} className="border-b hover:bg-gray-50">
+                        <td className="p-2">{art.title}</td>
+                        <td className="p-2">{art.artists?.name || 'Unknown'}</td>
+                        <td className="p-2">
+                          {Array.isArray(art.image_urls)
+                            ? art.image_urls.map((img, i) => (
+                              <img
+                                key={i}
+                                src={img}
+                                alt={art.title}
+                                className="w-12 h-12 object-cover rounded mr-2 inline-block cursor-pointer hover:opacity-75"
+                                onClick={() => {
+                                  setPreviewImage(img);
+                                  setShowImageModal(true);
+                                }}
+                              />
+                            ))
+                            : 'N/A'}
+                        </td>
+
+                        <td className="p-2">
+                          <button
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded"
+                            onClick={() => handleRemoveArtwork(art)}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -798,8 +927,7 @@ function AdminDashboard() {
           </div>
         )}
       </div>
-
-
+               
 
       {/* ALL EXISTING MODALS PRESERVED BELOW */}
 
@@ -843,6 +971,19 @@ function AdminDashboard() {
         </div>
       )}
 
+
+      {/* Modal for image_view */}
+      {showImageModal && previewImage && (
+        <Modal onClose={() => setShowImageModal(false)}>
+          <img
+            src={previewImage}
+            alt="Artwork Preview"
+            className="max-w-full max-h-screen rounded"
+          />
+        </Modal>
+      )}
+
+
       {/* Modal for id_view */}
       {selectedArtwork && (
         <Modal onClose={() => setSelectedArtwork(null)}>
@@ -851,6 +992,7 @@ function AdminDashboard() {
           <h3>{selectedArtwork.artist}</h3>
         </Modal>
       )}
+
 
       {/* Modal for Order Details */}
       {modalOpen && selectedOrder && (
@@ -919,6 +1061,54 @@ function AdminDashboard() {
               </>
             )}
 
+            {/* pin for every section*/}
+            {showPinModal && (
+              <Modal onClose={() => {
+                setShowPinModal(false);
+                setEnteredPin('');
+                setPinError('');
+              }}>
+                <h3 className="text-lg font-bold mb-4">Enter PIN for {pendingSection?.toUpperCase()}</h3>
+                <input
+                  type="password"
+                  value={enteredPin}
+                  onChange={e => setEnteredPin(e.target.value)}
+                  className="border rounded px-3 py-2 w-full mb-2"
+                  placeholder="Enter PIN"
+                />
+                {pinError && <div className="text-red-600 text-sm mb-2">{pinError}</div>}
+                <div className="flex justify-end gap-2">
+                  <button
+                    className="bg-gray-300 px-4 py-2 rounded"
+                    onClick={() => {
+                      setShowPinModal(false);
+                      setEnteredPin('');
+                      setPinError('');
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 rounded"
+                    onClick={() => {
+                      const requiredPin = SECTION_PINS[pendingSection];
+                      if (enteredPin === requiredPin) {
+                        setSelectedSection(pendingSection);
+                        setShowPinModal(false);
+                        setEnteredPin('');
+                        setPinError('');
+                      } else {
+                        setPinError('Incorrect PIN');
+                      }
+                    }}
+                  >
+                    Unlock
+                  </button>
+                </div>
+              </Modal>
+            )}
+
+
 
             {/* Change Status button */}
             {(selectedOrder.shipment_status === 'pending' ||
@@ -978,6 +1168,54 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+
+       {/* input pin Modal */}
+
+      {/* {showPinModal && (
+        <Modal onClose={() => {
+          setShowPinModal(false);
+          setEnteredPin('');
+          setPinError('');
+        }}>
+          <h3 className="text-lg font-bold mb-4">Enter PIN for {pendingSection?.toUpperCase()}</h3>
+          <input
+            type="password"
+            value={enteredPin}
+            onChange={e => setEnteredPin(e.target.value)}
+            className="border rounded px-3 py-2 w-full mb-2"
+            placeholder="Enter PIN"
+          />
+          {pinError && <div className="text-red-600 text-sm mb-2">{pinError}</div>}
+          <div className="flex justify-end gap-2">
+            <button
+              className="bg-gray-300 px-4 py-2 rounded"
+              onClick={() => {
+                setShowPinModal(false);
+                setEnteredPin('');
+                setPinError('');
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-blue-600 text-white px-4 py-2 rounded"
+              onClick={() => {
+                const requiredPin = SECTION_PINS[pendingSection];
+                if (enteredPin === requiredPin) {
+                  setSelectedSection(pendingSection);
+                  setShowPinModal(false);
+                  setEnteredPin('');
+                  setPinError('');
+                } else {
+                  setPinError('Incorrect PIN');
+                }
+              }}
+            >
+              Unlock
+            </button>
+          </div>
+        </Modal>
+      )} */}
     </div>
   );
 }
