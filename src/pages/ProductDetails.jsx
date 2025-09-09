@@ -27,6 +27,55 @@ function StarRating({ value }) {
     </span>
   );
 }
+function ArtworkShareButton({ artworkId }) {
+  const [copied, setCopied] = useState(false);
+  const artworkUrl = `${window.location.origin}/product-details?id=${artworkId}`;
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Check out this artwork',
+          text: 'Take a look at this artwork!',
+          url: artworkUrl,
+        });
+      } catch (err) {
+        console.error('Share canceled or failed', err);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(artworkUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.error('Copy failed', err);
+        alert(`Could not copy link. Please copy manually: ${artworkUrl}`);
+      }
+    }
+  };
+
+  return (
+    <button
+      onClick={handleShare}
+      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold shadow transition text-white
+        ${copied ? 'bg-green-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+      aria-label="Share Artwork"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15 8a3 3 0 00-6 0v8a3 3 0 006 0V8z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h8" />
+      </svg>
+      {copied ? 'Link Copied!' : 'Share'}
+    </button>
+  );
+}
 
 export default function ProductDetails() {
   const location = useLocation();
@@ -242,30 +291,36 @@ export default function ProductDetails() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-bold text-slate-900">{artwork.title}</h1>
-            <button
-              onClick={toggleLike}
-              onDoubleClick={toggleLike}
-              className="flex items-center justify-center p-0 ml-2 cursor-pointer transition-all duration-200 active:scale-95"
-              aria-label="Like button"
-              title={isLiked ? 'Unlike' : 'Like'}
-              style={{ width: 40, height: 40 }}
-            >
-              <svg
-                width="30"
-                height="30"
-                viewBox="0 0 24 24"
-                fill={isLiked ? 'red' : 'none'}
-                stroke={isLiked ? 'red' : '#a1a1aa'}
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="flex items-center gap-2">
+
+
+              <button
+                onClick={toggleLike}
+                onDoubleClick={toggleLike}
+                className="flex items-center justify-center p-0 ml-2 cursor-pointer transition-all duration-200 active:scale-95"
+                aria-label="Like button"
+                title={isLiked ? 'Unlike' : 'Like'}
+                style={{ width: 40, height: 40 }}
               >
-                <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
-              </svg>
-              <span className="ml-1 text-sm font-medium">
-                {artwork.liked_count ?? 0}
-              </span>
-            </button>
+                <svg
+                  width="30"
+                  height="30"
+                  viewBox="0 0 24 24"
+                  fill={isLiked ? 'red' : 'none'}
+                  stroke={isLiked ? 'red' : '#a1a1aa'}
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
+                </svg>
+                <span className="ml-1 text-sm font-medium">
+                  {artwork.liked_count ?? 0}
+                </span>
+
+              </button>
+            </div>
+
           </div>
 
           <div className="text-slate-600">Category: {artwork.category}</div>
@@ -308,6 +363,7 @@ export default function ProductDetails() {
               <button className="btn-outline px-5 py-2" disabled>See Creation Video</button>
             </div>
             <button className="btn-outline px-5 py-2" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>View Reviews</button>
+            <ArtworkShareButton artworkId={artwork.id} />
           </div>
 
         </div>
