@@ -73,6 +73,8 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
   const [following, setFollowing] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [followersCount, setFollowersCount] = useState(0);
+  const [artworks, setArtworks] = useState([]);
+
 
   // Load initial following status and followers count
   useEffect(() => {
@@ -215,6 +217,7 @@ export default function ArtistProfile() {
   const [averageRating, setAverageRating] = useState(0);
   const [userRole, setUserRole] = useState("user");
   const [user, setUser] = useState(null); // Add user state
+
 
   useEffect(() => {
     async function fetchArtistAndUser() {
