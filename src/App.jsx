@@ -1,8 +1,7 @@
-import { UserCircle, Briefcase, Palette } from "lucide-react";
-import React from 'react';
-import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
-
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Routes, Route, useLocation, Link } from 'react-router-dom';
+import { UserCircle, Briefcase, Palette } from 'lucide-react';
+import { MessageSquare } from "lucide-react";
 import TopPanel from './components/TopPanel';
 import Welcome from './pages/Welcome';
 import MainDashboard from './pages/MainDashboard';
@@ -26,12 +25,14 @@ import Feedback from './pages/Feedback';
 
 function App() {
   const location = useLocation();
-
+  const [footerOpen, setFooterOpen] = useState(false);
   const isWelcomePage = location.pathname === '/';
 
   return (
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
-      {!isWelcomePage && <TopPanel />}
+      {!isWelcomePage && <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />}
+
+
       <main
         className={`
           flex-grow flex flex-col
@@ -39,10 +40,12 @@ function App() {
           ${isWelcomePage ? 'p-0' : 'p-4'}
         `}
       >
-        <div className={`
-          ${isWelcomePage ? "w-full" : "w-full max-w-7xl mx-auto"}
-          flex-grow flex flex-col
-        `}>
+        <div
+          className={`
+            ${isWelcomePage ? 'w-full' : 'w-full max-w-7xl mx-auto'}
+            flex-grow flex flex-col
+          `}
+        >
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/artist-profile/:artistId" element={<ArtistProfile />} />
@@ -68,81 +71,94 @@ function App() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-gradient-to-t from-gray-900 via-gray-800 to-gray-700 text-gray-300 border-t border-gray-600 backdrop-blur-smborder-t border-gray-600 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+      {/* FIXED, COLLAPSIBLE FOOTER */}
+      <div
+        className={`
+          fixed bottom-0 left-0 w-full bg-gradient-to-t from-gray-900 via-gray-800 to-gray-700
+          text-gray-300 border-t border-gray-600 backdrop-blur-sm
+          transition-height duration-300 ease-in-out overflow-hidden
+          ${footerOpen ? 'h-auto pt-8' : 'h-8'}
+        `}
+        style={{ zIndex: 50 }}
+      >
+        {/* Gray “handle” area always visible (h-8) */}
+        <div
+          className="h-8 bg-gray-700 flex items-center justify-center cursor-pointer"
+          onClick={() => setFooterOpen(open => !open)}
+        >
+          {footerOpen ? (
+            <span className="text-gray-400">▼ click here to close </span>
+          ) : (
+            <span className="text-gray-400">▲ click here to see about us </span>
+          )}
+        </div>
 
-          {/* Left Section: About & Team */}
-          <div className="flex flex-col gap-8">
-            {/* About Us */}
-            <div className="bg-gray-800/40 p-6 rounded-2xl shadow-lg space-y-6 hover:shadow-xl transition-all duration-300">
-              <h2 className="text-xl font-bold text-white mb-2">About Us</h2>
-
-              {/* Vision */}
-              <div className="border-l-4 border-yellow-400 pl-4">
-                <p className="text-sm text-gray-300 italic leading-relaxed">
-                  <b>Vision: </b>“To empower local artists by connecting them directly with customers on a single platform,
-                  making art discovery, appreciation, and purchase seamless while fostering a vibrant creative community.”
-                </p>
+        {footerOpen && (
+          <footer className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Left Section: About & Team */}
+            <div className="flex flex-col gap-8">
+              <div className="bg-gray-800/40 p-6 rounded-2xl shadow-lg space-y-6 hover:shadow-xl transition-all duration-300">
+                <h2 className="text-xl font-bold text-white mb-2">About Us</h2>
+                <div className="border-l-4 border-yellow-400 pl-4">
+                  <p className="text-sm text-gray-300 italic leading-relaxed">
+                    <b>Vision: </b>“To empower local artists by connecting them directly with customers on a single
+                    platform, making art discovery, appreciation, and purchase seamless while fostering a vibrant
+                    creative community.”
+                  </p>
+                </div>
+                <ul className="space-y-3 text-sm leading-relaxed">
+                  <li className="flex items-center gap-2">
+                    <UserCircle className="w-5 h-5 text-yellow-400" />
+                    <span className="font-semibold text-white">Founder, CEO & CTO:</span>
+                    <span className="font-semibold text-yellow-400 text-base ml-7">
+                      Abdullah Munawar Khan
+                    </span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <Briefcase className="w-5 h-5 text-yellow-400" />
+                    <span className="font-semibold text-white">Founder, CFO & CMO:</span>
+                    <span className="font-semibold text-yellow-400 text-base ml-7">Ayush Ghojge</span>
+                  </li>
+                </ul>
               </div>
 
-              {/* Team */}
-              <ul className="space-y-3 text-sm leading-relaxed">
-                <li className="flex items-center gap-2">
-                  <UserCircle className="w-5 h-5 text-yellow-400" />
-                  <span className="font-semibold text-white">Founder, CEO & CTO:</span>
-                  <span className="font-semibold text-yellow-400 text-base ml-7">Abdullah Munawar Khan</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Briefcase className="w-5 h-5 text-yellow-400" />
-                  <span className="font-semibold text-white">Founder,CFO & CMO :</span>
-                  <span className="font-semibold text-yellow-400 text-base ml-7">Ayush Ghojge</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Developer Highlight */}
-            <div className="pt-4 border-t border-gray-700">
-              <div className="flex items-center gap-2">
-                <Palette className="w-5 h-5 text-yellow-400" />
-                <p className="text-sm text-gray-400">About the Developer:</p>
+              <div className="pt-4 border-t border-gray-700">
+                <div className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-yellow-400" />
+                  <p className="text-sm text-gray-400">About the Developer:</p>
+                </div>
+                <p className="font-semibold text-base ml-7">Abdullah Munawar Khan</p>
               </div>
-              <p className="font-semibold text-base ml-7">
-                Abdullah Munawar Khan
-              </p>
-            </div>
 
-            {/* Social Links */}
-            <div className="flex items-center justify-center md:justify-start gap-4">
-              <span className="text-gray-400 text-sm md:text-base font-medium">Connect with me:</span>
-              <a
-                href="https://www.linkedin.com/in/abdullah-munawar-khan-175a6b322"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn profile"
-                title="LinkedIn"
-                className="flex items-center px-4 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-semibold text-center transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 
+              <div className="flex items-center justify-center md:justify-start gap-4">
+                <span className="text-gray-400 text-sm md:text-base font-medium">
+                  Connect with me:
+                </span>
+                <a
+                  href="https://www.linkedin.com/in/abdullah-munawar-khan-175a6b322"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn profile"
+                  className="flex items-center px-4 py-1 bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 mr-2" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 
   .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854zm4.943 12.248V6.169H2.542v7.225zm-1.2-8.212c.837 0 1.358-.554 
   1.358-1.248-.015-.709-.52-1.248-1.342-1.248S2.4 3.226 2.4 3.934c0 .694.521 1.248 
   1.327 1.248zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 
   1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 
   0-1.845.7-2.165 1.193v.025h-.016l.016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225z"/>
-                </svg>
-                LinkedIn
-              </a>
-              <a
-                href="https://github.com/abdullahmunawarkhan"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub profile"
-                title="GitHub"
-                className="flex items-center px-4 py-1 bg-gray-900 hover:bg-black rounded-lg text-white text-sm font-semibold text-center transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303
+                  </svg>
+                  LinkedIn
+                </a>
+                <a
+                  href="https://github.com/abdullahmunawarkhan"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub profile"
+                  className="flex items-center px-4 py-1 bg-gray-900 hover:bg-black rounded-lg text-white text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105"
+                ><svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303
   3.438 9.8 8.205 11.387.6.113.82-.258.82-.577
   0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61
   -.546-1.387-1.333-1.757-1.333-1.757-1.089-.744.083-.729.083-.729
@@ -155,81 +171,66 @@ function App() {
   5.625-5.479 5.921.429.37.823 1.102.823 2.222
   0 1.606-.014 2.898-.014 3.293 0 .322.216.694.825.576
   C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
-                </svg>
-
-                GitHub
-              </a>
-            </div>
-
-          </div>
-
-          {/* Right Section: Contact */}
-          <div className="md:text-left text-center flex flex-col h-full gap-8 justify-between">
-            <div className="flex flex-col sm:flex-row sm:gap-6 sm:items-center">
-              {/* Left Side: Heading and Address */}
-              <div className="sm:w-3/5 flex flex-col justify-center">
-                <h2 className="text-lg font-bold text-white mb-3">Contact Us</h2>
-                <div className="text-sm leading-relaxed space-y-3">
-                  <p>
-                    <span className="font-semibold">Address:</span> NMIET campus,
-                    near Latis housing society, Talegaon Dabhade, Pune.
-                  </p>
-                  <p>
-                    <span className="font-semibold">Email:</span>{" "}
-                    <span className="italic text-gray-400">abdullahk4503@gmail.com</span>
-                  </p>
-                  <p className="flex flex-col">
-                    <span>
-                      <span className="font-semibold">Mobile Number:</span>{" "}
-                      <span className="italic text-gray-400">+91 8180826531</span>
-                    </span>
-                    <span className="italic text-gray-400"> +91 7498890871</span>
-                  </p>
-
-                </div>
-
-              </div>
-
-              {/* Map */}
-              <div className="sm:w-2/5 flex justify-center items-center">
-                <a
-                  href="https://maps.app.goo.gl/k42FcH4jt3BThurA8"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <img
-                    src="/images/location.png"
-                    alt="Map preview of NMIET campus"
-                    className="w-full h-40 object-cover rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
-                  />
+                  </svg>
+                  GitHub
                 </a>
               </div>
             </div>
-            <div className="mt-6">
+
+            {/* Right Section: Contact */}
+            <div className="flex flex-col gap-8">
+              <div className="sm:flex sm:gap-6 sm:items-center">
+                <div className="sm:w-3/5 flex flex-col justify-center">
+                  <h2 className="text-lg font-bold text-white mb-3">Contact Us</h2>
+                  <p className="text-sm leading-relaxed">
+                    <span className="font-semibold">Address:</span> NMIET campus, near Latis housing society, Talegaon
+                    Dabhade, Pune.
+                  </p>
+                  <p className="text-sm leading-relaxed">
+                    <span className="font-semibold">Email:</span>{' '}
+                    <span className="italic text-gray-400">abdullahk4503@gmail.com</span>
+                  </p>
+                  <p className="text-sm leading-relaxed">
+                    <span className="font-semibold">Mobile:</span>{' '}
+                    <span className="italic text-gray-400">+91 8180826531, +91 7498890871</span>
+                  </p>
+                </div>
+                <div className="sm:w-2/5 flex justify-center items-center">
+                  <a
+                    href="https://maps.app.goo.gl/k42FcH4jt3BThurA8"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <img
+                      src="/images/location.png"
+                      alt="Map preview"
+                      className="w-full h-40 object-cover rounded-lg shadow-md hover:shadow-xl transition-all duration-300"
+                    />
+                  </a>
+                </div>
+              </div>
               <Link
                 to="/feedback-form"
-                className="text-blue-400 hover:text-blue-200 font-semibold underline"
+                onClick={() => onClick(false)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200"
               >
-                Please provide us your valuable feedback
+                <MessageSquare className="w-5 h-5" />
+                <span>Please provide us your valuable feedback</span>
               </Link>
             </div>
-          </div>
-        </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-gray-700 mt-6 pb-6 pt-4">
-          <p className="text-center text-gray-500 text-xs md:text-sm">
-            &copy; 2025 <span className="text-yellow-400 font-semibold">ScopeBrush</span>. All rights reserved.
-          </p>
-        </div>
-      </footer>
+            {/* Bottom Bar */}
+            <div className="col-span-full border-t border-gray-700 mt-6 pt-4 pb-6">
+              <p className="text-center text-gray-500 text-xs">
+                &copy; 2025 <span className="text-yellow-400 font-semibold">ScopeBrush</span>. All rights
+                reserved.
+              </p>
+            </div>
+          </footer>
+        )}
+      </div>
     </div>
   );
 }
 
 export default App;
-
-
-
-
-

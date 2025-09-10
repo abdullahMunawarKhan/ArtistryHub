@@ -349,9 +349,9 @@ function ArtistList() {
                   </svg>
                   <span className="font-medium text-slate-700">{artist.location}</span>
                 </div>
-                <p className="text-sm text-slate-600 mb-1">
+                {/* <p className="text-sm text-slate-600 mb-1">
                   <span className="font-semibold">Paintings Sold:</span> {artist.paintings_sold}
-                </p>
+                </p> */}
                 <div className="mt-2">
                   <StarRating value={artist.avg_rating} />
                 </div>

@@ -166,19 +166,14 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
     setProcessing(false);
   }
 
-  return (
-    <div className="flex items-center gap-4 my-2">
+
+   return (
+    <div className="flex items-center gap-3 my-2 w-full">
       {/* Show follow button only if user is NOT the artist */}
       {!(user && String(user.id) === String(artistId)) && (
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFollow();
-          }}
-          onDoubleClick={(e) => {
-            e.stopPropagation();
-            toggleFollow();
-          }}
+          onClick={e => { e.stopPropagation(); toggleFollow(); }}
+          onDoubleClick={e => { e.stopPropagation(); toggleFollow(); }}
           disabled={processing}
           className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
           ${following
@@ -194,13 +189,16 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
 
       {/* Followers count always visible */}
       <span
-        className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600"
+        className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600 ml-0"
         style={{ letterSpacing: '0.03em' }}
       >
         {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
       </span>
     </div>
   );
+
+
+
 }
 
 function ArtistProfileShare({ artistId }) {

@@ -46,6 +46,10 @@ function MainDashboard() {
   const [likedArtworks, setLikedArtworks] = useState([]);
   const [showLikedOnly, setShowLikedOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(20);
+  const [isFetching, setIsFetching] = useState(false);
+  const [showGoTop, setShowGoTop] = useState(false);
+
 
 
   // Function to filter artworks by liked status (true to show liked only, false to show all)
@@ -132,6 +136,7 @@ function MainDashboard() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
 
   async function fetchUserLikedArtworks(userId) {
     const { data, error } = await supabase
@@ -303,6 +308,43 @@ function MainDashboard() {
       return true;
     });
 
+  const visibleArtworks = filteredArtworks.slice(0, visibleCount);
+  function handleScroll() {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
+      !isFetching &&
+      visibleArtworks.length < filteredArtworks.length // prevent scroll overreach!
+    ) {
+      setIsFetching(true);
+      setTimeout(() => {
+        setVisibleCount(count => Math.min(count + 8, filteredArtworks.length));
+        setIsFetching(false);
+      }, 200);
+    }
+  }
+
+
+  useEffect(() => {
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [filteredArtworks, isFetching]);
+
+  // Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [selectedTag, showLikedOnly, searchQuery]);
+
+
+  useEffect(() => {
+    function handleScroll() {
+      setShowGoTop(window.scrollY > 300);
+    }
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
   if (loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -331,11 +373,12 @@ function MainDashboard() {
             </h1>
           </div>
           <p className="text-xl md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
-            Discover amazing artworks from talented artists around the world
+            Discover amazing artworks from talented artists
           </p>
           {/* 🔹 Sticky Filter + Search Section */}
           <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl px-4 py-4">
             {/* Category Filter Tags */}
+
             <div className="flex flex-wrap gap-3 justify-center mb-4">
               <button
                 onClick={() => {
@@ -382,7 +425,7 @@ function MainDashboard() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="🔍 Search artworks by title..."
+                placeholder="🔍 Search artworks by title,material,category...."
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
               />
             </div>
@@ -398,9 +441,11 @@ function MainDashboard() {
 
         <br />
 
-        {/* Artworks Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredArtworks.map(artwork => {
+        {/* NEW - Use this instead */}
+        {/* Artworks Grid with Infinite Scroll */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+          {visibleArtworks.map(artwork => {
             const firstImage = Array.isArray(artwork.image_urls)
               ? artwork.image_urls[0]
               : artwork.image_urls;
@@ -410,10 +455,9 @@ function MainDashboard() {
             return (
               <div key={artwork.id} className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
                 onClick={() => navigate(`/product?id=${artwork.id}`)}>
+
                 {/* Artwork Image */}
-                <div
-                  className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative"
-                >
+                <div className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative">
                   {firstImage ? (
                     <img
                       src={firstImage}
@@ -436,7 +480,6 @@ function MainDashboard() {
 
                 {/* Artwork Info */}
                 <div className="p-6">
-
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-lg text-slate-800 line-clamp-2">
                       {artwork.title}
@@ -488,6 +531,7 @@ function MainDashboard() {
                       <span>{artwork.liked_count ?? 0}</span>
                     </button>
                   </div>
+
                   {/* Artist Info */}
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-sm text-slate-500">by</span>
@@ -547,14 +591,31 @@ function MainDashboard() {
                     >
                       Buy Now
                     </button>
-
                   </div>
-
                 </div>
               </div>
             );
           })}
+
+
+
         </div>
+        <div className="flex justify-center items-center mt-12 mb-8">
+          {/* Loading indicator */}
+          {isFetching && visibleArtworks.length < filteredArtworks.length && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-600">Loading more artworks...</p>
+            </div>
+          )}
+
+          {!isFetching && visibleArtworks.length >= filteredArtworks.length && filteredArtworks.length > 0 && (
+            <div className="text-center py-4 text-gray-400 font-medium">
+              No more artworks.
+            </div>
+          )}
+        </div>
+
 
         {/* Empty State */}
         {filteredArtworks.length === 0 && (
@@ -592,8 +653,17 @@ function MainDashboard() {
             </div>
           </div>
         )}
+        {showGoTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
+            aria-label="Scroll to top"
+          >
+            ↑ Top
+          </button>
+        )}
       </div>
-    </div>
+    </div >
   );
 }
 

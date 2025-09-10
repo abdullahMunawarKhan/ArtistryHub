@@ -24,7 +24,7 @@ function Cart() {
 
     const { data, error } = await supabase
       .from('cart')
-      .select('id, artwork_id, quantity, artworks (title, cost, image_urls)')
+      .select('id, artwork_id, quantity, artworks (title, cost, image_urls,availability)')
       .eq('user_id', user.id);
 
     if (error) {
@@ -103,7 +103,7 @@ function Cart() {
               <div className="flex-1 cursor-pointer" onClick={() => navigate(`/product?id=${item.artwork_id}`)}>
                 <h3 className="text-lg font-semibold">{item.artworks?.title || 'Untitled'}</h3>
                 <div className="text-yellow-700 font-bold">₹{item.artworks?.cost}</div>
-                <div className="text-gray-500 text-sm">Quantity: {item.quantity}</div>
+                
               </div>
               <div>
                 <button

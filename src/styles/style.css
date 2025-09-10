@@ -544,3 +544,56 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+:root {
+  --artwork-row-height: 340px;
+  /* Example: set to match your card height */
+}
+
+@media (max-width: 640px) {
+  .artwork-scroll-area {
+    max-height: calc(var(--artwork-row-height) * 6);
+  }
+}
+
+@media (min-width: 641px) {
+  .artwork-scroll-area {
+    max-height: calc(var(--artwork-row-height) * 3);
+  }
+}
+
+:root {
+  --artwork-row-height: 500px;
+  /* Adjust based on your card height */
+}
+
+.artwork-scroll-area {
+  max-height: calc(var(--artwork-row-height) * 6);
+  /* Mobile: 6 rows */
+}
+
+@media (min-width: 641px) {
+  .artwork-scroll-area {
+    max-height: calc(var(--artwork-row-height) * 3);
+    /* Desktop: 3 rows */
+  }
+}
+
+/* Custom scrollbar styling (optional) */
+.artwork-scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.artwork-scroll-area::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.artwork-scroll-area::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.artwork-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}

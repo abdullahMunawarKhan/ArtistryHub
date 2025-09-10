@@ -356,11 +356,9 @@ export default function ProductDetails() {
               <button className="btn-secondary px-5 py-2" onClick={addToCart}>Add to Cart</button>
             )}
             <div className="flex flex-col items-center">
-              <span className="text-xs text-red-500 -mb-1">
-                <span style={{ color: 'red' }}>*</span>
-                Will be available soon
-              </span>
-              <button className="btn-outline px-5 py-2" disabled>See Creation Video</button>
+              {artwork.video_url && (
+                <button className="btn-outline px-5 py-2" onClick={() => setShowVideo(true)}>See Creation Video</button>
+              )}
             </div>
             <button className="btn-outline px-5 py-2" onClick={() => navigate(`/artist-profile?id=${artwork.artist_id}`)}>View Reviews</button>
             <ArtworkShareButton artworkId={artwork.id} />
