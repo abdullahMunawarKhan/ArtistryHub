@@ -276,7 +276,7 @@ function ArtistDashboard() {
         <tbody>
           {orders.map(order => (
             <tr key={order.id} className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
-              onClick={() => navigate(`/product-details?id=${order.artwork?.id}`)}>
+              onClick={() => navigate(`/product?id=${order.artwork?.id}`)}>
               <td className="text-blue-700 underline">{order.artwork?.title || 'Unknown'}</td>
               <td>₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}</td>
               <td>₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}</td>
@@ -315,7 +315,7 @@ function ArtistDashboard() {
                   <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
                     <td
                       className="text-blue-700 underline cursor-pointer"
-                      onClick={() => navigate(`/product-details?id=${artwork.id}`)}
+                      onClick={() => navigate(`/product?id=${artwork.id}`)}
                     >
                       {artwork.title}
                     </td>
@@ -326,7 +326,7 @@ function ArtistDashboard() {
                           : artwork.image_urls}
                         alt={artwork.title}
                         className="w-12 h-12 rounded cursor-pointer"
-                        onClick={() => navigate(`/product-details?id=${artwork.id}`)}
+                        onClick={() => navigate(`/product?id=${artwork.id}`)}
                       />
                     </td>
                     <td>₹{artwork.base_price}</td>

@@ -341,7 +341,8 @@ function ArtistList() {
               />
 
               {/* Right Side: Info */}
-              <div className="flex flex-col flex-grow">
+              <div className="flex flex-col flex-grow"
+                onClick={() => navigate(`/artist-profile?id=${artist.id}`)} >
                 <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">
                   {artist.name}
                 </h2>
@@ -375,7 +376,7 @@ function ArtistList() {
                     onFollowChange={handleFollowChange}
                   />
                   <span className="text-sm text-gray-500">
-                    {artist.followers_count?.toLocaleString()} 
+                    {artist.followers_count?.toLocaleString()}
                   </span>
                 </div>
               </div>

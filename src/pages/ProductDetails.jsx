@@ -29,7 +29,8 @@ function StarRating({ value }) {
 }
 function ArtworkShareButton({ artworkId }) {
   const [copied, setCopied] = useState(false);
-  const artworkUrl = `${window.location.origin}/#/product-details?id=${artworkId}`;
+  const artworkUrl = `${window.location.origin}/#/product?id=${artworkId}`;
+
 
 
   const handleShare = async () => {
@@ -380,7 +381,7 @@ export default function ProductDetails() {
                 <div
                   key={item.id}
                   className="min-w-[200px] bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md cursor-pointer transition"
-                  onClick={() => navigate(`/product-details?id=${item.id}`)}
+                  onClick={() => navigate(`/product?id=${item.id}`)}
                 >
                   <div className="w-full h-40 rounded-t-xl overflow-hidden">
                     <img src={img} alt={item.title} className="w-full h-full object-cover" />
@@ -412,7 +413,7 @@ export default function ProductDetails() {
                   {/* Image clickable */}
                   <div
                     className="w-full h-40 rounded-t-xl overflow-hidden"
-                    onClick={() => navigate(`/product-details?id=${item.id}`)}
+                    onClick={() => navigate(`/product?id=${item.id}`)}
                   >
                     <img src={img} alt={item.title} className="w-full h-full object-cover" />
                   </div>
@@ -421,7 +422,7 @@ export default function ProductDetails() {
                     {/* Title clickable */}
                     <h3
                       className="text-sm font-medium text-slate-900 truncate hover:text-blue-600 cursor-pointer"
-                      onClick={() => navigate(`/product-details?id=${item.id}`)}
+                      onClick={() => navigate(`/product?id=${item.id}`)}
                     >
                       {item.title}
                     </h3>
@@ -429,7 +430,7 @@ export default function ProductDetails() {
                     {/* Cost clickable */}
                     <p
                       className="text-slate-600 font-semibold cursor-pointer hover:text-blue-600"
-                      onClick={() => navigate(`/product-details?id=${item.id}`)}
+                      onClick={() => navigate(`/product?id=${item.id}`)}
                     >
                       ₹{item.cost}
                     </p>
