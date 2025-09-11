@@ -203,7 +203,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
 
 function ArtistProfileShare({ artistId }) {
   const [copied, setCopied] = useState(false);
-  const profileUrl = `${window.location.origin}/artist-profile?id=${artistId}`;
+  const profileUrl = `${window.location.origin}/#/artist-profile?id=${artistId}`;
 
   const handleShare = async () => {
     // Native share on supported devices

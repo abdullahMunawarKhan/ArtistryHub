@@ -29,7 +29,8 @@ function StarRating({ value }) {
 }
 function ArtworkShareButton({ artworkId }) {
   const [copied, setCopied] = useState(false);
-  const artworkUrl = `${window.location.origin}/product-details?id=${artworkId}`;
+  const artworkUrl = `${window.location.origin}/#/product-details?id=${artworkId}`;
+
 
   const handleShare = async () => {
     if (navigator.share) {
