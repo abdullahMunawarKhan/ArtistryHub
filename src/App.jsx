@@ -23,6 +23,7 @@ import ArtistDashboard from './pages/ArtistDashboard';
 import VideoFeed from './components/VideoFeed';
 import Feedback from './pages/Feedback';
 import ContactUs from './pages/ContactUs';
+import PrivacyPolicies from './pages/PrivacyPolicies';
 
 
 function App() {
@@ -83,8 +84,9 @@ function App() {
             <Route path="/track-order" element={<TrackOrder />} />
             <Route path="/artist-dashboard" element={<ArtistDashboard />} />
             <Route path="/feed" element={<VideoFeed />} />
-            <Route path="feedback-form" element={<Feedback />} />
-            <Route path="contact-us" element={<ContactUs />} />
+            <Route path="/feedback-form" element={<Feedback />} />
+            <Route path="/contact-us" element={<ContactUs />} />
+            <Route path="/privacy-policies" element={<PrivacyPolicies />} />
           </Routes>
         </div>
       </main>
@@ -205,7 +207,8 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
               <div className="flex flex-col gap-8">
                 <div className="sm:flex sm:gap-6 sm:items-center">
                   <div className="sm:w-3/5 flex flex-col justify-center">
-                    <Link to="/contact-us" className="text-lg font-bold text-white mb-3">
+                    <Link to="/contact-us"
+                      onClick={() => setFooterOpen(false)} className="text-lg font-bold text-white mb-3">
                       Contact Us
                     </Link>
                     <p className="text-sm leading-relaxed">
@@ -244,7 +247,14 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
                   <span>Please provide us your valuable feedback</span>
                 </Link>
               </div>
-
+              <Link
+                to="/privacy-policies"
+                onClick={() => setFooterOpen(false)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200"
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>see privacy policies</span>
+              </Link>
               {/* Bottom Bar */}
               <div className="col-span-full border-t border-gray-700 mt-4 pt-1">
                 <p className="text-center text-gray-500 text-xs">
