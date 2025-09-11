@@ -36,142 +36,7 @@ function StarRating({ value }) {
 
 
 
-function ArtistFollowButton({ artistId, user, refreshArtistFollowers, stopPropagationHandler, onFollowChange }) {
-  const [following, setFollowing] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [followersCount, setFollowersCount] = useState(0);
 
-
-  // Load initial following status and followers count
-  useEffect(() => {
-    async function fetchData() {
-      if (!user) {
-        setFollowing(false);
-      } else {
-        const { data: userData } = await supabase
-          .from('user')
-          .select('following')
-          .eq('id', user.id)
-          
-
-        setFollowing(userData?.following?.includes(artistId) ?? false);
-      }
-
-      const { data: artistData, error } = await supabase
-        .from('artists')
-        .select('followers')
-        .eq('id', artistId)
-        
-
-      if (!error && artistData) {
-        setFollowersCount(artistData.followers || 0);
-      }
-    }
-    fetchData();
-  }, [user, artistId]);
-
-  async function toggleFollow() {
-    if (!user) {
-      alert('Please login to follow an artist.');
-      return;
-    }
-    if (processing) return;
-    setProcessing(true);
-
-    try {
-      const { data: userData, error: userError } = await supabase
-        .from('user')
-        .select('following')
-        .eq('id', user.id)
-        
-
-      if (userError) throw userError;
-
-      let currentFollowing = userData?.following || [];
-      let updatedFollowing = [];
-      let followersCountChange = 0;
-
-      if (!following) {
-        updatedFollowing = [...currentFollowing, artistId];
-        followersCountChange = 1;
-      } else {
-        updatedFollowing = currentFollowing.filter(id => id !== artistId);
-        followersCountChange = -1;
-      }
-
-      await supabase
-        .from('user')
-        .update({ following: updatedFollowing })
-        .eq('id', user.id);
-
-      const { data: artistData, error: artistError } = await supabase
-        .from('artists')
-        .select('followers')
-        .eq('id', artistId)
-        
-
-      if (artistError) throw artistError;
-
-      const newFollowers = Math.max(0, (artistData.followers || 0) + followersCountChange);
-
-      await supabase
-        .from('artists')
-        .update({ followers: newFollowers })
-        .eq('id', artistId);
-
-      setFollowing(!following);
-      setFollowersCount(newFollowers);
-
-      // Notify parent about follow status change for instant UI update
-      if (onFollowChange) {
-        onFollowChange(artistId, !following);
-      }
-
-      if (refreshArtistFollowers) refreshArtistFollowers();
-
-    } catch (error) {
-      alert('Failed to update follow status.');
-      console.error('Follow toggle error:', error);
-    }
-
-    setProcessing(false);
-  }
-
-
-  return (
-    <div className="flex items-center gap-4 my-2">
-      {(user && user.role === 'user') && (
-        <button
-          onClick={(e) => {
-            stopPropagationHandler?.(e);
-            toggleFollow();
-          }}
-          onDoubleClick={(e) => {
-            stopPropagationHandler?.(e);
-            toggleFollow();
-          }}
-          disabled={processing}
-          className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
-          ${following
-              ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
-              : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
-            }`}
-          style={{ minWidth: '110px', textAlign: 'center' }}
-          title={following ? 'Unfollow artist' : 'Follow artist'}
-        >
-          {following ? 'Following' : 'Follow'}
-        </button>
-      )}
-      <span
-        className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600"
-        style={{ letterSpacing: '0.03em' }}
-      >
-        {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
-      </span>
-    </div>
-  );
-
-}
 
 function ArtistList() {
   const [artists, setArtists] = useState([]);
@@ -180,6 +45,7 @@ function ArtistList() {
   const [filterTag, setFilterTag] = useState('All'); // 'All' or 'Following'
   const [followingIds, setFollowingIds] = useState([]); // user's following F
   const [searchTerm, setSearchTerm] = useState(''); // new state for search term
+  const [showLoginMessage, setShowLoginMessage] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -214,7 +80,7 @@ function ArtistList() {
         .from('user')
         .select('following')
         .eq('id', user.id)
-        
+
       if (!error && userData?.following) {
         setFollowingIds(userData.following);
       } else {
@@ -270,6 +136,142 @@ function ArtistList() {
       }
     });
   }
+  function handleFollowingClick() {
+    if (!user) {
+      setShowLoginMessage(true);
+      // Hide message after 3 seconds (optional)
+      setTimeout(() => setShowLoginMessage(false), 3000);
+      return;
+    }
+    setFilterTag('Following');
+  }
+
+  function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
+    const [following, setFollowing] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [followersCount, setFollowersCount] = useState(0);
+
+    // Load initial following status and followers count
+    useEffect(() => {
+      async function fetchData() {
+        if (!user) {
+          setFollowing(false);
+        } else {
+          const { data: userData } = await supabase
+            .from('user')
+            .select('following')
+            .eq('id', user.id);
+
+          setFollowing(userData?.following?.includes(artistId) ?? false);
+        }
+
+        const { data: artistData, error } = await supabase
+          .from('artists')
+          .select('followers')
+          .eq('id', artistId)
+          .single();
+
+        if (!error && artistData) {
+          setFollowersCount(artistData.followers || 0);
+        }
+      }
+      fetchData();
+    }, [user, artistId]);
+
+    async function toggleFollow() {
+      if (!user) {
+        alert('Please login to follow an artist.');
+        return;
+      }
+      if (processing) return;
+      setProcessing(true);
+
+      try {
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('following')
+          .eq('id', user.id);
+
+        if (userError) throw userError;
+
+        let currentFollowing = userData?.following || [];
+        let updatedFollowing = [];
+        let followersCountChange = 0;
+
+        if (!following) {
+          updatedFollowing = [...currentFollowing, artistId];
+          followersCountChange = 1;
+        } else {
+          updatedFollowing = currentFollowing.filter(id => id !== artistId);
+          followersCountChange = -1;
+        }
+
+        await supabase
+          .from('user')
+          .update({ following: updatedFollowing })
+          .eq('id', user.id);
+
+        const { data: artistData, error: artistError } = await supabase
+          .from('artists')
+          .select('followers')
+          .eq('id', artistId)
+          .single();
+
+        if (artistError) throw artistError;
+
+        const newFollowers = Math.max(0, (artistData.followers || 0) + followersCountChange);
+
+        await supabase
+          .from('artists')
+          .update({ followers: newFollowers })
+          .eq('id', artistId);
+
+        setFollowing(!following);
+        setFollowersCount(newFollowers);
+        if (refreshArtistFollowers) refreshArtistFollowers();
+
+      } catch (error) {
+        alert('Failed to update follow status.');
+        console.error('Follow toggle error:', error);
+      }
+
+      setProcessing(false);
+    }
+
+
+    return (
+      <div className="flex items-center gap-3 my-2 w-full">
+        {/* Show follow button only if user is NOT the artist */}
+        {!(user && String(user.id) === String(artistId)) && (
+          <button
+            onClick={e => { e.stopPropagation(); toggleFollow(); }}
+            onDoubleClick={e => { e.stopPropagation(); toggleFollow(); }}
+            disabled={processing}
+            className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
+            ${following
+                ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
+                : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
+              }`}
+            style={{ minWidth: '110px', textAlign: 'center' }}
+            title={following ? 'Unfollow artist' : 'Follow artist'}
+          >
+            {following ? 'Following' : 'Follow'}
+          </button>
+        )}
+
+        {/* Followers count always visible */}
+        <span
+          className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600 ml-0"
+          style={{ letterSpacing: '0.03em' }}
+        >
+          {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
+        </span>
+      </div>
+    );
+
+
+
+  }
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse">
@@ -303,16 +305,21 @@ function ArtistList() {
           All
         </button>
         <button
-          className={`px-5 py-2 rounded-xl shadow ${filterTag === 'Following'
-            ? 'bg-blue-600 text-white'
-            : 'bg-white text-blue-600 border border-blue-600'
+
+          onClick={handleFollowingClick}
+          className={`px-5 py-2 rounded-xl shadow ${!user
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : filterTag === 'Following'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-blue-600 border border-blue-600'
             }`}
-          onClick={() => setFilterTag('Following')}
-          disabled={!user} // Optionally disable if no user logged in
-          title={!user ? 'Login to see followed artists' : ''}
         >
-          Following
+          My Following
         </button>
+
+        {showLoginMessage && (
+          <p className="text-sm text-red-600 mt-1 select-none">Login to see your following</p>
+        )}
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -324,47 +331,57 @@ function ArtistList() {
           </div>
         ) : (
           filteredArtists.map((artist) => (
-            <div
-              key={artist.id}
-              className="bg-white glass-card backdrop-blur-md shadow-2xl p-6 rounded-2xl cursor-pointer border border-slate-100 hover:shadow-3xl transition-all duration-200"
-              onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
-            >
-              <div className="flex flex-col items-center">
-                <img
-                  src={artist.profile_image_url}
-                  alt={`${artist.name}'s profile`}
-                  className="w-24 h-24 rounded-full object-cover shadow ring-4 ring-blue-100 mb-3"
-                  loading="lazy"
-                />
-                <h2 className="text-2xl font-bold text-gray-900 mt-3 mb-1 text-center">
+            <div className="bg-white rounded-2xl shadow-xl p-6 flex items-center gap-6 max-w-xl hover:shadow-2xl transition-shadow duration-300">
+              {/* Profile Image Left */}
+              <img
+                src={artist.profile_image_url}
+                alt={`${artist.name}'s profile`}
+                className="w-28 h-28 rounded-full object-cover shadow-md ring-4 ring-blue-100 flex-shrink-0 transform hover:scale-105 transition-transform duration-300"
+                loading="lazy"
+              />
+
+              {/* Right Side: Info */}
+              <div className="flex flex-col flex-grow">
+                <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">
                   {artist.name}
                 </h2>
-                <div className="flex items-center gap-2 text-blue-500 mt-2 mb-2">
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+
+                <div className="flex items-center gap-2 text-blue-600 mb-3">
+                  <svg
+                    className="w-5 h-5 opacity-80"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="font-medium text-slate-700">{artist.location}</span>
+                  <span className="font-medium text-gray-700">{artist.location}</span>
                 </div>
-                {/* <p className="text-sm text-slate-600 mb-1">
-                  <span className="font-semibold">Paintings Sold:</span> {artist.paintings_sold}
-                </p> */}
-                <div className="mt-2">
+
+                {/* Ratings */}
+                <div className="mb-4">
                   <StarRating value={artist.avg_rating} />
                 </div>
-                {/* Pass stopPropagation to the follow button to prevent redirect */}
-                <ArtistFollowButton
-                  artistId={artist.id}
-                  user={user}
-                  stopPropagationHandler={(e) => e.stopPropagation()}
-                  onFollowChange={handleFollowChange}
-                />
 
+                {/* Follow Button and Follower Count */}
+                <div className="flex items-center justify-between">
+                  <ArtistFollowButton
+                    artistId={artist.id}
+                    user={user}
+                    stopPropagationHandler={(e) => e.stopPropagation()}
+                    onFollowChange={handleFollowChange}
+                  />
+                  <span className="text-sm text-gray-500">
+                    {artist.followers_count?.toLocaleString()} 
+                  </span>
+                </div>
               </div>
             </div>
+
+
           ))
         )}
       </div>
