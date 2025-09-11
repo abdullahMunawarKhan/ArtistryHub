@@ -1,7 +1,7 @@
 // src/pages/Welcome.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
+import {motion} from "framer-motion";
 function Welcome() {
   const navigate = useNavigate();
 
@@ -29,12 +29,35 @@ function Welcome() {
           <div className="absolute right-10 bottom-10 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-300 rounded-full blur-3xl opacity-30" />
 
           {/* Logo and Brand */}
-          <div className="mb-10 text-center z-10">
-            <div className="ScopeBrush-logo text-6xl font-extrabold mb-3 animate-pulse text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-800 drop-shadow-lg">
+          
+
+          {/* Logo and Brand */}
+          <div className="mb-12 text-center z-10 flex flex-col items-center justify-center">
+            <motion.img
+              src="/images/logo2.png"
+              alt="ScopeBrush Logo"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="h-28 w-28 rounded-full shadow-xl border-4 border-purple-400 transition-transform duration-300 hover:scale-110 hover:shadow-2xl"
+            />
+            <motion.div
+              className="ScopeBrush-logo text-7xl font-extrabold leading-relaxed pb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-800 drop-shadow-xl"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+            >
               ScopeBrush
-            </div>
-            <div className="h-1 w-32 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full shadow-lg animate-fadeIn"></div>
+            </motion.div>
+            <motion.div
+              className="h-1.5 w-40 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full shadow-md"
+              initial={{ opacity: 0, scaleX: 0 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
+              style={{ transformOrigin: "center" }}
+            />
           </div>
+
 
           {/* Hero Content */}
           <div className="flex flex-col items-center text-center md:w-[60vw] z-10">

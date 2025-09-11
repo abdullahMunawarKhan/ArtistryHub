@@ -98,30 +98,22 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   let clickTimeout = null;
 
   const handleAboutUsClick = () => {
-    if (clickTimeout !== null) {
-      // Double click detected: close footer
-      clearTimeout(clickTimeout);
-      clickTimeout = null;
-      setFooterOpen(false);
-      return;
-    }
-
-    clickTimeout = setTimeout(() => {
-      clickTimeout = null;
-
-      // Single click behavior: toggle open or scroll to footer
-      if (!footerOpen) {
-        setFooterOpen(true);
-        setTimeout(() => {
-          const footer = document.querySelector('footer');
-          if (footer) footer.scrollIntoView({ behavior: 'smooth' });
-        }, 150);
-      } else {
+    if (!footerOpen) {
+      // Footer is closed: open it and scroll to it
+      setFooterOpen(true);
+      setTimeout(() => {
         const footer = document.querySelector('footer');
         if (footer) footer.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 250); // 250ms window for double click
+      }, 150);
+    } else {
+      // Footer is already open: close it
+      setFooterOpen(false);
+    }
   };
+
+
+
+
 
   const handleNav = (path) => {
     setMenuOpen(false);
@@ -166,9 +158,10 @@ function TopPanel({ footerOpen, setFooterOpen }) {
         {/* Left: Logo and Name, flush to left */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/logo2.png" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
+            <img src="/images/logo2.png" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
             <span className="text-2xl font-bold" style={{ color: '#D740A1' }}>ScopeBrush</span>
           </Link>
+
         </div>
 
         {/* Center: Desktop Navigation */}
@@ -214,6 +207,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
           )}
           <button
             onClick={handleAboutUsClick}
+            
             className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
           >
             About Us
@@ -332,6 +326,9 @@ function TopPanel({ footerOpen, setFooterOpen }) {
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
           <div className="px-6 py-4 space-y-4">
+            <button onClick={() => navOrLogin('/feed')} className="nav-link">
+              Explore Arts
+            </button>
             <Link
               to="/main-dashboard"
               onClick={() => handleNav('/main-dashboard')}
@@ -346,79 +343,56 @@ function TopPanel({ footerOpen, setFooterOpen }) {
             >
               👨‍🎨 Artists
             </Link>
-            {user ? (
+
+            {!isAdmin && (
               <>
-                {!isAdmin && (
-                  <>
-                    <button
-                      onClick={() => navOrLogin('/cart')}
-                      className="block nav-link py-2 w-full text-left"
-                    >
-                      🛒 Cart
-                    </button>
-                    <button
-                      onClick={() => navOrLogin('/orders')}
-                      className="block nav-link py-2 w-full text-left"
-                    >
-                      📦 Orders
-                    </button>
-                    {artistProfile && (
-                      <Link
-                        to={`/artist-profile?id=${artistProfile.id}`}
-                        onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
-                        className="block nav-link py-2"
-                      >
-                        👤 My Profile
-                      </Link>
-                    )}
-                    {!artistProfile && (
-                      <button
-                        onClick={() => navOrLogin('/register')}
-                        className="block nav-link py-2 w-full text-left"
-                      >
-                        ✨ Become Artist
-                      </button>
-                    )}
-                  </>
+                <button
+                  onClick={() => navOrLogin('/cart')}
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  🛒 Cart
+                </button>
+                <button
+                  onClick={() => navOrLogin('/orders')}
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  📦 Orders
+                </button>
+                {artistProfile && (
+                  <Link
+                    to={`/artist-profile?id=${artistProfile.id}`}
+                    onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
+                    className="block nav-link py-2"
+                  >
+                    👤 My Profile
+                  </Link>
                 )}
-                {isAdmin && (
+                {!artistProfile && (
                   <button
-                    onClick={handleAdminDashboard}
+                    onClick={() => navOrLogin('/register')}
                     className="block nav-link py-2 w-full text-left"
                   >
-                    ⚙️ Admin Dashboard
+                    ✨ Become Artist
                   </button>
                 )}
-
               </>
-            ) : (
-              <div className="space-y-3 pt-4">
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setLoginDropdownOpen(false);
-                    navigate('/user-login');
-                  }}
-                  className="block btn-primary w-full text-center"
-                >
-                  User Login
-                </button>
-                <Link
-                  to="/signup"
-                  onClick={() => handleNav('/signup')}
-                  className="block btn-outline w-full text-center"
-                >
-                  Sign Up
-                </Link>
-                <button
-                  onClick={handleAboutUsClick}
-                  className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
-                >
-                  About Us
-                </button>
-
-              </div>
             )}
+            {isAdmin && (
+              <button
+                onClick={handleAdminDashboard}
+                className="block nav-link py-2 w-full text-left"
+              >
+                ⚙️ Admin Dashboard
+              </button>
+            )}
+            <button
+              onClick={handleAboutUsClick}
+              
+              className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
+            >
+              About Us
+            </button>
+
           </div>
         </div>
       )}
@@ -448,3 +422,4 @@ function TopPanel({ footerOpen, setFooterOpen }) {
 }
 
 export default TopPanel;
+
