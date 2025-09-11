@@ -137,7 +137,7 @@ function App() {
                       </span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <Briefcase className="w-5 h-5 text-yellow-400" />
+                      <UserCircle className="w-5 h-5 text-yellow-400" />
                       <span className="font-semibold text-white">Founder, CFO & CMO:</span>
                       <span className="font-semibold text-yellow-400 text-base ml-7">Ayush Ghojge</span>
                     </li>

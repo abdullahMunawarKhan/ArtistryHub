@@ -207,7 +207,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
           )}
           <button
             onClick={handleAboutUsClick}
-            
+
             className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
           >
             About Us
@@ -326,6 +326,26 @@ function TopPanel({ footerOpen, setFooterOpen }) {
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
           <div className="px-6 py-4 space-y-4">
+            {!user && (
+              <>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate('/user-login');
+                  }}
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  Login
+                </button>
+                <Link
+                  to="/signup"
+                  onClick={() => setMenuOpen(false)}
+                  className="block nav-link py-2 w-full text-left"
+                >
+                  Sign Up
+                </Link>
+              </>
+            )}
             <button onClick={() => navOrLogin('/feed')} className="nav-link">
               Explore Arts
             </button>
@@ -387,13 +407,15 @@ function TopPanel({ footerOpen, setFooterOpen }) {
             )}
             <button
               onClick={handleAboutUsClick}
-              
+
               className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
             >
               About Us
             </button>
 
+
           </div>
+
         </div>
       )}
 
