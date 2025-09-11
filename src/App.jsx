@@ -22,7 +22,7 @@ import TrackOrder from './pages/TrackOrder';
 import ArtistDashboard from './pages/ArtistDashboard';
 import VideoFeed from './components/VideoFeed';
 import Feedback from './pages/Feedback';
-
+import ContactUs from './pages/ContactUs';
 
 
 function App() {
@@ -84,6 +84,7 @@ function App() {
             <Route path="/artist-dashboard" element={<ArtistDashboard />} />
             <Route path="/feed" element={<VideoFeed />} />
             <Route path="feedback-form" element={<Feedback />} />
+            <Route path="contact-us" element={<ContactUs />} />
           </Routes>
         </div>
       </main>
@@ -204,7 +205,9 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
               <div className="flex flex-col gap-8">
                 <div className="sm:flex sm:gap-6 sm:items-center">
                   <div className="sm:w-3/5 flex flex-col justify-center">
-                    <h2 className="text-lg font-bold text-white mb-3">Contact Us</h2>
+                    <Link to="/contact-us" className="text-lg font-bold text-white mb-3">
+                      Contact Us
+                    </Link>
                     <p className="text-sm leading-relaxed">
                       <span className="font-semibold">Address:</span> NMIET campus, near Latis housing society, Talegaon
                       Dabhade, Pune.
