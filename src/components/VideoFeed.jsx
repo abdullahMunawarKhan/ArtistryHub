@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { Heart, ShoppingCart, UserPlus, Play, Pause, Info } from 'lucide-react';
+
 
 
 const aspectClass = "aspect-[3/4]"; // Reel-like format
