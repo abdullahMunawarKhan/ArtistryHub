@@ -217,53 +217,34 @@ function TopPanel({ footerOpen, setFooterOpen }) {
 
         {/* Right: User icon and text, flush to right */}
         <div className="flex items-center flex-shrink-0 justify-end">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {user ? (
               <div className="relative" ref={profileMenuRef}>
+                {/* Profile Button */}
                 <button
                   onClick={() => setProfileMenuOpen(prev => !prev)}
-                  className="flex flex-col items-center bg-transparent border-none cursor-pointer"
+                  className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                   aria-label="User profile menu"
-                  style={{ marginRight: 0 }}
                 >
                   <img
                     src="/images/user_profile.png"
                     alt="Profile Icon"
-                    style={{ width: 32, height: 32, borderRadius: '50%' }}
+                    className="w-9 h-9 rounded-full border-2 border-purple-300 shadow-sm hover:scale-105 transition-transform"
                   />
-                  <span style={{ fontSize: '0.75rem', marginTop: '2px' }}>User</span>
                 </button>
+
+                {/* Dropdown Menu */}
                 {profileMenuOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: 0,
-                      marginTop: '0.5rem',
-                      background: 'white',
-                      border: '1px solid #ddd',
-                      borderRadius: '6px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                      width: 220,
-                      padding: '0.5rem 1rem',
-                      zIndex: 1000,
-                    }}
-                  >
-                    <div style={{ marginBottom: 8, fontSize: '0.875rem' }}>
-                      <div>Signed in as</div>
-                      <div style={{ fontWeight: 'bold', wordBreak: 'break-word' }}>{user.email}</div>
+                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden animate-fadeIn">
+                    <div className="px-4 py-3 text-sm border-b border-gray-100">
+                      <p className="text-gray-500">Signed in as</p>
+                      <p className="font-semibold text-gray-900 break-words">
+                        {user.email}
+                      </p>
                     </div>
                     <button
                       onClick={handleLogout}
-                      style={{
-                        width: '100%',
-                        padding: '0.5rem',
-                        backgroundColor: '#ff4d4f',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontWeight: 'bold',
-                      }}
+                      className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition"
                     >
                       Logout
                     </button>
@@ -271,22 +252,22 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 )}
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-2 relative">
-                {/* Dropdown Login */}
+              <div className="hidden md:flex items-center gap-3 relative">
+                {/* Login Dropdown */}
                 <div className="relative">
                   <button
-                    onClick={() => setLoginDropdownOpen((prev) => !prev)}
-                    className="btn-primary flex items-center gap-2 px-5 py-2"
+                    onClick={() => setLoginDropdownOpen(prev => !prev)}
+                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow transition"
                     type="button"
                   >
                     Login <span className="ml-1">▾</span>
                   </button>
                   {loginDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-40 bg-white border rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="absolute top-full left-0 mt-2 w-44 bg-white border rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
                       <button
                         onClick={() => {
                           setLoginDropdownOpen(false);
-                          navigate('/user-login');
+                          navigate("/user-login");
                         }}
                         className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
                       >
@@ -297,7 +278,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 </div>
                 <Link
                   to="/signup"
-                  className="btn-outline px-5 py-2 hover:border-purple-400 hover:text-purple-700 transition ml-2"
+                  className="px-5 py-2 rounded-lg border border-purple-300 text-purple-700 font-medium hover:bg-purple-50 transition"
                 >
                   Sign Up
                 </Link>
@@ -306,20 +287,29 @@ function TopPanel({ footerOpen, setFooterOpen }) {
 
             {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
-              style={{ marginLeft: 4, marginRight: 0 }} // Adjust spacing as needed
             >
               {/* Hamburger icon */}
               <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-                <span className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? 'rotate-45 translate-y-1' : ''}`}></span>
-                <span className={`block h-0.5 w-6 bg-gray-600 transition-opacity ${menuOpen ? 'opacity-0' : ''}`}></span>
-                <span className={`block h-0.5 w-6 bg-gray-600 transition-transform ${menuOpen ? '-rotate-45 -translate-y-1' : ''}`}></span>
+                <span
+                  className={`block h-0.5 w-6 bg-gray-700 transition-transform ${menuOpen ? "rotate-45 translate-y-1" : ""
+                    }`}
+                ></span>
+                <span
+                  className={`block h-0.5 w-6 bg-gray-700 transition-opacity ${menuOpen ? "opacity-0" : ""
+                    }`}
+                ></span>
+                <span
+                  className={`block h-0.5 w-6 bg-gray-700 transition-transform ${menuOpen ? "-rotate-45 -translate-y-1" : ""
+                    }`}
+                ></span>
               </div>
             </button>
           </div>
         </div>
+
       </nav>
 
       {/* Mobile Menu */}

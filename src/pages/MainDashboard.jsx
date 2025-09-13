@@ -659,7 +659,7 @@ function MainDashboard() {
             className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
             aria-label="Scroll to top"
           >
-            ↑ Top
+            ↑
           </button>
         )}
       </div>

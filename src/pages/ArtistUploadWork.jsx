@@ -74,7 +74,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         .from("artists")
         .select("id")
         .eq("user_id", user.id)
-
+        .single();
       setArtistId(artist?.id || null);
     }
     loadUserAndArtist();
@@ -394,8 +394,8 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
               />
             </div>
             <br />
-            
-            
+
+
             <label>Upload Video (optional, max 50MB)<br /><b>*Don't upload with any social media id tag or watermark will be provided by our plateform</b></label>
             <input type="file" accept="video/*" onChange={handleVideoChange} style={{ marginBottom: 16 }} />
             {videoPreview && (

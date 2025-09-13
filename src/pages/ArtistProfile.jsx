@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+
 // import { HashRouter as Router } from "react-router-dom";
 // instead of BrowserRouter
 
@@ -167,7 +168,7 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
   }
 
 
-   return (
+  return (
     <div className="flex items-center gap-3 my-2 w-full">
       {/* Show follow button only if user is NOT the artist */}
       {!(user && String(user.id) === String(artistId)) && (
@@ -197,9 +198,8 @@ function ArtistFollowButton({ artistId, user, refreshArtistFollowers }) {
     </div>
   );
 
-
-
 }
+
 
 function ArtistProfileShare({ artistId }) {
   const [copied, setCopied] = useState(false);
@@ -234,21 +234,19 @@ function ArtistProfileShare({ artistId }) {
     <>
       <button
         onClick={handleShare}
-        className="absolute top-4 left-4 flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold shadow transition"
+        className="flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow transition text-sm sm:text-base"
         aria-label="Share Profile"
       >
-        {/* Arrow SVG */}
+        {/* Heroicon: Arrow turn-up-right (looks like classic Share arrow) */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-5 w-5"
-          fill="none"
+          fill="currentColor"
           viewBox="0 0 20 20"
-          stroke="currentColor"
-          strokeWidth={2}
+          className="w-5 h-5"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M10 11l-4-4m0 0l4-4m-4 4h10" />
+          <path d="M15.707 5.293a1 1 0 0 0-1.414 0L10 9.586V7a1 1 0 1 0-2 0v6a1 1 0 0 0 1 1h6a1 1 0 1 0 0-2h-2.586l4.293-4.293a1 1 0 0 0 0-1.414z" />
         </svg>
-        Share
+        <span>Share</span>
       </button>
 
     </>
@@ -273,7 +271,7 @@ export default function ArtistProfile() {
   const [averageRating, setAverageRating] = useState(0);
   const [userRole, setUserRole] = useState("user");
   const [user, setUser] = useState(null); // Add user state
-
+  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     async function fetchArtistAndUser() {
@@ -415,30 +413,39 @@ export default function ArtistProfile() {
     <div className="flex flex-col-reverse md:flex-row gap-6 max-w-7xl mx-auto p-6">
       {/* ARTWORKS: Bottom on mobile, left on desktop */}
       <div className="w-full md:w-3/4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">{isOwner ? "Your Artworks" : "Artworks by this artist"}</h2>
-          <div className="flex gap-4 items-center mt-2">
-            {isOwner && (
+        <div className="flex flex-col gap-3 mb-4">
+          {isOwner && (
+            <div className="flex items-center justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => navigate("/upload-work")}
-                className="inline-flex items-center px-5 py-2 rounded-xl font-bold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-lg hover:scale-105 hover:shadow-2xl transition-transform duration-150"
+                className="flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-200 text-sm sm:text-base"
               >
-                <svg className="w-5 h-5 mr-2 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <svg
+                  className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-                Upload Artwork
+                Upload
               </button>
-            )}
-            {isOwner && (
+
               <button
                 onClick={() => navigate("/artist-dashboard")}
-                className="inline-flex items-center px-5 py-2 rounded-xl font-bold bg-indigo-600 text-white shadow-lg hover:bg-indigo-700 hover:scale-105 transition-transform duration-150"
+                className="flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow-md hover:bg-indigo-700 hover:scale-105 transition-transform duration-200 text-sm sm:text-base"
               >
                 Dashboard
               </button>
-            )}
-          </div>
+            </div>
+          )}
+
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900">
+            {isOwner ? "Your Artworks" : "Artworks by this artist"}
+          </h2>
         </div>
+
 
         {loadingArtworks ? (
           <p className="text-slate-600">Loading artworks...</p>
@@ -495,27 +502,45 @@ export default function ArtistProfile() {
       </div>
 
       {/* ARTIST CARD: Top on mobile, right on desktop */}
-      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-6 pt-20 flex flex-col h-fit mb-6 md:mb-0">
-        <ArtistProfileShare artistId={artist.id} />
-        {isOwner && (
-          <button
-            onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
-            className="absolute top-4 right-4 px-4 py-1 bg-blue-600 hover:bg-blue-700 transition text-white rounded text-sm font-medium"
-            aria-label="Edit Profile"
-          >
-            Edit
-          </button>
-        )}
+      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-4 sm:p-6 pt-16 sm:pt-20 flex flex-col h-fit mb-6 md:mb-0">
+        <div className="absolute top-4 left-0 w-full px-4 flex items-center justify-between">
+          <ArtistProfileShare artistId={artist.id} />
+
+          {isOwner && (
+            <button
+              onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition text-sm sm:text-base"
+              aria-label="Edit Profile"
+            >
+              {/* Heroicon: Pencil */}
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L10.582 16.071a4.5 4.5 0 01-1.897 1.13l-2.685.805.805-2.685a4.5 4.5 0 011.13-1.897l10.927-10.937z"
+                />
+              </svg>
+              <span className="hidden xs:inline">Edit</span>
+            </button>
+          )}
+        </div>
         {/* Profile image */}
         <img
           src={artist.profile_image_url}
           alt={artist.name}
-          className="w-32 h-32 rounded-full object-cover mx-auto mb-6 border-2 border-gray-200"
+          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover mx-auto mb-4 sm:mb-6 border-2 border-gray-200"
           loading="lazy"
         />
 
         {/* Rating */}
-        <div className="text-center mb-5">
+        <div className="text-center mb-4 sm:mb-5">
           <StarRating value={averageRating} />
           <p className="text-xs text-gray-500 mt-1">
             {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
@@ -523,48 +548,41 @@ export default function ArtistProfile() {
         </div>
 
         {/* Info */}
-        <h2 className="text-xl font-semibold text-center text-gray-900 mb-1">{artist.name}</h2>
-        <p className="text-sm text-gray-600 text-center mb-6">{artist.location}</p>
+        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-900 mb-1">{artist.name}</h2>
+        <p className="text-xs sm:text-sm text-gray-600 text-center mb-4 sm:mb-6">{artist.location}</p>
 
         {(isOwner || userRole === "efbv") && (
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm space-y-4 mx-auto w-full max-w-sm">
+          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-200 shadow-sm space-y-3 sm:space-y-4 mx-auto w-full max-w-xs">
             <div>
-              <p className="font-semibold text-xs text-black-500 font-medium mb-1">Mobile</p>
-              <p className="text-gray-800 break-words">{artist.mobile}</p>
+              <p className="font-semibold text-[11px] sm:text-xs text-black-500 mb-1">Mobile</p>
+              <p className="text-gray-800 break-words text-sm">{artist.mobile}</p>
             </div>
             <div>
-              <p className="font-semibold text-xs text-black-500 font-medium mb-1">Email</p>
-              <p className="text-gray-800 break-words truncate">{artist.email}</p>
+              <p className="font-semibold text-[11px] sm:text-xs text-black-500 mb-1">Email</p>
+              <p className="text-gray-800 break-words truncate text-sm">{artist.email}</p>
             </div>
           </div>
         )}
 
         {/* Follow button */}
-
-
-        <ArtistFollowButton
-          artistId={artist.id}
-          user={user}
-        />
-
-
+        <ArtistFollowButton artistId={artist.id} user={user} />
 
         {/* Reviews */}
-        <div className="mt-8 border-t border-gray-200 pt-5">
-          <h3 className="font-semibold text-gray-900 mb-4 text-lg">Reviews</h3>
+        <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4 sm:pt-5">
+          <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-base sm:text-lg">Reviews</h3>
           {reviews.length === 0 ? (
-            <p className="text-sm text-gray-500 italic">No reviews yet.</p>
+            <p className="text-xs sm:text-sm text-gray-500 italic">No reviews yet.</p>
           ) : (
-            <div className="space-y-4 max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="space-y-3 sm:space-y-4 max-h-48 sm:max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {reviews.map((rev, i) => (
                 <div
                   key={i}
-                  className="border rounded-lg p-3 text-sm bg-white shadow-sm"
+                  className="border rounded-lg p-2 sm:p-3 text-xs sm:text-sm bg-white shadow-sm"
                 >
                   <StarRating value={rev.rating} />
-                  <p className="mt-2 text-gray-700">{rev.review}</p>
+                  <p className="mt-1 sm:mt-2 text-gray-700">{rev.review}</p>
                   {isOwner && (
-                    <p className="text-xs text-gray-400 mt-1 italic">
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1 italic">
                       By: {rev.email}
                     </p>
                   )}

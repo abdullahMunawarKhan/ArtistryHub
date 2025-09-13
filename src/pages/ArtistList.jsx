@@ -240,19 +240,18 @@ function ArtistList() {
 
 
     return (
-      <div className="flex items-center gap-3 my-2 w-full">
+      <div className="flex items-center justify-between gap-3 my-2 w-full">
         {/* Show follow button only if user is NOT the artist */}
         {!(user && String(user.id) === String(artistId)) && (
           <button
             onClick={e => { e.stopPropagation(); toggleFollow(); }}
             onDoubleClick={e => { e.stopPropagation(); toggleFollow(); }}
             disabled={processing}
-            className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none
-            ${following
+            className={`px-5 py-2 text-sm font-bold rounded-xl shadow transition-all duration-300 focus:outline-none min-w-[110px] text-center flex-shrink-0
+        ${following
                 ? 'bg-white text-blue-600 border-blue-300 border hover:bg-blue-50 active:bg-blue-100'
                 : 'bg-blue-600 text-white border-blue-600 border hover:bg-blue-700 active:bg-blue-800'
               }`}
-            style={{ minWidth: '110px', textAlign: 'center' }}
             title={following ? 'Unfollow artist' : 'Follow artist'}
           >
             {following ? 'Following' : 'Follow'}
@@ -261,12 +260,13 @@ function ArtistList() {
 
         {/* Followers count always visible */}
         <span
-          className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600 ml-0"
+          className="text-sm font-semibold select-none whitespace-nowrap bg-gradient-to-r from-red-500 to-red-700 text-white px-3 py-1 rounded-full shadow border border-red-600 ml-0 flex-shrink-0"
           style={{ letterSpacing: '0.03em' }}
         >
           {followersCount} {followersCount === 1 ? 'follower' : 'followers'}
         </span>
       </div>
+
     );
 
 
@@ -331,7 +331,7 @@ function ArtistList() {
           </div>
         ) : (
           filteredArtists.map((artist) => (
-            <div className="bg-white rounded-2xl shadow-xl p-6 flex items-center gap-6 max-w-xl hover:shadow-2xl transition-shadow duration-300">
+            <div className="bg-white rounded-2xl shadow-xl p-6 flex items-center gap-6 max-w-xl w-full hover:shadow-2xl transition-shadow duration-300">
               {/* Profile Image Left */}
               <img
                 src={artist.profile_image_url}
@@ -341,8 +341,10 @@ function ArtistList() {
               />
 
               {/* Right Side: Info */}
-              <div className="flex flex-col flex-grow"
-                onClick={() => navigate(`/artist-profile?id=${artist.id}`)} >
+              <div
+                className="flex flex-col flex-grow cursor-pointer"
+                onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
+              >
                 <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">
                   {artist.name}
                 </h2>
@@ -368,19 +370,21 @@ function ArtistList() {
                 </div>
 
                 {/* Follow Button and Follower Count */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between w-full mt-auto">
                   <ArtistFollowButton
                     artistId={artist.id}
                     user={user}
                     stopPropagationHandler={(e) => e.stopPropagation()}
                     onFollowChange={handleFollowChange}
+                    className="flex-shrink-0"
                   />
-                  <span className="text-sm text-gray-500">
+                  <span className="text-sm text-gray-500 ml-4">
                     {artist.followers_count?.toLocaleString()}
                   </span>
                 </div>
               </div>
             </div>
+
 
 
           ))
