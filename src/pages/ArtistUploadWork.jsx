@@ -75,6 +75,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         .select("id")
         .eq("user_id", user.id)
         .single();
+        
       setArtistId(artist?.id || null);
     }
     loadUserAndArtist();
