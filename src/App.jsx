@@ -24,6 +24,7 @@ import VideoFeed from './components/VideoFeed';
 import Feedback from './pages/Feedback';
 import ContactUs from './pages/ContactUs';
 import PrivacyPolicies from './pages/PrivacyPolicies';
+import TermsConditions from './pages/TermsCondition';
 
 
 function App() {
@@ -87,6 +88,7 @@ function App() {
             <Route path="/feedback-form" element={<Feedback />} />
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/privacy-policies" element={<PrivacyPolicies />} />
+            <Route path="/terms-conditions" element={<TermsConditions />} />
           </Routes>
         </div>
       </main>
@@ -152,7 +154,10 @@ function App() {
                     <Palette className="w-5 h-5 text-yellow-400" />
                     <p className="text-sm text-gray-400">About the Developer:</p>
                   </div>
-                  <p className="font-semibold text-sm ml-7">Abdullah Munawar Khan</p>
+                  <p className="text-yellow-400 font-semibold text-sm ml-7">
+                    Abdullah Munawar Khan
+                  </p>
+
                 </div>
 
                 <div className="flex items-center justify-center md:justify-start gap-4">
@@ -211,15 +216,15 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
                       onClick={() => setFooterOpen(false)} className="text-lg font-bold text-white mb-3">
                       Contact Us
                     </Link>
-                    <p className="text-sm leading-relaxed">
+                    <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Address:</span> NMIET campus, near Latis housing society, Talegaon
                       Dabhade, Pune.
                     </p>
-                    <p className="text-sm leading-relaxed">
+                    <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Email:</span>{' '}
                       <span className="italic text-gray-400">abdullahk4503@gmail.com</span>
                     </p>
-                    <p className="text-sm leading-relaxed">
+                    <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Mobile:</span>{' '}
                       <span className="italic text-gray-400">+91 8180826531, +91 7498890871</span>
                     </p>
@@ -241,20 +246,30 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
                 <Link
                   to="/feedback-form"
                   onClick={() => setFooterOpen(false)}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200 w-fit"
                 >
-                  <MessageSquare className="w-5 h-5" />
+                  <MessageSquare className="w-3 h-5" />
                   <span>Please provide us your valuable feedback</span>
                 </Link>
+                <Link
+                  to="/privacy-policies"
+                  onClick={() => setFooterOpen(false)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200 w-fit"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span>see privacy policies</span>
+                </Link>
+                <Link
+                  to="/terms-conditions"
+                  onClick={() => setFooterOpen(false)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200 w-fit"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span>see terms and conditions</span>
+                </Link>
               </div>
-              <Link
-                to="/privacy-policies"
-                onClick={() => setFooterOpen(false)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-blue-500 text-white font-semibold shadow-md hover:bg-blue-400 transition duration-200"
-              >
-                <MessageSquare className="w-5 h-5" />
-                <span>see privacy policies</span>
-              </Link>
+
+
               {/* Bottom Bar */}
               <div className="col-span-full border-t border-gray-700 mt-4 pt-1">
                 <p className="text-center text-gray-500 text-xs">

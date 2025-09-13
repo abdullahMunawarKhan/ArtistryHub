@@ -410,8 +410,89 @@ export default function ArtistProfile() {
   }
 
   return (
-    <div className="flex flex-col-reverse md:flex-row gap-6 max-w-7xl mx-auto p-6">
-      {/* ARTWORKS: Bottom on mobile, left on desktop */}
+    <div className="flex flex-col md:flex-row gap-6 w-full p-6">
+      {/* ARTIST CARD: Top on mobile, LEFT on desktop (25% width) - MOVED TO FIRST POSITION */}
+      <div className="relative w-full md:w-1/4 bg-white rounded-xl shadow-md p-4 flex flex-col h-fit mb-4">
+        {/* Top row: Share + Edit */}
+        <div className="flex items-center justify-between mb-3">
+          <ArtistProfileShare artistId={artist.id} />
+          {isOwner && (
+            <button
+              onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
+              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 transition text-white rounded text-xs font-medium"
+              aria-label="Edit Profile"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
+        {/* Profile image */}
+        <img
+          src={artist.profile_image_url}
+          alt={artist.name}
+          className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border border-gray-200"
+          loading="lazy"
+        />
+
+        {/* Rating */}
+        <div className="text-center mb-3">
+          <StarRating value={averageRating} />
+          <p className="text-xs text-gray-500">
+            {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
+          </p>
+        </div>
+
+        {/* Info */}
+        <h2 className="text-lg font-semibold text-center text-gray-900">{artist.name}</h2>
+        <p className="text-xs text-gray-600 text-center mb-2">{artist.location}</p>
+
+        {(isOwner || userRole === "efbv") && (
+          <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm mx-auto w-full">
+            <div className="flex justify-between text-sm text-gray-800">
+              <span className="font-semibold text-xs text-gray-600">Mobile:</span>
+              <span className="truncate">{artist.mobile}</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-800 mt-1">
+              <span className="font-semibold text-xs text-gray-600">Email:</span>
+              <span className="truncate">{artist.email}</span>
+            </div>
+          </div>
+        )}
+
+
+        {/* Follow button */}
+        <div className="mt-3">
+          <ArtistFollowButton artistId={artist.id} user={user} />
+        </div>
+
+        {/* Reviews */}
+        <div className="mt-4 border-t border-gray-200 pt-3">
+          <h3 className="font-semibold text-gray-900 mb-2 text-sm">Reviews</h3>
+          {reviews.length === 0 ? (
+            <p className="text-xs text-gray-500 italic">No reviews yet.</p>
+          ) : (
+            <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+              {reviews.map((rev, i) => (
+                <div
+                  key={i}
+                  className="border rounded-md p-2 text-xs bg-white shadow-sm"
+                >
+                  <StarRating value={rev.rating} />
+                  <p className="mt-1 text-gray-700">{rev.review}</p>
+                  {isOwner && (
+                    <p className="text-[10px] text-gray-400 mt-1 italic">
+                      By: {rev.email}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+
       <div className="w-full md:w-3/4">
         <div className="flex flex-col gap-3 mb-4">
           {isOwner && (
@@ -431,7 +512,6 @@ export default function ArtistProfile() {
                 </svg>
                 Upload
               </button>
-
               <button
                 onClick={() => navigate("/artist-dashboard")}
                 className="flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold bg-indigo-600 text-white shadow-md hover:bg-indigo-700 hover:scale-105 transition-transform duration-200 text-sm sm:text-base"
@@ -440,169 +520,94 @@ export default function ArtistProfile() {
               </button>
             </div>
           )}
-
           <h2 className="text-lg sm:text-xl font-bold text-slate-900">
             {isOwner ? "Your Artworks" : "Artworks by this artist"}
           </h2>
         </div>
 
-
         {loadingArtworks ? (
           <p className="text-slate-600">Loading artworks...</p>
         ) : (
-          <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
-            {artworks.length === 0 && <p className="text-slate-600">No artworks found.</p>}
-            {artworks.map((artwork) => (
-              <div key={artwork.id} className="bg-white rounded-xl border shadow p-3 relative cursor-pointer" onClick={() => navigate(`/product?id=${artwork.id}`)}>
-                {/* Edit button */}
-
-                {isOwner && (
-                  <button
-                    className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditProduct(artwork);
-                    }}
-                  >
-                    Edit
-                  </button>
-                )}
-
-                {/* Artwork image */}
-                <div className="w-full h-40 flex items-center justify-center overflow-hidden bg-slate-50 rounded">
-                  <img src={artwork.image_urls?.[0]} alt={artwork.title} className="w-full h-full object-contain" />
-                </div>
-
-                {/* Info */}
-                <div className="mt-2">
-                  <h3 className="font-se      mibold">{artwork.title}</h3>
-                  {!isOwner && <p className="text-sm text-slate-600">{artwork.category}</p>}
-                  <p className="font-bold">₹{artwork.cost}</p>
-                </div>
-
-                {/* Toggle availability */}
-                {isOwner && (
-                  <div className="mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={artwork.availability !== false} readOnly onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleClick(artwork)
-
-                      }} />
-                      <span className={`${artwork.availability !== false ? "text-green-700" : "text-red-700"} font-semibold`}>
-                        Availability: {artwork.availability !== false ? "Yes" : "No"}
-                      </span>
-                    </label>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ARTIST CARD: Top on mobile, right on desktop */}
-      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-lg p-4 sm:p-6 pt-16 sm:pt-20 flex flex-col h-fit mb-6 md:mb-0">
-        <div className="absolute top-4 left-0 w-full px-4 flex items-center justify-between">
-          <ArtistProfileShare artistId={artist.id} />
-
-          {isOwner && (
-            <button
-              onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white font-semibold shadow transition text-sm sm:text-base"
-              aria-label="Edit Profile"
-            >
-              {/* Heroicon: Pencil */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M16.862 4.487l1.651-1.651a1.875 1.875 0 112.652 2.652L10.582 16.071a4.5 4.5 0 01-1.897 1.13l-2.685.805.805-2.685a4.5 4.5 0 011.13-1.897l10.927-10.937z"
-                />
-              </svg>
-              <span className="hidden xs:inline">Edit</span>
-            </button>
-          )}
-        </div>
-        {/* Profile image */}
-        <img
-          src={artist.profile_image_url}
-          alt={artist.name}
-          className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover mx-auto mb-4 sm:mb-6 border-2 border-gray-200"
-          loading="lazy"
-        />
-
-        {/* Rating */}
-        <div className="text-center mb-4 sm:mb-5">
-          <StarRating value={averageRating} />
-          <p className="text-xs text-gray-500 mt-1">
-            {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
-          </p>
-        </div>
-
-        {/* Info */}
-        <h2 className="text-lg sm:text-xl font-semibold text-center text-gray-900 mb-1">{artist.name}</h2>
-        <p className="text-xs sm:text-sm text-gray-600 text-center mb-4 sm:mb-6">{artist.location}</p>
-
-        {(isOwner || userRole === "efbv") && (
-          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 border border-gray-200 shadow-sm space-y-3 sm:space-y-4 mx-auto w-full max-w-xs">
-            <div>
-              <p className="font-semibold text-[11px] sm:text-xs text-black-500 mb-1">Mobile</p>
-              <p className="text-gray-800 break-words text-sm">{artist.mobile}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-[11px] sm:text-xs text-black-500 mb-1">Email</p>
-              <p className="text-gray-800 break-words truncate text-sm">{artist.email}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Follow button */}
-        <ArtistFollowButton artistId={artist.id} user={user} />
-
-        {/* Reviews */}
-        <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4 sm:pt-5">
-          <h3 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-base sm:text-lg">Reviews</h3>
-          {reviews.length === 0 ? (
-            <p className="text-xs sm:text-sm text-gray-500 italic">No reviews yet.</p>
-          ) : (
-            <div className="space-y-3 sm:space-y-4 max-h-48 sm:max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-              {reviews.map((rev, i) => (
+          <div className="max-h-[500px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+            <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3">
+              {artworks.length === 0 && <p className="text-slate-600">No artworks found.</p>}
+              {artworks.map((artwork) => (
                 <div
-                  key={i}
-                  className="border rounded-lg p-2 sm:p-3 text-xs sm:text-sm bg-white shadow-sm"
+                  key={artwork.id}
+                  className="bg-white rounded-xl border shadow p-3 relative cursor-pointer"
+                  onClick={() => navigate(`/product?id=${artwork.id}`)}
                 >
-                  <StarRating value={rev.rating} />
-                  <p className="mt-1 sm:mt-2 text-gray-700">{rev.review}</p>
+                  {/* Edit button */}
                   {isOwner && (
-                    <p className="text-[10px] sm:text-xs text-gray-400 mt-1 italic">
-                      By: {rev.email}
-                    </p>
+                    <button
+                      className="absolute top-2 right-2 bg-yellow-500 text-white px-3 py-1 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditProduct(artwork);
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
+
+                  {/* Artwork image */}
+                  <div className="w-full h-40 flex items-center justify-center overflow-hidden bg-slate-50 rounded">
+                    <img
+                      src={artwork.image_urls?.[0]}
+                      alt={artwork.title}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  {/* Info */}
+                  <div className="mt-2">
+                    <h3 className="font-semibold">{artwork.title}</h3>
+                    {!isOwner && <p className="text-sm text-slate-600">{artwork.category}</p>}
+                    <p className="font-bold">₹{artwork.cost}</p>
+                  </div>
+
+                  {/* Toggle availability */}
+                  {isOwner && (
+                    <div className="mt-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={artwork.availability !== false}
+                          readOnly
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleClick(artwork);
+                          }}
+                        />
+                        <span
+                          className={`${artwork.availability !== false
+                            ? "text-green-700"
+                            : "text-red-700"
+                            } font-semibold`}
+                        >
+                          Availability: {artwork.availability !== false ? "Yes" : "No"}
+                        </span>
+                      </label>
+                    </div>
                   )}
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
-
 
       {/* Confirmation Modal */}
       <ConfirmationModal
         visible={confirmModal.visible}
         onConfirm={confirmToggle}
         onCancel={() => setConfirmModal({ ...confirmModal, visible: false })}
-        message={`Are you sure you want to set availability to ${confirmModal.currentAvailability ? "No" : "Yes"}?`}
+        message={`Are you sure you want to set availability to ${confirmModal.currentAvailability ? "No" : "Yes"
+          }?`}
       />
     </div>
   );
+
 }
 
 
