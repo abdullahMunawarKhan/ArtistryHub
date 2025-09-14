@@ -1,7 +1,7 @@
 // src/pages/Welcome.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import {motion} from "framer-motion";
+import { motion } from "framer-motion";
 function Welcome() {
   const navigate = useNavigate();
 
@@ -12,7 +12,16 @@ function Welcome() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-ScopeBrush relative overflow-hidden" onClick={() => navigate("/main-dashboard")}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 relative overflow-hidden"
+      onClick={() => navigate("/main-dashboard")}
+      style={{
+        backgroundImage: "url('/images/main_bg.png')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+
       {/* Background decorative elements */}
       <div className="absolute inset-0">
         <div className="absolute top-10 left-10 w-20 h-20 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full animate-float"></div>
@@ -22,14 +31,14 @@ function Welcome() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col md:flex-row items-start justify-between max-w-7xl mx-auto px-6 py-12">
-        <div className="min-h-screen flex flex-col justify-center items-center bg-gradient-to-br from-purple-50 via-pink-50 to-blue-100 relative overflow-hidden">
+      <div className="flex flex-col md:flex-row items-start justify-between max-w-7xl mx-auto px-6 pb-12">
+        <div className="min-h-screen flex flex-col justify-center items-center from-purple-50 via-pink-50 to-blue-100 relative overflow-hidden">
           {/* Decorative Gradients */}
           <div className="absolute left-0 top-0 w-64 h-64 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full blur-2xl opacity-40" />
           <div className="absolute right-10 bottom-10 w-40 h-40 bg-gradient-to-br from-blue-400 to-purple-300 rounded-full blur-3xl opacity-30" />
 
-          {/* Logo and Brand */}
-          
+
+
 
           {/* Logo and Brand */}
           <div className="mb-12 text-center z-10 flex flex-col items-center justify-center">
@@ -42,13 +51,14 @@ function Welcome() {
               className="h-28 w-28 rounded-full shadow-xl border-4 border-purple-400 transition-transform duration-300 hover:scale-110 hover:shadow-2xl"
             />
             <motion.div
-              className="ScopeBrush-logo text-7xl font-extrabold leading-relaxed pb-2 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-800 drop-shadow-xl"
+              className="text-6xl md:text-7xl font-extrabold text-white drop-shadow-2xl"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+              transition={{ delay: 0.4, duration: 0.8, ease: 'easeOut' }}
             >
               ScopeBrush
             </motion.div>
+
             <motion.div
               className="h-1.5 w-40 bg-gradient-to-r from-purple-500 to-pink-500 mx-auto rounded-full shadow-md"
               initial={{ opacity: 0, scaleX: 0 }}
@@ -61,42 +71,162 @@ function Welcome() {
 
           {/* Hero Content */}
           <div className="flex flex-col items-center text-center md:w-[60vw] z-10">
-            <h1 className="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-blue-600 mb-6 drop-shadow-xl">
+            <h1 className="text-4xl md:text-6xl font-extrabold text-yellow-100 drop-shadow-xl mb-6">
               Where Artists & Customers Connect
             </h1>
-            <p className="text-lg md:text-xl text-slate-600 mb-7 leading-relaxed font-medium">
+            <p className="text-lg md:text-xl text-slate-100 drop-shadow-lg mb-7 leading-relaxed font-medium">
               Discover beautiful artworks, showcase your creations, and build your artistic legacy.<br />
-              <span className="text-purple-600 font-semibold">Join a vibrant community</span> where creativity meets opportunity.
+              <span className="text-yellow-200 font-semibold drop-shadow">Join a vibrant community</span> where creativity meets opportunity.
             </p>
+
+
             <button
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-pink-500 hover:to-purple-600 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg hover:scale-105 transform transition-all duration-200"
+              className="bg-gradient-to-r from-purple-600 to-pink-500 hover:from-pink-500 hover:to-purple-700 text-white px-8 py-3 rounded-full text-lg font-bold shadow-lg hover:scale-105 transform transition-all duration-200 drop-shadow"
               onClick={handleEnter}
             >
               Enter Gallery
             </button>
+
 
           </div>
         </div>
 
 
         {/* Feature highlights on the right side */}
-        <div className="md:w-1/3 flex flex-col gap-8">
-          <div className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <div className="text-4xl mb-4">🖼️</div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Discover Art</h3>
-            <p className="text-slate-600">Explore unique artworks from talented artists worldwide</p>
+        <div className="flex flex-col gap-8 md:absolute md:top-0 md:right-0 md:w-[375px] mx-auto md:mx-0 mt-10 md:mt-14 md:mr-12 w-full max-w-[98vw] z-10">
+          {/* Discover Art */}
+          <div
+            className="
+      relative p-6 text-center
+      rounded-[20px]
+      shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+      bg-white/25
+      backdrop-blur-[10px]
+      border border-white/30
+      transition-all duration-200
+      hover:scale-[1.03] hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]
+      group
+    "
+            style={{
+              backgroundImage: "url('/images/discover_art.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }}
+          >
+            <h3 className="
+      font-['Montserrat'] font-bold 
+      text-[2rem] md:text-[2.3rem] 
+      text-[#123147] mb-2 
+      leading-tight 
+      drop-shadow-sm 
+      transition-all duration-300 
+      group-hover:group-hover:scale-110
+      group-hover:duration-300
+    ">
+              Discover Art
+              {/* Remove gradient underline effect */}
+            </h3>
+            
+            <p className="
+      font-['Poppins'] font-medium 
+      text-[black] 
+      text-[1.2rem] md:text-[1.35rem] 
+      leading-relaxed 
+      drop-shadow-sm
+    ">
+              Explore unique artworks from talented artists worldwide
+            </p>
           </div>
-          <div className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <div className="text-4xl mb-4">👨‍🎨</div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Showcase Talent</h3>
-            <p className="text-slate-600">Display your artwork and build your artistic portfolio</p>
+
+          {/* Showcase Talent */}
+          <div
+            className="
+      relative p-6 text-center
+      rounded-[20px]
+      shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+      bg-white/25
+      backdrop-blur-[10px]
+      border border-white/30
+      transition-all duration-200
+      hover:scale-[1.03] hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]
+      group
+    "
+            style={{
+              backgroundImage: "url('/images/showcase_talent.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }}
+          >
+            <h3 className="
+      font-['Montserrat'] font-bold 
+      text-[2rem] md:text-[2.3rem] 
+      text-[#123147] mb-2 
+      leading-tight 
+      drop-shadow-sm 
+      transition-all duration-300 
+      group-hover:group-hover:scale-110
+      group-hover:duration-300
+    ">
+              Showcase Talent
+            </h3>
+            
+            <p className="
+      font-['Poppins'] font-medium 
+      text-[black] 
+      text-[1.2rem] md:text-[1.35rem] 
+      leading-relaxed 
+      drop-shadow-sm
+    ">
+              Display your artwork and build your artistic portfolio
+            </p>
           </div>
-          <div className="glass-card p-6 text-center hover:scale-105 transition-transform duration-300">
-            <div className="text-4xl mb-4">🤝</div>
-            <h3 className="text-xl font-semibold text-slate-800 mb-2">Connect & Create</h3>
-            <p className="text-slate-600">Build meaningful connections in the art community</p>
+
+          {/* Connect & Create */}
+          <div
+            className="
+      relative p-6 text-center
+      rounded-[20px]
+      shadow-[0_4px_20px_rgba(0,0,0,0.15)]
+      bg-white/25
+      backdrop-blur-[10px]
+      border border-white/30
+      transition-all duration-200
+      hover:scale-[1.03] hover:shadow-[0_8px_28px_rgba(0,0,0,0.18)]
+      group
+    "
+            style={{
+              backgroundImage: "url('/images/connect_create.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center"
+            }}
+          >
+            <h3 className="
+      font-['Montserrat'] font-bold 
+      text-[2rem] md:text-[2.3rem] 
+      text-[#123147] mb-2 
+      leading-tight 
+      drop-shadow-sm 
+      transition-all duration-300 
+      group-hover:group-hover:scale-110
+      group-hover:duration-300
+    ">
+              Connect & Create
+            </h3>
+           
+            <p className="
+      font-['Poppins'] font-medium 
+      text-[black] 
+      text-[1.2rem] md:text-[1.35rem] 
+      leading-relaxed 
+      drop-shadow-sm
+    ">
+              Build meaningful connections in the art community
+            </p>
           </div>
         </div>
+
+
+
 
 
         {/*Stats section*/}
@@ -133,3 +263,6 @@ function Welcome() {
 }
 
 export default Welcome;
+
+
+
