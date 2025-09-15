@@ -136,9 +136,9 @@ function App() {
                   <ul className="space-y-3 text-sm leading-relaxed">
                     <li className="flex items-center gap-2">
                       <UserCircle className="w-5 h-5 text-yellow-400" />
-                      <span className="font-semibold text-white">Founder :</span>
+                      <span className="font-semibold text-white">Founders :</span>
                       <span className="font-semibold text-yellow-400 text-base ml-7">
-                        Abdullah Munawar Khan and Ayush Ghojge  
+                        Abdullah Khan  &  Ayush Ghojge
                       </span>
                     </li>
                     {/* <li className="flex items-center gap-2">

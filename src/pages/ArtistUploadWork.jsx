@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+import Autocomplete from "react-google-autocomplete";
+import { useRef } from 'react';
+import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
 function roundToNearest9(num) {
   let rounded = Math.round(num);
@@ -9,6 +12,51 @@ function roundToNearest9(num) {
   if (lastDigit < 9) return rounded + (9 - lastDigit);
   return rounded + (19 - lastDigit);
 }
+
+// const AddressAutocomplete = ({ value, onChange, onAddressSelect }) => {
+//   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
+//   const inputRef = useRef(null);
+//   const places = useMapsLibrary('places');
+
+//   useEffect(() => {
+//     if (!places || !inputRef.current) return;
+
+//     const options = {
+//       types: ['address'],
+//       componentRestrictions: { country: ['in'] },
+//       fields: ['formatted_address', 'address_components', 'geometry']
+//     };
+
+//     setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
+//   }, [places]);
+
+//   useEffect(() => {
+//     if (!placeAutocomplete) return;
+
+//     placeAutocomplete.addListener('place_changed', () => {
+//       const place = placeAutocomplete.getPlace();
+//       if (place.formatted_address) {
+//         onAddressSelect(place.formatted_address);
+//       }
+//     });
+//   }, [placeAutocomplete, onAddressSelect]);
+
+//   return (
+//     <textarea
+//       ref={inputRef}
+//       value={value}
+//       onChange={onChange}
+//       placeholder="Enter pickup address"
+//       rows={3}
+//       required
+//       className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+//     />
+//   );
+// };
+
+
+
+
 
 export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const navigate = useNavigate();
@@ -75,7 +123,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         .select("id")
         .eq("user_id", user.id)
         .single();
-        
+
       setArtistId(artist?.id || null);
     }
     loadUserAndArtist();
@@ -312,8 +360,11 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       setLoading(false);
     }
   }
+  // const addressInputRef = useGoogleAutocomplete((address) => {
+  //   setPickupAddress(address);
+  // });
 
-  // Existing zoom handling and image viewer...
+
 
   return (
     <div className="pt-20 max-w-6xl mx-auto p-6 bg-white shadow-xl rounded-2xl">
@@ -380,6 +431,19 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             </div>
 
             {/* Pickup Address */}
+            {/* <APIProvider apiKey={import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY}>
+              <div>
+                <label className="block font-semibold text-gray-700 mb-1">
+                  Pickup Address <span className="text-red-500">*</span>{" "}
+                  <span className="text-xs text-gray-400">(with Pin code, precise)</span>
+                </label>
+                <AddressAutocomplete
+                  value={pickupAddress}
+                  onChange={(e) => setPickupAddress(e.target.value)}
+                  onAddressSelect={(address) => setPickupAddress(address)}
+                />
+              </div>
+            </APIProvider> */}
             <div>
               <label className="block font-semibold text-gray-700 mb-1">
                 Pickup Address <span className="text-red-500">*</span>{" "}

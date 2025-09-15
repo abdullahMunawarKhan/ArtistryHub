@@ -15,7 +15,7 @@ export default function PrivacyPolicies() {
                     <ShieldCheckIcon className="w-8 h-8 text-blue-600" />
                     <h1 className="text-3xl font-bold text-gray-800">Privacy Policy</h1>
                 </div>
-                <p className="text-sm text-gray-500 mb-8">Last updated: <span className="font-semibold text-blue-700">12-09-2025</span></p>
+                <p className="text-sm text-gray-500 mb-8">Last updated: <span className="font-semibold text-blue-700">16-09-2025</span></p>
 
                 <section className="mb-8">
                     <p className="text-gray-600 leading-relaxed">
@@ -69,6 +69,29 @@ export default function PrivacyPolicies() {
                 <Section icon={GlobeAltIcon} title="Links to Other Sites">
                     <p className="text-gray-700">
                         Our Website may contain links to external sites not operated by us. We are not responsible for their content or privacy practices.
+                    </p>
+                </Section>
+                <Section icon={ClockIcon} title="Data Retention">
+                    <p className="text-gray-700">
+                        We retain your personal data for as long as your account is active on our platform. If you choose to delete your profile, all associated personal information will be permanently removed from our records, except where retention is required by law or for legitimate business purposes.
+                    </p>
+                </Section>
+
+                <Section icon={GlobeAltIcon} title="International Data Transfers">
+                    <p className="text-gray-700">
+                        All personal data collected and processed by ScopeBrush is stored securely within India. We do not transfer your personal information outside India.
+                    </p>
+                </Section>
+
+                <Section icon={UserCircleIcon} title="Children's Privacy">
+                    <p className="text-gray-700">
+                        Our platform is intended for users of all ages, including children. Users under the age of 18 may use our services with the consent and supervision of a parent or legal guardian. We encourage parents and guardians to monitor their children’s online activities and help enforce this policy by instructing children never to provide personal information without permission.
+                    </p>
+                </Section>
+
+                <Section icon={LockClosedIcon} title="Cookies and Tracking Technologies">
+                    <p className="text-gray-700">
+                        We use cookies and similar tracking technologies for analytics and performance optimization. These cookies help us understand user behavior, improve user experience, and monitor the effectiveness of our platform. You can manage your cookie preferences through your browser settings; however, disabling cookies may affect the functionality of some features.
                     </p>
                 </Section>
 

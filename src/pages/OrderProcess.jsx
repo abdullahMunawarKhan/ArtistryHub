@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
-
+import Autocomplete from "react-google-autocomplete";
 const DELIVERY_FEE = 50;
 const POLICY_LINKS = [
   {
