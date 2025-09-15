@@ -6,6 +6,8 @@ import { UserIcon } from '@heroicons/react/24/outline';             // User / Pe
 import { GlobeAltIcon } from '@heroicons/react/24/outline';         // Globe / Global access
 import { ArrowPathIcon } from '@heroicons/react/24/outline';        // Refresh / Update
 import { EnvelopeIcon } from '@heroicons/react/24/outline';         // Mail / Contact
+import { ClockIcon } from '@heroicons/react/24/outline';  
+import { UserCircleIcon } from '@heroicons/react/24/outline';  
 
 export default function PrivacyPolicies() {
     return (
