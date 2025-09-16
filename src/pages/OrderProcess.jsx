@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
-import Autocomplete from "react-google-autocomplete";
+// import Autocomplete from "react-google-autocomplete";
 const DELIVERY_FEE = 50;
 const POLICY_LINKS = [
   {
@@ -125,7 +125,7 @@ export default function OrderProcess() {
                 alt_mobile: form.altMobile,
                 razorpay_payment_id: response.razorpay_payment_id,
                 tracking_id: null,              // not yet known
-                courier_name: null,
+                
                 shipment_status: "pending",     // waiting for shipment creation
                 shipment_created_at: null
 

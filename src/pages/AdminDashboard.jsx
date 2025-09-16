@@ -92,6 +92,8 @@ function AdminDashboard() {
   const [artworkList, setArtworkList] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);       // URL of image to preview
   const [showImageModal, setShowImageModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundUTR, setRefundUTR] = useState('');
   // for pin setup for each section
   // const [showPinModal, setShowPinModal] = useState(false);
   // const [pendingSection, setPendingSection] = useState(null);
@@ -224,16 +226,16 @@ function AdminDashboard() {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          *,
-          artworks (
-            id, title, image_urls, cost, base_price,length, width, height, weight,pickupAddress,availability,shipment_status,artist_payment,
-    artist_utr,
-    artist_id
-          ),
-          artists (
-            id, name, email, mobile,artwork_count, paintings_sold,artist_qr
-          )
-        `)
+    *,
+    artworks (
+      id, title, image_urls, cost, base_price, length, width, height, weight,
+      pickupAddress, availability, shipment_status, artist_payment, artist_utr,
+      artist_id,
+      artists (
+        id, name, email, mobile, artwork_count, paintings_sold, artist_qr
+      )
+    )
+  `)
         .eq('shipment_status', orderTag);
       if (!error) setOrderList(data || []);
     }
@@ -245,7 +247,11 @@ function AdminDashboard() {
     }
   }, [selectedSection]);
 
-
+  function handleOpenRefundModal(order) {
+    setSelectedOrder(order);
+    setRefundUTR(order.refund_utr || '');
+    setShowRefundModal(true);
+  }
   async function updatePaintingsSoldIfConfirmed(artworkId, newShipmentStatus) {
     if (newShipmentStatus === "confirm") {
       // Fetch the artwork to get artist_id
@@ -435,6 +441,27 @@ function AdminDashboard() {
       setEarningsLoading(false);
     }
   };
+  async function handleRefundSubmit() {
+    if (!refundUTR) {
+      alert('Please enter the refund UTR.');
+      return;
+    }
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        refund_utr: refundUTR,
+        refund_status: 'done'
+      })
+      .eq('id', selectedOrder.id);
+    if (error) {
+      alert('Error updating refund: ' + error.message);
+    } else {
+      alert('Refund marked as done.');
+      setShowRefundModal(false);
+      // re-fetch the order list for UI update
+      fetchOrders();
+    }
+  }
 
   if (loading) {
     return (
@@ -490,10 +517,10 @@ function AdminDashboard() {
             }
             ].map((btn, i) => (
               <button
-                key={i} 
-                 onClick={() => setSelectedSection(btn.key)}
-                 //onClick={() => {setPendingSection(btn.key);  setShowPinModal(true);}}
-                  
+                key={i}
+                onClick={() => setSelectedSection(btn.key)}
+                //onClick={() => {setPendingSection(btn.key);  setShowPinModal(true);}}
+
                 className={`w-full py-3 px-4 rounded-lg text-left font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
                   ? `bg-${btn.activeColor}-600 text-white shadow-md`
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
@@ -507,14 +534,14 @@ function AdminDashboard() {
 
         </div>
       </div>
-                 
+
       {/* Left Side content area */}
       <div className="flex-1 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 min-h-[70vh] animate-fadeIn">
         <h2 className="text-3xl font-extrabold mb-10 text-center text-blue-800 tracking-tight drop-shadow-sm">
           Admin Dashboard
         </h2>
 
-        {!selectedSection&& (         //{selectedSection === 'home' && (
+        {!selectedSection && (         //{selectedSection === 'home' && (
           <div className="flex flex-col gap-10 ">
             {/* Time Window Selector */}
             <div className="flex gap-3 justify-center flex-wrap">
@@ -698,7 +725,7 @@ function AdminDashboard() {
               Order Management ({orderList.length})
             </h3>
             <div className="flex gap-3 mb-4">
-              {['pending', 'confirm', 'shipped', 'delivered'].map(tag => (
+              {['pending', 'confirm', 'shipped', 'delivered', 'canceled'].map(tag => (
                 <button
                   key={tag}
                   className={`px-4 py-1 rounded ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
@@ -718,6 +745,9 @@ function AdminDashboard() {
                     <th className="p-2">Artist</th>
                     <th className="p-2">Shipment Status</th>
                     <th className="p-2">View Details</th>
+                    {orderTag === 'canceled' && (
+                      <th className="p-2">Refund Status</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -766,6 +796,18 @@ function AdminDashboard() {
                             View Full Details
                           </button>
                         </td>
+                        {orderTag === 'canceled' && (
+                          <td className="p-2">
+                            <button
+                              className="px-3 py-1 rounded bg-blue-50 border border-blue-400 text-blue-700 font-semibold hover:bg-blue-100"
+                              onClick={() => handleOpenRefundModal(order)}
+                            >
+                              {order.refund_status
+                                ? order.refund_status.charAt(0).toUpperCase() + order.refund_status.slice(1)
+                                : 'Pending'}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -774,6 +816,38 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+        {/* Modal */}
+        {showRefundModal && selectedOrder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <h2 className="text-lg font-bold mb-4">Process Refund</h2>
+              <div className="flex flex-col items-center mb-4">
+                <img
+                  src={selectedOrder.artworks.artists.artist_qr}
+                  alt="QR for Refund"
+                  className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain"
+                />
+
+              </div>
+              <label className="block font-semibold mb-2">Refund UTR:</label>
+              <input
+                className="border rounded p-2 mb-4 w-full"
+                type="text"
+                value={refundUTR}
+                onChange={(e) => setRefundUTR(e.target.value)}
+                placeholder="Enter Refund UTR"
+              />
+              <button
+                className="px-5 py-2 bg-blue-700 text-white rounded hover:bg-blue-800"
+                onClick={handleRefundSubmit}
+              >
+                Mark as Refunded
+              </button>
+              <button className="ml-3 px-5 py-2 text-gray-500 hover:underline" onClick={() => setShowRefundModal(false)}>Cancel</button>
+            </div>
+          </div>
+        )}
+
 
         {selectedSection === 'payment' && (
           <div className="mb-14 animate-fadeIn">
@@ -927,7 +1001,7 @@ function AdminDashboard() {
           </div>
         )}
       </div>
-               
+
 
       {/* ALL EXISTING MODALS PRESERVED BELOW */}
 
@@ -1012,10 +1086,10 @@ function AdminDashboard() {
                 onClick={() => navigate(`/artist-profile?id=${selectedOrder.artists?.id}`)}
                 className="text-blue-600 hover:underline"
               >
-                {selectedOrder.artists?.name}
+                {selectedOrder.artworks?.artists?.name}
               </button>
               <div className="text-sm">
-                Mobile: {selectedOrder.artists?.mobile} | Email: {selectedOrder.artists?.email}
+                {selectedOrder.artworks?.artists?.mobile} | Email: {selectedOrder.artworks?.artists?.email}
               </div>
             </div>
             <div className="mb-2">
@@ -1061,7 +1135,7 @@ function AdminDashboard() {
               </>
             )}
 
-            {/* pin for every section*/}
+            {/* pin for every section
             {showPinModal && (
               <Modal onClose={() => {
                 setShowPinModal(false);
@@ -1106,7 +1180,7 @@ function AdminDashboard() {
                   </button>
                 </div>
               </Modal>
-            )}
+            )} */}
 
 
 
@@ -1169,7 +1243,7 @@ function AdminDashboard() {
         </div>
       )}
 
-       {/* input pin Modal */}
+      {/* input pin Modal */}
 
       {/* {showPinModal && (
         <Modal onClose={() => {
