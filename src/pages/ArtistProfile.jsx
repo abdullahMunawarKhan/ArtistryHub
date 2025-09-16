@@ -462,9 +462,9 @@ export default function ArtistProfile() {
 
 
         {/* Follow button */}
-        <div className="mt-3">
+        {/* <div className="mt-3">
           <ArtistFollowButton artistId={artist.id} user={user} />
-        </div>
+        </div> */}
 
         {/* Reviews */}
         <div className="mt-4 border-t border-gray-200 pt-3">

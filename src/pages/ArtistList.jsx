@@ -371,7 +371,7 @@ function ArtistList() {
                 </div>
 
                 {/* Follow Button + Followers Count */}
-                <div className="flex items-center gap-3 mt-auto">
+                {/* <div className="flex items-center gap-3 mt-auto">
                   <ArtistFollowButton
                     artistId={artist.id}
                     user={user}
@@ -380,7 +380,7 @@ function ArtistList() {
                     className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg shadow hover:bg-blue-700 transition"
                   />
                   
-                </div>
+                </div> */}
               </div>
             </div>
 
