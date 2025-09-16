@@ -254,7 +254,7 @@ function MainDashboard() {
       .update({ liked_artworks: updatedLikedArtworks })
       .eq('id', user.id)
       .select('liked_artworks')
-      .single()
+      // .single()
 
     if (userErr) {
       console.error('Error updating user liked_artworks:', userErr);

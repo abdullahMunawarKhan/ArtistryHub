@@ -134,8 +134,7 @@ export default function ProductDetails() {
         const { data: userData } = await supabase
           .from('user')
           .select('liked_artworks')
-          .eq('id', auth.user.id)
-          .single();
+          .eq('id', auth.user.id);
 
         const liked = userData?.liked_artworks || [];
         setLikedArtworks(liked);
@@ -146,9 +145,8 @@ export default function ProductDetails() {
           .select('id')
           .eq('user_id', auth.user.id)
           .eq('artwork_id', artworkId)
-          .limit(1)
-          .maybeSingle();
-        setInCart(!!cartRows);
+          .limit(1);
+        setInCart(cartRows && cartRows.length > 0);
       }
       if (data?.category) {
         const { data: related } = await supabase
