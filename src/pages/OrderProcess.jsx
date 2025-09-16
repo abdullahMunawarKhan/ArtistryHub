@@ -62,7 +62,7 @@ export default function OrderProcess() {
       setLoading(false);
 
       // Correct: Safely set only the object
-      if (error || !data || data.length === 0) {
+      if (error || !data) {
         alert("Failed to load artwork");
         navigate("/main-dashboard");
         return;
@@ -72,7 +72,37 @@ export default function OrderProcess() {
     loadArtwork();
   }, [artworkId, navigate]);
 
-  const totalCost = artwork ? artwork.cost + DELIVERY_FEE : 0;
+  const totalCost = artwork
+    ? Number(artwork.cost) + DELIVERY_FEE
+    : 0;
+
+  // Inside OrderProcess, after your useState hooks
+  const [errors, setErrors] = useState({});
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!form.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
+    }
+    if (!form.mobile.trim()) {
+      newErrors.mobile = "Mobile number is required";
+    } else if (!/^[6-9]\d{9}$/.test(form.mobile)) {
+      newErrors.mobile = "Please enter a valid 10-digit mobile number";
+    }
+    if (!form.shippingAddress.trim()) {
+      newErrors.shippingAddress = "Shipping address is required";
+    }
+    if (!form.billingAddress.trim()) {
+      newErrors.billingAddress = "Billing address is required";
+    }
+    if (!policiesChecked) {
+      newErrors.policiesChecked = "You must accept the policies";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -80,6 +110,13 @@ export default function OrderProcess() {
   }
 
   async function handlePayment() {
+
+    if (!validateForm()) {
+      alert(Object.values(errors)[0]);
+      return;
+    }
+
+    // 1. Ensure policies accepted
     if (!policiesChecked) {
       alert("Please read and accept all policies before proceeding.");
       setShowPolicies(true);
@@ -88,8 +125,10 @@ export default function OrderProcess() {
 
     setProcessing(true);
 
-    const { data: { user } } = await supabase.auth.getUser();
-
+    // 2. Ensure user is logged in
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) {
       alert("Please log in to place order");
       setProcessing(false);
@@ -97,23 +136,56 @@ export default function OrderProcess() {
       return;
     }
 
-    return new Promise((resolve, reject) => {
+    try {
+      // 3. Create order on backend
+      const orderRes = await fetch("/api/create-order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artworkId: artwork.id }),
+      });
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.error || "Order creation failed");
+
+      // 4. Configure Razorpay options with server-generated order
       const options = {
         key: razorpayKey,
-        amount: totalCost * 100, // in paise
+        amount: orderData.amount,      // amount from backend (in paise)
         currency: "INR",
+        order_id: orderData.id,        // server-generated order ID
         name: "My Art Store",
         description: "Artwork Purchase",
+        prefill: {
+          name: form.fullName,
+          email: user.email,
+          contact: form.mobile,
+        },
+        theme: { color: "#F59E0B" },
+        modal: {
+          ondismiss: () => {
+            setProcessing(false);
+            setShowPolicies(false);
+          },
+        },
         handler: async function (response) {
           try {
+            // 5. Verify payment signature on backend
+            const verifyRes = await fetch("/api/verify-payment", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+            const { success } = await verifyRes.json();
+            if (!success) throw new Error("Payment verification failed");
 
-
-            // Step 2: Insert the order with tracking_id
+            // 6. Save order record in Supabase
             const { error: orderError } = await supabase.from("orders").insert([
               {
                 user_id: user.id,
                 artwork_id: artwork.id,
-
                 amount: totalCost,
                 delivery_fee: DELIVERY_FEE,
                 status: "paid",
@@ -124,58 +196,42 @@ export default function OrderProcess() {
                 mobile: form.mobile,
                 alt_mobile: form.altMobile,
                 razorpay_payment_id: response.razorpay_payment_id,
-                tracking_id: null,              // not yet known
+                tracking_id: null,
                 courier_name: null,
-                shipment_status: "pending",     // waiting for shipment creation
-                shipment_created_at: null
-
+                shipment_status: "pending",
+                shipment_created_at: null,
               },
             ]);
-
             if (orderError) throw orderError;
 
-            // Step 3: Update artwork availability to false (sold)
+            // 7. Mark artwork as sold
             const { error: availabilityError } = await supabase
               .from("artworks")
               .update({ availability: false })
               .eq("id", artwork.id);
+            if (availabilityError) console.error("Failed to update availability:", availabilityError);
 
-            if (availabilityError) {
-              console.error("Failed to update availability:", availabilityError);
-              // Order is already placed successfully, so we just log this error
-            }
-
-            alert("Payment successful & order placed! Tracking ID allocated. Artwork is now marked as sold.");
+            alert("Payment successful & order placed! Artwork is now marked as sold.");
             navigate("/orders");
-            resolve(response);
           } catch (err) {
-            alert("Error saving order: " + err.message);
-            reject(err);
+            alert("Error processing payment: " + err.message);
           } finally {
             setProcessing(false);
             setShowPolicies(false);
           }
         },
-        prefill: {
-          name: form.fullName,
-          email: user.email,
-          contact: form.mobile,
-        },
-        theme: {
-          color: "#F59E0B",
-        },
-        modal: {
-          ondismiss: function () {
-            setProcessing(false);
-            setShowPolicies(false);
-          },
-        },
       };
 
+      // 8. Open Razorpay modal
       const rzp = new window.Razorpay(options);
       rzp.open();
-    });
+    } catch (err) {
+      alert("Error initiating payment: " + err.message);
+      setProcessing(false);
+    }
   }
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -212,7 +268,7 @@ export default function OrderProcess() {
               No image available
             </div>
           )}
-          
+
           <div className="w-full flex flex-col gap-3">
             <h1 className="text-3xl md:text-4xl font-bold text-gradient mb-3 font-['Nova_Round',cursive]">
               Purchase <span className="text-yellow-700">{artwork.title}</span>
@@ -230,10 +286,10 @@ export default function OrderProcess() {
           </div>
         </div>
 
-        
+
         <div className="md:w-1/2 w-full p-6 flex flex-col justify-center">
 
-          
+
           <form className="space-y-3" onSubmit={e => { e.preventDefault(); handlePayment(); }}>
             <label className="block">
               <span className="form-label font-semibold">Full Name</span>

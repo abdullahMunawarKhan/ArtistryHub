@@ -5,6 +5,7 @@ import Autocomplete from "react-google-autocomplete";
 import { useRef } from 'react';
 import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
+
 function roundToNearest9(num) {
   let rounded = Math.round(num);
   const lastDigit = rounded % 10;
@@ -13,52 +14,54 @@ function roundToNearest9(num) {
   return rounded + (19 - lastDigit);
 }
 
-// const AddressAutocomplete = ({ value, onChange, onAddressSelect }) => {
-//   const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
-//   const inputRef = useRef(null);
-//   const places = useMapsLibrary('places');
 
-//   useEffect(() => {
-//     if (!places || !inputRef.current) return;
-
-//     const options = {
-//       types: ['address'],
-//       componentRestrictions: { country: ['in'] },
-//       fields: ['formatted_address', 'address_components', 'geometry']
-//     };
-
-//     setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
-//   }, [places]);
-
-//   useEffect(() => {
-//     if (!placeAutocomplete) return;
-
-//     placeAutocomplete.addListener('place_changed', () => {
-//       const place = placeAutocomplete.getPlace();
-//       if (place.formatted_address) {
-//         onAddressSelect(place.formatted_address);
-//       }
-//     });
-//   }, [placeAutocomplete, onAddressSelect]);
-
-//   return (
-//     <textarea
-//       ref={inputRef}
-//       value={value}
-//       onChange={onChange}
-//       placeholder="Enter pickup address"
-//       rows={3}
-//       required
-//       className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-//     />
-//   );
-// };
+const AddressAutocomplete = ({ value, onChange, onAddressSelect }) => {
+  const [placeAutocomplete, setPlaceAutocomplete] = useState(null);
+  const inputRef = useRef(null);
+  const places = useMapsLibrary('places');
 
 
+  useEffect(() => {
+    if (!places || !inputRef.current) return;
 
+    const options = {
+      types: ['address'],
+      componentRestrictions: { country: ['in'] },
+      fields: ['formatted_address', 'address_components', 'geometry']
+    };
+
+
+    setPlaceAutocomplete(new places.Autocomplete(inputRef.current, options));
+  }, [places]);
+
+  useEffect(() => {
+    if (!placeAutocomplete) return;
+
+    placeAutocomplete.addListener('place_changed', () => {
+      const place = placeAutocomplete.getPlace();
+      if (place.formatted_address) {
+        onAddressSelect(place.formatted_address);
+      }
+    });
+  }, [placeAutocomplete, onAddressSelect]);
+
+
+  return (
+    <textarea
+      ref={inputRef}
+      value={value}
+      onChange={onChange}
+      placeholder="Enter pickup address"
+      rows={3}
+      required
+      className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+    />
+  );
+};
 
 
 export default function ArtistUploadWork({ categories, onUploadSuccess }) {
+
   const navigate = useNavigate();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
@@ -186,6 +189,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     setPreviewUrls(validFiles.map((file) => URL.createObjectURL(file)));
   }
 
+
   function handleVideoChange(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -196,6 +200,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     setVideo(file);
     setVideoPreview(URL.createObjectURL(file));
   }
+
 
   async function uploadImages() {
     let urls = [];
@@ -209,6 +214,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     return urls;
   }
 
+  
   async function uploadVideo() {
     if (!video) return videoPreview || "";
     const filename = `artworks/videos/${Date.now()}_${video.name}`;
@@ -360,9 +366,10 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       setLoading(false);
     }
   }
-  // const addressInputRef = useGoogleAutocomplete((address) => {
-  //   setPickupAddress(address);
-  // });
+  
+  const addressInputRef = useGoogleAutocomplete((address) => {
+    setPickupAddress(address);
+  });
 
 
 
@@ -431,7 +438,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             </div>
 
             {/* Pickup Address */}
-            {/* <APIProvider apiKey={import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY}>
+            <APIProvider apiKey={import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY}>
               <div>
                 <label className="block font-semibold text-gray-700 mb-1">
                   Pickup Address <span className="text-red-500">*</span>{" "}
@@ -443,21 +450,8 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   onAddressSelect={(address) => setPickupAddress(address)}
                 />
               </div>
-            </APIProvider> */}
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">
-                Pickup Address <span className="text-red-500">*</span>{" "}
-                <span className="text-xs text-gray-400">(with Pin code, precise)</span>
-              </label>
-              <textarea
-                value={pickupAddress}
-                onChange={(e) => setPickupAddress(e.target.value)}
-                placeholder="Enter pickup address"
-                rows={3}
-                required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            </APIProvider>
+           
             <br />
 
 
