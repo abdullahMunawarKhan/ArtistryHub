@@ -314,7 +314,7 @@ function ArtistList() {
               : 'bg-white text-blue-600 border border-blue-600'
             }`}
         >
-          My Following
+          My Following 
         </button>
 
         {showLoginMessage && (

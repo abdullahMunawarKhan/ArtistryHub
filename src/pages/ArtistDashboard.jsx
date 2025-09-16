@@ -93,7 +93,8 @@ function ArtistDashboard() {
           )
         `)
         .not('shipment_status', 'is', null)
-        .eq('artwork.artist_id', artistId);
+
+        .eq('artwork.artistid', artistId);
 
       if (selectedFilter !== 'all') {
         query = query.eq('shipment_status', selectedFilter);
@@ -376,8 +377,8 @@ function ArtistDashboard() {
                       key={filter.value}
                       onClick={() => setSelectedFilter(filter.value)}
                       className={`py-2 px-1 border-b-2 font-medium text-sm ${selectedFilter === filter.value
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                         }`}
                     >
                       {filter.label}
@@ -445,8 +446,8 @@ function ArtistDashboard() {
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-3 ${activeSection === section.id
-                      ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                      : 'hover:bg-gray-100 text-gray-700'
+                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                    : 'hover:bg-gray-100 text-gray-700'
                     }`}
                 >
                   <span className="text-lg">{section.icon}</span>
