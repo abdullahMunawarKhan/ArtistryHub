@@ -4,7 +4,7 @@ import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const ORDER_CATEGORIES = [
-  { label: 'in process (in 20 hr)', value: 'pending' },
+  { label: 'in process', value: 'pending' },
   { label: 'Current Orders', value: 'confirm' },
   { label: 'Past Orders', value: 'dilevered' },
   { label: 'Canceled Orders', value: 'canceled' },
@@ -73,6 +73,7 @@ export default function Orders() {
         quantity,
         tracking_id,
         refund_amount,
+        refund_utr,
         refund_status, 
         artwork:artworks (title,id,image_urls,artist:artists (name))
       `)
@@ -203,10 +204,11 @@ export default function Orders() {
                     <div className="flex flex-col items-start gap-2 mt-4">
                       {order.shipment_status === 'canceled' ? (
                         <>
-                          <span className="text-red-500 font-medium">
-                            Refund of ₹{order.refund_amount?.toFixed(2) || '0.00'}
-                            will be credited to your account in 3-4 business days
-                          </span>
+                          {order.refund_status !== 'done' && (
+                            <span className="text-red-500 font-medium">
+                              Refund of ₹{order.refund_amount?.toFixed(2) || '0.00'} will be credited to your account in 3-4 business days
+                            </span>
+                          )}
                           <div className="mt-1">
                             <div
                               className="inline-block px-4 py-2 rounded-lg bg-blue-50 border border-blue-300 text-blue-800 font-semibold text-sm shadow-sm"
@@ -218,6 +220,12 @@ export default function Orders() {
                                 : 'Pending'}
                             </div>
                           </div>
+                          {order.refund_status === 'done' && (
+                            <div className="mt-2 text-sm text-gray-700">
+                              <div>Refund Amount: ₹{order.refund_amount?.toFixed(2) || '0.00'}</div>
+                              <div>Refund UTR: {order.refund_utr || 'N/A'}</div>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <>
@@ -228,8 +236,8 @@ export default function Orders() {
                         </>
                       )}
                     </div>
-
                   )}
+
                 </div>
               </div>
               <div className="flex flex-col items-end mt-4 sm:mt-0 sm:ml-auto">

@@ -37,7 +37,7 @@ export default function OrderProcess() {
   const [form, setForm] = useState({
     fullName: "",
     shippingAddress: "",
-    billingAddress: "",
+    // billingAddress: "",
     mobile: "",
     altMobile: "",
   });
@@ -119,7 +119,7 @@ export default function OrderProcess() {
                 status: "paid",
                 ordered_at: new Date().toISOString(),
                 shipping_address: form.shippingAddress,
-                billing_address: form.billingAddress,
+                // billing_address: form.billingAddress,
                 full_name: form.fullName,
                 mobile: form.mobile,
                 alt_mobile: form.altMobile,
@@ -283,7 +283,7 @@ export default function OrderProcess() {
                 placeholder="Shipping address"
               ></textarea>
             </label>
-            <label className="block">
+            {/* <label className="block">
               <span className="form-label font-semibold">Billing Address</span>
               <textarea
                 name="billingAddress"
@@ -294,7 +294,7 @@ export default function OrderProcess() {
                 required
                 placeholder="Billing address"
               ></textarea>
-            </label>
+            </label> */}
             <label className="inline-flex items-center mb-2">
               <input
                 type="checkbox"

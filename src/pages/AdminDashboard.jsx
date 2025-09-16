@@ -109,6 +109,23 @@ function AdminDashboard() {
   // };
   // Toggle modal visibility
 
+  async function fetchOrders() {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+    *,
+    artworks (
+      id, title, image_urls, cost, base_price, length, width, height, weight,
+      pickupAddress, availability, shipment_status, artist_payment, artist_utr,
+      artist_id,
+      artists (
+        id, name, email, mobile, artwork_count, paintings_sold, artist_qr
+      )
+    )
+  `)
+      .eq('shipment_status', orderTag);
+    if (!error) setOrderList(data || []);
+  }
   useEffect(() => {
     async function fetchArtworks() {
       const { data, error } = await supabase
@@ -222,25 +239,11 @@ function AdminDashboard() {
 
   // Fetch orders based on shipment status
   useEffect(() => {
-    async function fetchOrders() {
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-    *,
-    artworks (
-      id, title, image_urls, cost, base_price, length, width, height, weight,
-      pickupAddress, availability, shipment_status, artist_payment, artist_utr,
-      artist_id,
-      artists (
-        id, name, email, mobile, artwork_count, paintings_sold, artist_qr
-      )
-    )
-  `)
-        .eq('shipment_status', orderTag);
-      if (!error) setOrderList(data || []);
-    }
+
     fetchOrders();
   }, [orderTag]);
+
+
   useEffect(() => {
     if (selectedSection === 'earnings') {
       fetchTotalEarnings();
@@ -458,7 +461,7 @@ function AdminDashboard() {
     } else {
       alert('Refund marked as done.');
       setShowRefundModal(false);
-      // re-fetch the order list for UI update
+
       fetchOrders();
     }
   }
@@ -828,6 +831,10 @@ function AdminDashboard() {
                   className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain"
                 />
 
+              </div>
+              <div className="mb-4">
+                <span className="font-semibold">Refund Amount: </span>
+                <span>{selectedOrder.refund_amount}</span>
               </div>
               <label className="block font-semibold mb-2">Refund UTR:</label>
               <input

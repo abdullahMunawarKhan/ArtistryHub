@@ -243,6 +243,12 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                       </p>
                     </div>
                     <button
+                      onClick={() => navigate("/update-password")}
+                      className="w-full px-4 py-3 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+                    >
+                      Update Password
+                    </button>
+                    <button
                       onClick={handleLogout}
                       className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition"
                     >
@@ -256,25 +262,13 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 {/* Login Dropdown */}
                 <div className="relative">
                   <button
-                    onClick={() => setLoginDropdownOpen(prev => !prev)}
+                    onClick={() => navigate("/user-login")}
                     className="flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow transition"
                     type="button"
                   >
-                    Login <span className="ml-1">▾</span>
+                    Login 
                   </button>
-                  {loginDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-2 w-44 bg-white border rounded-xl shadow-xl z-50 overflow-hidden animate-fadeIn">
-                      <button
-                        onClick={() => {
-                          setLoginDropdownOpen(false);
-                          navigate("/user-login");
-                        }}
-                        className="block w-full text-left px-4 py-3 hover:bg-purple-50 font-medium text-purple-700 transition"
-                      >
-                        User Login
-                      </button>
-                    </div>
-                  )}
+                 
                 </div>
                 <Link
                   to="/signup"
