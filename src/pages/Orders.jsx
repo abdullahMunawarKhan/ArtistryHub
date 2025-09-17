@@ -1,11 +1,12 @@
 // src/pages/Orders.jsx
-import React, { useEffect, useState,useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
 const ORDER_CATEGORIES = [
-  { label: 'in process', value: 'pending' },
-  { label: 'Current Orders', value: 'confirm' },
+  { label: 'All', value: 'all' },
+
+  { label: 'Current Orders', value: 'current' },
   { label: 'Past Orders', value: 'dilevered' },
   { label: 'Canceled Orders', value: 'canceled' },
 ];
@@ -63,7 +64,7 @@ function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
 }
 
 export default function Orders() {
-  const [selectedCategory, setSelectedCategory] = useState('pending');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -81,25 +82,31 @@ export default function Orders() {
       setLoading(false);
       return;
     }
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select(`
-        id,
-        amount,
-        status,
-        shipment_status,
-        ordered_at,
-        quantity,
-        tracking_id,
-        refund_amount,
-        refund_utr,
-        refund_status, 
-        artwork:artworks (title,id,image_urls,artist:artists (name))
-      `)
+      id,
+      amount,
+      status,
+      shipment_status,
+      ordered_at,
+      quantity,
+      tracking_id,
+      refund_amount,
+      refund_utr,
+      refund_status, 
+      artwork:artworks (title,id,image_urls,artist:artists (name))
+    `)
+      .eq('user_id', user.id);
 
-      .eq('user_id', user.id)
-      .eq('shipment_status', selectedCategory)
-      .order('ordered_at', { ascending: false });
+    if (selectedCategory === 'current') {
+      query = query.in('shipment_status', ['confirm', 'pending', 'shipped']);
+    } else if (selectedCategory !== 'all') {
+      query = query.eq('shipment_status', selectedCategory);
+    }
+
+
+    const { data, error } = await query.order('ordered_at', { ascending: false });
 
     if (error) {
       console.error(error);
@@ -109,6 +116,7 @@ export default function Orders() {
     }
     setLoading(false);
   }
+
   async function cancelOrder(id) {
     if (!window.confirm('Are you sure you want to cancel this order?')) return;
 
@@ -190,6 +198,8 @@ export default function Orders() {
                 className="flex cursor-pointer w-full sm:w-auto"
                 onClick={() => navigate(`/product?id=${order.artwork.id}`)}
               >
+
+
                 <img
                   src={order.artwork?.image_urls?.[0] || ''}
                   alt={order.artwork?.title || 'Artwork'}
@@ -266,7 +276,31 @@ export default function Orders() {
                 </div>
               </div>
               <div className="flex flex-col items-end mt-4 sm:mt-0 sm:ml-auto">
-                {selectedCategory === 'pending' ? (
+                <div className={`flex flex-col items-end mt-4 sm:mt-0 sm:ml-auto space-y-2
+                ${order.shipment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    order.shipment_status === 'confirm' ? 'bg-blue-100 text-blue-800' :
+                      order.shipment_status === 'dilevered' ? 'bg-green-100 text-green-800' :
+                        order.shipment_status === 'canceled' ? 'bg-red-100 text-red-800' :
+                          order.shipment_status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                            'bg-gray-100 text-gray-800'
+                  }`}>
+                  {order.shipment_status.charAt(0).toUpperCase() + order.shipment_status.slice(1)}
+                </div>
+                {(order.tracking_id || order.shipment_status === 'shipped') && (
+                  <div className="mt-3 p-3 rounded-xl bg-purple-50 border border-purple-200 text-sm text-purple-800">
+                    <p className="font-semibold">
+                      Tracking ID:{" "}
+                      <span className="font-bold text-purple-900">
+                        {order.tracking_id || "Not Available"}
+                      </span>
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-purple-600">
+                      📲 A tracking link has been sent to your WhatsApp.
+                    </p>
+                  </div>
+
+                )}
+                {order.shipment_status === 'pending' ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -276,7 +310,7 @@ export default function Orders() {
                   >
                     Cancel
                   </button>
-                ) : (
+                ) : order.shipment_status === 'dilevered' ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -286,7 +320,8 @@ export default function Orders() {
                   >
                     Delete
                   </button>
-                )}
+                ) : null}
+
               </div>
             </li>
           ))}
@@ -297,3 +332,5 @@ export default function Orders() {
   );
 
 }
+
+

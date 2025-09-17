@@ -66,7 +66,7 @@ function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [userEmail, setUserEmail] = useState('');
   const [artistList, setArtistList] = useState([]);
-  const [orderTag, setOrderTag] = useState('pending');
+  const [orderTag, setOrderTag] = useState('all');
   const [orderList, setOrderList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -77,7 +77,7 @@ function AdminDashboard() {
   const [enteredUtr, setEnteredUtr] = useState("")
   const [artworkPayments, setArtworkPayments] = useState([]);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
-  const [showIdProofModal, setShowIdProofModal] = React.useState(false);
+  const [selectedIdProofUrl, setSelectedIdProofUrl] = useState(null);
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrImageSrc, setQrImageSrc] = useState(null);
   const [selectedSection, setSelectedSection] = useState(null); // 'artist' | 'order' | 'payment' | null
@@ -638,17 +638,8 @@ function AdminDashboard() {
                               src={artist.id_proof_url}
                               alt="ID Proof"
                               className="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:scale-105 transition-transform duration-200"
-                              onClick={() => setShowIdProofModal(true)}
+                              onClick={() => setSelectedIdProofUrl(artist.id_proof_url)}
                             />
-                            {showIdProofModal && (
-                              <Modal onClose={() => setShowIdProofModal(false)}>
-                                <img
-                                  src={artist.id_proof_url}
-                                  alt="ID Proof"
-                                  className="max-w-full max-h-screen rounded-lg"
-                                />
-                              </Modal>
-                            )}
                           </>
                         ) : (
                           <span className="text-gray-400">N/A</span>
@@ -660,6 +651,16 @@ function AdminDashboard() {
               </table>
             </div>
           </div>
+        )}
+
+        {selectedIdProofUrl && (
+          <Modal onClose={() => setSelectedIdProofUrl(null)}>
+            <img
+              src={selectedIdProofUrl}
+              alt="ID Proof"
+              className="max-w-full max-h-screen rounded-lg"
+            />
+          </Modal>
         )}
         {selectedSection === 'artwork' && (
           <div className="mb-14 animate-fadeIn">
@@ -728,7 +729,7 @@ function AdminDashboard() {
               Order Management ({orderList.length})
             </h3>
             <div className="flex gap-3 mb-4">
-              {['pending', 'confirm', 'shipped', 'delivered', 'canceled'].map(tag => (
+              {['all', 'pending', 'confirm', 'shipped', 'delivered', 'canceled'].map(tag => (
                 <button
                   key={tag}
                   className={`px-4 py-1 rounded ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
@@ -790,7 +791,21 @@ function AdminDashboard() {
                             </button>
                           ) : 'N/A'}
                         </td>
-                        <td className="p-2">{order.shipment_status}</td>
+                        <td className="p-2">
+                          <span
+                            className={`
+                                      px-2 py-0.5 rounded-full text-xs font-semibold
+                                      ${order.shipment_status === 'pending' ? 'bg-yellow-200 text-yellow-800' :
+                                order.shipment_status === 'confirm' ? 'bg-blue-200 text-blue-800' :
+                                  order.shipment_status === 'shipped' ? 'bg-indigo-200 text-indigo-800' :
+                                    order.shipment_status === 'delivered' ? 'bg-green-200 text-green-800' :
+                                      order.shipment_status === 'canceled' ? 'bg-red-200 text-red-800' :
+                                        'bg-gray-200 text-gray-700' // default style
+                              }`}
+                          >
+                            {order.shipment_status.charAt(0).toUpperCase() + order.shipment_status.slice(1)}
+                          </span>
+                        </td>
                         <td className="p-2">
                           <button
                             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"

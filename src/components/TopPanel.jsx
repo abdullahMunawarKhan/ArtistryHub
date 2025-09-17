@@ -246,7 +246,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                       onClick={() => navigate("/update-password")}
                       className="w-full px-4 py-3 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
                     >
-                      Update Password
+                      Reset Password
                     </button>
                     <button
                       onClick={handleLogout}

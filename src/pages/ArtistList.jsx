@@ -323,9 +323,9 @@ function ArtistList() {
                 </div>
 
                 {/* Paintings Sold */}
-                <p className="text-sm text-gray-600 mb-2">
+                {/* <p className="text-sm text-gray-600 mb-2">
                   {artist.paintings_sold} paintings sold
-                </p>
+                </p> */}
 
                 {/* Rating */}
                 <div className="flex items-center gap-2 mb-3">
