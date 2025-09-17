@@ -122,7 +122,7 @@ const FileUpload = ({
         onChange={onChange}
         className="hidden"
         id={label.replace(/\s+/g, '-').toLowerCase()}
-        required={required}
+
       />
       <label
         htmlFor={label.replace(/\s+/g, '-').toLowerCase()}
@@ -343,7 +343,7 @@ export default function Register() {
         {/* Registration Form */}
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} noValidate className="space-y-8">
 
               {/* Personal Information */}
               <div>
@@ -384,7 +384,7 @@ export default function Register() {
                     placeholder="Enter your email address"
                     required
                   />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                  {/* {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>} */}
 
                   <FormField
                     label="Location"

@@ -1,5 +1,5 @@
 // src/pages/Orders.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,8 +10,10 @@ const ORDER_CATEGORIES = [
   { label: 'Canceled Orders', value: 'canceled' },
 ];
 // Place this code above your Orders component
-function OrderTimer({ orderedAt }) {
+function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
   const [remaining, setRemaining] = useState(0);
+  const [didUpdate, setDidUpdate] = useState(false);
+  const updatingRef = useRef(false);
 
   useEffect(() => {
     function updateRemaining() {
@@ -19,11 +21,28 @@ function OrderTimer({ orderedAt }) {
       const now = Date.now();
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
+
+      // If time is up and pending -> confirm
+      if (diff === 0 && shipmentStatus === 'pending' && !updatingRef.current && !didUpdate) {
+        updatingRef.current = true; // Prevent duplicate updates
+        // Call Supabase to update shipment_status
+        supabase
+          .from('orders')
+          .update({ shipment_status: 'confirm' })
+          .eq('id', orderId)
+          .then(() => {
+            setDidUpdate(true);
+            if (onStatusUpdated) onStatusUpdated();
+          })
+          .finally(() => {
+            updatingRef.current = false;
+          });
+      }
     }
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [orderedAt]);
+  }, [orderedAt, shipmentStatus, orderId, onStatusUpdated, didUpdate]);
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -231,7 +250,13 @@ export default function Orders() {
                         <>
                           <span className="text-gray-500">Awaiting Shipment</span>
                           {order.shipment_status === 'pending' && (
-                            <OrderTimer orderedAt={order.ordered_at} />
+                            <OrderTimer
+                              orderedAt={order.ordered_at}
+                              orderId={order.id}
+                              shipmentStatus={order.shipment_status}
+                              onStatusUpdated={fetchOrders}
+                            />
+
                           )}
                         </>
                       )}
