@@ -40,6 +40,7 @@ const TrackOrder = () => {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const normalizedId = trackingId.trim();
+
   // Helper for courier-specific tracking URLs
   const getTrackingUrl = (trackingId) => {
     if (!trackingId) return null;
@@ -52,6 +53,43 @@ const TrackOrder = () => {
     { key: 'shipped', label: 'Shipped' },
     { key: 'delivered', label: 'Delivery' },
   ];
+  const updateArtworkReview = async (artworkId, newReviewText, newRating) => {
+    const numericRating = Number(newRating);
+    if (isNaN(numericRating)) {
+      console.error("Invalid rating: not a number");
+      return;
+    }
+
+    // Fetch current review JSON array
+    const { data: artworkData, error: fetchError } = await supabase
+      .from("artworks")
+      .select("review, rating")
+      .eq("id", artworkId)
+      .single();
+
+    if (fetchError) {
+      console.error("Error fetching artwork data:", fetchError);
+      return;
+    }
+
+    const currentReviews = artworkData?.review || [];
+    const updatedReviews = [...currentReviews, newReviewText];
+
+    // Update review and rating columns with numeric rating value
+    const { error: updateError } = await supabase
+      .from("artworks")
+      .update({
+        review: updatedReviews,
+        rating: numericRating,
+      })
+      .eq("id", artworkId);
+
+    if (updateError) {
+      console.error("Error updating artwork:", updateError);
+    } else {
+      console.log("Artwork review and rating updated successfully");
+    }
+  };
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -75,6 +113,7 @@ const TrackOrder = () => {
               id, 
               title, 
               image_urls, 
+             
               artist:artists (name)
             )
           `)
@@ -159,26 +198,15 @@ const TrackOrder = () => {
 
     setReviewLoading(true);
     try {
-      const { error } = await supabase
-        .from("reviews")
-        .insert({
-          artwork_id: orderData.products[0].id,
-          rating: starRating,
-          review: reviewText,
-          order_id: orderData.id,
-        });
-
-      if (!error) {
-        setReviewSubmitted(true);
-      } else {
-        console.error("Review submission error:", error);
-      }
+      await updateArtworkReview(orderData.products[0].id, reviewText, starRating);
+      setReviewSubmitted(true);
     } catch (err) {
       console.error("Review submission error:", err);
     } finally {
       setReviewLoading(false);
     }
   };
+
 
   function VerticalOrderStatus({ status }) {
     const stepIndex = ORDER_STEPS.findIndex((step) =>

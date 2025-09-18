@@ -317,7 +317,11 @@ export default function ArtistProfile() {
       }
 
       if (data) {
-        const delivered = data.filter((a) => a.shipment_status === "delivered" && typeof a.rating === "number");
+        const delivered = data.filter(
+          (a) =>
+            (a.shipment_status === "delivered" || a.shipment_status === "shipped") &&
+            typeof a.rating === "number"
+        );
         if (delivered.length > 0) {
           const avg = delivered.reduce((sum, a) => sum + a.rating, 0) / delivered.length;
           setAverageRating(avg);
@@ -330,11 +334,16 @@ export default function ArtistProfile() {
           };
           updateAvgRating();
         }
-        const revs = delivered.map((a) => ({
-          rating: a.rating,
-          review: a.review,
-          email: a.email,
-        }));
+        const revs = data
+          .filter(
+            (a) =>
+              (a.shipment_status === "delivered" || a.shipment_status === "shipped") &&
+              typeof a.rating === "number"
+          )
+          .map((a) => ({
+            rating: a.rating,
+            review: a.review
+          }));
         setReviews(revs);
       }
     }
@@ -488,8 +497,12 @@ export default function ArtistProfile() {
                   className="border rounded-md p-2 text-xs bg-white shadow-sm"
                 >
                   <StarRating value={rev.rating} />
-                  <p className="mt-1 text-gray-700">{rev.review}</p>
-                  {isOwner && (
+                  <p className="mt-1 text-gray-700">
+                    {Array.isArray(rev.review)
+                      ? rev.review.join(", ")       // This will display all strings in the array
+                      : rev.review}
+                  </p>
+                  {isOwner && rev.email && (
                     <p className="text-[10px] text-gray-400 mt-1 italic">
                       By: {rev.email}
                     </p>
