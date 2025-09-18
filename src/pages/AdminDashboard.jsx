@@ -16,11 +16,27 @@ function OrderTimer({ orderedAt }) {
       const now = Date.now();
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
+
+      if (diff === 0 && shipmentStatus === 'pending' && !updatingRef.current && !didUpdate) {
+        updatingRef.current = true;
+        supabase
+          .from('orders')
+          .update({ shipment_status: 'confirm' })
+          .eq('id', orderId)
+          .then(() => {
+            setDidUpdate(true);
+            if (onStatusUpdated) onStatusUpdated();
+          })
+          .finally(() => {
+            updatingRef.current = false;
+          });
+      }
     }
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [orderedAt]);
+  }, [orderedAt, shipmentStatus, orderId, onStatusUpdated, didUpdate]);
+
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -364,51 +380,77 @@ function AdminDashboard() {
     if (!selectedOrder) return;
     setModalLoading(true);
     const artworkId = selectedOrder.artwork_id;
-    // If pending: allow after 24hrs
+
     if (selectedOrder.shipment_status === 'pending') {
       const placed = new Date(selectedOrder.ordered_at).getTime();
       if (Date.now() - placed >= 24 * 60 * 60 * 1000) {
-        // Update to confirm
         const { error } = await supabase
           .from('orders')
           .update({ shipment_status: 'confirm' })
-
           .eq('id', selectedOrder.id);
         if (!error) {
           setSelectedOrder({ ...selectedOrder, shipment_status: 'confirm' });
           await updatePaintingsSoldIfConfirmed(artworkId, "confirm");
-          setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o));
+          setOrderList(orderList.map(o =>
+            o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o
+          ));
         }
       } else {
         alert('24 hours have not yet passed since the order was placed.');
       }
-    }
-    // If confirm: open tracking modal
-    else if (selectedOrder.shipment_status === 'confirm') {
+    } else if (selectedOrder.shipment_status === 'confirm') {
       setTrackingModalOpen(true);
     }
     setModalLoading(false);
   }
 
+
+
   // Submit Tracking ID (confirm → shipped)
   async function handleTrackingSubmit(e) {
     e.preventDefault();
     if (!trackingInput) return;
+
     setModalLoading(true);
+
+    // 1. Create the timestamp
+    const timestamp = new Date().toISOString();
+
+    // 2. Parse extra charges
     const extraCharges = parseFloat(extraDeliveryChargesInput) || 0;
+
+    // 3. Send update to Supabase, including shipment_created_at
     const { error } = await supabase
       .from('orders')
-      .update({ tracking_id: trackingInput, shipment_status: 'shipped', extra_delivery_charges: extraCharges })
+      .update({
+        trackingid: trackingInput,
+        shipmentstatus: 'shipped',
+        extradeliverycharges: extraCharges,
+        shipment_created_at: timestamp,    // ← Added
+      })
       .eq('id', selectedOrder.id);
+
     if (!error) {
-      setSelectedOrder({ ...selectedOrder, shipment_status: 'shipped', tracking_id: trackingInput, extra_delivery_charges: extraCharges });
-      setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: 'shipped', tracking_id: trackingInput, extra_delivery_charges: extraCharges } : o));
+      // 4. Optimistically update local state
+      setOrderList(orderList.map(o =>
+        o.id === selectedOrder.id
+          ? {
+            ...o,
+            shipmentstatus: 'shipped',
+            trackingid: trackingInput,
+            extradeliverycharges: extraCharges,
+            shipment_created_at: timestamp,  // ← Added
+          }
+          : o
+      ));
       setTrackingModalOpen(false);
       setTrackingInput('');
       setExtraDeliveryChargesInput('');
     }
+
     setModalLoading(false);
   }
+
   const fetchTotalEarnings = async () => {
     setEarningsLoading(true);
     try {

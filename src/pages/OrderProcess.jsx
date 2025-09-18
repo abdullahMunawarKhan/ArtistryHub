@@ -113,7 +113,6 @@ export default function OrderProcess() {
               {
                 user_id: user.id,
                 artwork_id: artwork.id,
-
                 amount: totalCost,
                 delivery_fee: DELIVERY_FEE,
                 status: "paid",
@@ -125,7 +124,6 @@ export default function OrderProcess() {
                 alt_mobile: form.altMobile,
                 razorpay_payment_id: response.razorpay_payment_id,
                 tracking_id: null,              // not yet known
-                
                 shipment_status: "pending",     // waiting for shipment creation
                 shipment_created_at: null
 
@@ -212,7 +210,7 @@ export default function OrderProcess() {
               No image available
             </div>
           )}
-          
+
           <div className="w-full flex flex-col gap-3">
             <h1 className="text-3xl md:text-4xl font-bold text-gradient mb-3 font-['Nova_Round',cursive]">
               Purchase <span className="text-yellow-700">{artwork.title}</span>
@@ -230,10 +228,10 @@ export default function OrderProcess() {
           </div>
         </div>
 
-        
+
         <div className="md:w-1/2 w-full p-6 flex flex-col justify-center">
 
-          
+
           <form className="space-y-3" onSubmit={e => { e.preventDefault(); handlePayment(); }}>
             <label className="block">
               <span className="form-label font-semibold">Full Name</span>

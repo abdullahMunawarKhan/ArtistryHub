@@ -83,6 +83,7 @@ function App() {
             <Route path="/order-process" element={<OrderProcess />} />
             <Route path="/product" element={<ProductDetails />} />
             <Route path="/track-order" element={<TrackOrder />} />
+            <Route path="track-order/:trackingId" element={<TrackOrder />} />
             <Route path="/artist-dashboard" element={<ArtistDashboard />} />
             <Route path="/feed" element={<VideoFeed />} />
             <Route path="/feedback-form" element={<Feedback />} />
@@ -287,3 +288,4 @@ C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
 }
 
 export default App;
+

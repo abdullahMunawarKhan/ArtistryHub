@@ -32,13 +32,23 @@ const TrackOrder = () => {
   const navigate = useNavigate();
   const [orderData, setOrderData] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [starRating, setStarRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const normalizedId = trackingId.trim();
   // Helper for courier-specific tracking URLs
   const getTrackingUrl = (trackingId) => {
     if (!trackingId) return null;
     return `https://shiprocket.co/tracking/${trackingId}`;
   };
 
+  const ORDER_STEPS = [
+    { key: 'pending', label: 'Order placed ' },
+    { key: 'confirm', label: 'Order Confirmed' },
+    { key: 'shipped', label: 'Shipped' },
+    { key: 'delivered', label: 'Delivery' },
+  ];
 
   useEffect(() => {
     const fetchOrderData = async () => {
@@ -46,25 +56,29 @@ const TrackOrder = () => {
       try {
         const { data, error } = await supabase
           .from("orders")
-          .select(
-            `
+          .select(`
             id,
             tracking_id,
-            courier_name,
+            
             shipment_status,
             ordered_at,
             amount,
-            quantity,
+            
             shipping_address,
             billing_address,
             full_name,
             mobile,
-            artworks ( id, title, image_urls, price ),
-            artists ( name )
-          `
-          )
-          .eq("tracking_id", trackingId)
-          
+            artwork:artworks (
+              id, 
+              title, 
+              image_urls, 
+              artist:artists (name)
+            )
+          `)
+          .eq("tracking_id", normalizedId)
+          .maybeSingle();
+
+        console.log("fetchOrderData →", { data, error });
 
         if (error) {
           console.error("Error fetching order:", error);
@@ -77,13 +91,15 @@ const TrackOrder = () => {
             status: data.shipment_status,
             orderDate: data.ordered_at,
             estimatedDelivery: null, // can be added later
+            totalAmount: data.amount,
             products: [
               {
-                id: data.artworks?.id,
-                name: data.artworks?.title,
-                image: data.artworks?.image_urls?.[0] || "",
-                price: data.artworks?.price,
+                id: data.artwork?.id,
+                name: data.artwork?.title,
+                image: data.artwork?.image_urls?.[0] || "",
+                price: data.amount, // Use order amount as it might include shipping
                 quantity: data.quantity,
+                artist: data.artwork?.artist?.name,
               },
             ],
             customer: {
@@ -91,8 +107,9 @@ const TrackOrder = () => {
               phone: data.mobile,
             },
             shippingAddress: data.shipping_address,
+            billingAddress: data.billing_address,
+            courierName: data.courier_name,
             trackingUrl: getTrackingUrl(data.tracking_id),
-
           };
           setOrderData(order);
         }
@@ -104,7 +121,6 @@ const TrackOrder = () => {
       }
     };
 
-
     if (trackingId) {
       fetchOrderData();
     }
@@ -112,22 +128,86 @@ const TrackOrder = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    return new Date(dateString).toLocaleString("en-IN", {
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false
     });
   };
+
+  const getStatusColor = (status) => {
+    const statusColors = {
+      pending: "bg-yellow-100 text-yellow-800",
+      confirm: "bg-blue-100 text-blue-800",
+      shipped: "bg-purple-100 text-purple-800",
+      dilevered: "bg-green-100 text-green-800",
+      canceled: "bg-red-100 text-red-800",
+    };
+    return statusColors[status] || "bg-gray-100 text-gray-800";
+  };
+
   const handleReviewSubmit = async () => {
     if (!starRating || !reviewText || !orderData?.products[0]?.id) return;
+
     setReviewLoading(true);
-    const { error } = await supabase
-      .from("artworks")
-      .update({ rating: starRating, review: reviewText })
-      .eq("id", orderData.products[0].id);
-    if (!error) setReviewSubmitted(true);
-    setReviewLoading(false);
+    try {
+      const { error } = await supabase
+        .from("reviews")
+        .insert({
+          artwork_id: orderData.products[0].id,
+          rating: starRating,
+          review: reviewText,
+          order_id: orderData.id,
+        });
+
+      if (!error) {
+        setReviewSubmitted(true);
+      } else {
+        console.error("Review submission error:", error);
+      }
+    } catch (err) {
+      console.error("Review submission error:", err);
+    } finally {
+      setReviewLoading(false);
+    }
   };
+  
+  function VerticalOrderStatus({ status }) {
+    const stepIndex = ORDER_STEPS.findIndex((step) =>
+      status.toLowerCase().includes(step.key)
+    );
+    return (
+      <ol className="space-y-6 my-6 w-72 mx-auto">
+        {ORDER_STEPS.map((step, i) => {
+          const isActive = i <= stepIndex;
+          return (
+            <li key={step.key} className="relative flex items-center">
+              <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2
+              ${isActive ? 'border-green-500 bg-green-100 text-green-700' : 'border-gray-300 bg-white text-gray-400'}`}>
+                {isActive ? (
+                  // Checkmark SVG
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M5 10l4 4 6-6" stroke="green" strokeWidth="2" fill="none" />
+                  </svg>
+                ) : (
+                  <span className="text-lg font-semibold">{i + 1}</span>
+                )}
+              </div>
+              <span className={`ml-4 font-medium ${isActive ? 'text-green-700' : 'text-gray-500'}`}>
+                {step.label}
+              </span>
+              {i < ORDER_STEPS.length - 1 && (
+                <div className={`absolute left-4 top-10 w-0.5 h-8 ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    );
+  }
 
   if (loading) {
     return (
@@ -162,7 +242,7 @@ const TrackOrder = () => {
   }
 
   return (
-    <div className="min-h-[90vh] max-w-6xl mx-auto p-5 bg-gray-50 min-h-screen">
+    <div className="min-h-[90vh] max-w-6xl mx-auto p-5 bg-gray-50">
       {/* Header */}
       <div className="flex items-center gap-5 mb-8 bg-white p-5 rounded-xl shadow-sm">
         <button
@@ -175,24 +255,42 @@ const TrackOrder = () => {
           <h1 className="text-3xl font-semibold text-gray-900 mb-3">
             Track Your Order
           </h1>
+
+        </div>
+      </div>
+
+      {/* Order Summary */}
+      <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div>
+            <span className="text-gray-600">Order Date:</span>
+            <p className="font-medium">{formatDate(orderData.orderDate)}</p>
+          </div>
+          <div>
+            <span className="text-gray-600">Total Amount:</span>
+            <p className="font-medium">₹{orderData.totalAmount?.toFixed(2)}</p>
+          </div>
           <div className="flex gap-5 flex-wrap items-center">
-            <span className="bg-gray-100 px-3 py-1 rounded-md text-sm font-medium text-gray-600">
-              Order #{orderData.id}
-            </span>
+
             <span className="bg-gray-100 px-3 py-1 rounded-md text-sm font-medium text-gray-600">
               Tracking: {orderData.trackingNumber}
+            </span>
+            <span className={`px-3 py-1 rounded-md text-sm font-medium ${getStatusColor(orderData.status)}`}>
+              {orderData.status.charAt(0).toUpperCase() + orderData.status.slice(1)}
             </span>
             {orderData.trackingUrl && (
               <a
                 href={orderData.trackingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
                 Track Live
               </a>
             )}
           </div>
+          <VerticalOrderStatus status={orderData.status} />
         </div>
       </div>
 
@@ -212,18 +310,21 @@ const TrackOrder = () => {
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-16 h-16 object-cover rounded-lg bg-gray-50"
+                  className="w-20 h-20 object-cover rounded-lg bg-gray-50 border"
                 />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                  <h4 className="font-semibold text-gray-900 text-base mb-1">
                     {product.name}
                   </h4>
+                  {product.artist && (
+                    <p className="text-gray-600 text-sm mb-2">
+                      Artist: {product.artist}
+                    </p>
+                  )}
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-600 text-sm">
-                      Qty: {product.quantity}
-                    </span>
-                    <span className="font-semibold text-gray-900 text-sm">
-                      ₹{product.price}
+
+                    <span className="font-semibold text-gray-900 text-base">
+                      ₹{product.price?.toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -237,8 +338,8 @@ const TrackOrder = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-5 pb-3 border-b-2 border-gray-100">
             Shipping Address
           </h2>
-          <div className="bg-gray-50 p-5 rounded-lg border-l-4 border-blue-500">
-            <p className="text-gray-700 text-sm leading-relaxed">
+          <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-blue-500">
+            <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line">
               {orderData.shippingAddress}
             </p>
           </div>
@@ -247,40 +348,71 @@ const TrackOrder = () => {
         {/* Customer Info */}
         <div className="bg-white p-6 rounded-xl shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900 mb-5 pb-3 border-b-2 border-gray-100">
-            Customer
+            Customer Information
           </h2>
-          <p className="text-gray-700 text-sm">Name: {orderData.customer.name}</p>
-          <p className="text-gray-700 text-sm">Phone: {orderData.customer.phone}</p>
+          <div className="space-y-2">
+            <div>
+              <span className="text-gray-600 text-sm">Name:</span>
+              <p className="font-medium">{orderData.customer.name}</p>
+            </div>
+            <div>
+              <span className="text-gray-600 text-sm">Phone:</span>
+              <p className="font-medium">{orderData.customer.phone}</p>
+            </div>
+          </div>
         </div>
-        
-        <div className="mt-6 border-t pt-4">
-          <h3 className="font-semibold text-lg mb-2">Please provide your review</h3>
+      </div>
+
+      {/* Review Section - Only show for delivered orders */}
+      {orderData.status === 'dilevered' || 'shipped' && (
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            Share Your Experience
+          </h3>
           {reviewSubmitted ? (
-            <div className="text-green-600 font-medium">Thank you for your review!</div>
+            <div className="text-center py-8">
+              <div className="text-green-600 font-medium text-lg mb-2">
+                ✅ Thank you for your review!
+              </div>
+              <p className="text-gray-600">
+                Your feedback helps us improve our service.
+              </p>
+            </div>
           ) : (
-            <>
-              <label className="block mb-2">Your Rating:</label>
-              <InteractiveStarRating value={starRating} onChange={setStarRating} />
-              <textarea
-                placeholder="Write your review"
-                value={reviewText}
-                onChange={e => setReviewText(e.target.value)}
-                className="border rounded px-2 py-1 w-full mt-3 mb-2"
-                rows={3}
-                disabled={reviewLoading}
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your Rating:
+                </label>
+                <InteractiveStarRating value={starRating} onChange={setStarRating} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Write Your Review:
+                </label>
+                <textarea
+                  placeholder="Tell us about your experience with this artwork..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  rows={4}
+                  disabled={reviewLoading}
+                />
+              </div>
               <button
                 onClick={handleReviewSubmit}
-                className={`bg-blue-600 text-white py-1 px-4 rounded ${reviewLoading ? "opacity-60" : ""}`}
+                className={`bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium transition-colors ${reviewLoading || !starRating || !reviewText
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+                  }`}
                 disabled={reviewLoading || !starRating || !reviewText}
               >
-                Submit Review
+                {reviewLoading ? "Submitting..." : "Submit Review"}
               </button>
-            </>
+            </div>
           )}
         </div>
-
-      </div>
+      )}
     </div>
   );
 };

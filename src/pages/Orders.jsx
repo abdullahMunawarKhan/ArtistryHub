@@ -10,6 +10,7 @@ const ORDER_CATEGORIES = [
   { label: 'Past Orders', value: 'dilevered' },
   { label: 'Canceled Orders', value: 'canceled' },
 ];
+
 // Place this code above your Orders component
 function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
   const [remaining, setRemaining] = useState(0);
@@ -18,15 +19,14 @@ function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
 
   useEffect(() => {
     function updateRemaining() {
+      // Use the stored IST timestamp directly
       const placed = new Date(orderedAt).getTime();
       const now = Date.now();
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
 
-      // If time is up and pending -> confirm
       if (diff === 0 && shipmentStatus === 'pending' && !updatingRef.current && !didUpdate) {
-        updatingRef.current = true; // Prevent duplicate updates
-        // Call Supabase to update shipment_status
+        updatingRef.current = true;
         supabase
           .from('orders')
           .update({ shipment_status: 'confirm' })
@@ -53,15 +53,20 @@ function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
     <div className="text-sm mt-3 mb-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-700">
       {remaining > 0 ? (
         <span className="font-medium text-blue-700">
-          ⏳ Cancel before : {hours.toString().padStart(2, '0')} :
-          {minutes.toString().padStart(2, '0')}:{seconds.toString().padStart(2, '0')} <br />Afterwards not allowed to Cancel.
+          ⏳ Cancel before: {hours.toString().padStart(2, '0')}:
+          {minutes.toString().padStart(2, '0')}:
+          {seconds.toString().padStart(2, '0')}<br />
+          Afterwards not allowed to Cancel.
         </span>
       ) : (
-        <span className="text-green-600 font-semibold">✔️ 24 hours passed. Status can now be confirmed.</span>
+        <span className="text-green-600 font-semibold">
+          ✔️ 24 hours passed. Status can now be confirmed.
+        </span>
       )}
     </div>
   );
 }
+
 
 export default function Orders() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -291,7 +296,15 @@ export default function Orders() {
                   {order.shipment_status.charAt(0).toUpperCase() + order.shipment_status.slice(1)}
                 </div>
                 {(order.tracking_id || order.shipment_status === 'shipped') && (
-                  <div className="mt-3 p-3 rounded-xl bg-purple-50 border border-purple-200 text-sm text-purple-800">
+                  <div
+                    className="mt-3 p-3 rounded-xl bg-purple-50 border border-purple-200 text-sm text-purple-800 cursor-pointer hover:bg-purple-100 transition-colors duration-200"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (order.tracking_id) {
+                        navigate(`/track-order/${order.tracking_id}`);
+                      }
+                    }}
+                  >
                     <p className="font-semibold">
                       Tracking ID:{" "}
                       <span className="font-bold text-purple-900">
@@ -300,10 +313,15 @@ export default function Orders() {
                     </p>
                     <p className="mt-1 flex items-center gap-1 text-xs text-purple-600">
                       📲 A tracking link has been sent to your WhatsApp.
+                      {order.tracking_id && (
+                        <span className="ml-2 text-purple-700 font-medium">
+                          → Click to track
+                        </span>
+                      )}
                     </p>
                   </div>
-
                 )}
+
                 {order.shipment_status === 'pending' ? (
                   <button
                     onClick={(e) => {
