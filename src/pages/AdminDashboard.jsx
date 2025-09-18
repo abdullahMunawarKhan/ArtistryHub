@@ -110,7 +110,7 @@ function AdminDashboard() {
   // Toggle modal visibility
 
   async function fetchOrders() {
-    const { data, error } = await supabase
+    let query = supabase
       .from('orders')
       .select(`
     *,
@@ -122,10 +122,22 @@ function AdminDashboard() {
         id, name, email, mobile, artwork_count, paintings_sold, artist_qr
       )
     )
-  `)
-      .eq('shipment_status', orderTag);
-    if (!error) setOrderList(data || []);
+  `);
+
+    if (orderTag !== 'all') {
+      query = query.eq('shipment_status', orderTag);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching orders:', error);
+    } else {
+      setOrderList(data);
+    }
+
   }
+
   useEffect(() => {
     async function fetchArtworks() {
       const { data, error } = await supabase
@@ -287,6 +299,9 @@ function AdminDashboard() {
         }
       }
     }
+
+
+
     async function handleRemoveArtwork(artwork) {
       // 1. Remove images from Supabase storage
       if (Array.isArray(artwork.image_urls)) {
@@ -312,6 +327,7 @@ function AdminDashboard() {
     }
 
   }
+
   const openPaymentModal = (artworkId) => {
     setCurrentArtworkId(artworkId);
     setModalOpen(true);
@@ -465,6 +481,27 @@ function AdminDashboard() {
       fetchOrders();
     }
   }
+  const handleMarkDelivered = async () => {
+    if (!selectedOrder) return;
+    try {
+      setModalLoading(true);
+      const { error } = await supabase
+        .from('orders')
+        .update({ shipment_status: 'delivered' })
+        .eq('id', selectedOrder.id);
+      if (error) {
+        alert('Failed to update status: ' + error.message);
+      } else {
+        alert('Shipment marked as delivered.');
+        setSelectedOrder({ ...selectedOrder, shipment_status: 'delivered' });
+        fetchOrders(); // Refresh order list
+      }
+    } catch (err) {
+      alert('Error updating shipment status.');
+    } finally {
+      setModalLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -865,6 +902,7 @@ function AdminDashboard() {
               >
                 Mark as Refunded
               </button>
+
               <button className="ml-3 px-5 py-2 text-gray-500 hover:underline" onClick={() => setShowRefundModal(false)}>Cancel</button>
             </div>
           </div>
@@ -1142,6 +1180,7 @@ function AdminDashboard() {
             {selectedOrder.shipment_status === 'pending' && (
               <OrderTimer orderedAt={selectedOrder.ordered_at} />
             )}
+
             {/* Tracking ID and extra charges Display */}
 
             {['shipped', 'delivered'].includes(selectedOrder.shipment_status) && (
@@ -1219,6 +1258,16 @@ function AdminDashboard() {
                     : 'Mark as Shipped'}
                 </button>
               )}
+
+            {selectedOrder.shipment_status === 'shipped' && (
+              <button
+                className={`block mx-auto mt-6 bg-green-600 hover:bg-green-700 text-white py-1 px-6 rounded ${modalLoading && 'opacity-50'}`}
+                onClick={handleMarkDelivered}
+                disabled={modalLoading}
+              >
+                Mark as Delivered
+              </button>
+            )}
 
             {/* Tracking ID Modal */}
             {trackingModalOpen && (

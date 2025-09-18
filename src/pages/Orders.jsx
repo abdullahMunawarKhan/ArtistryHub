@@ -156,7 +156,11 @@ export default function Orders() {
 
   async function deleteOrder(id) {
     if (!window.confirm('Are you sure you want to delete this order?')) return;
-    const { error } = await supabase.from('orders').delete().eq('id', id);
+    const { error } = await supabase
+      .from('orders')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', id)
+      .is('deleted_at', null);
     if (error) alert('Failed to delete: ' + error.message);
     else fetchOrders();
   }
