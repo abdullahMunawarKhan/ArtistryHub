@@ -3,8 +3,10 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "../utils/supabase";
 import { useNavigate, useParams } from "react-router-dom";
 
+
 function InteractiveStarRating({ value, onChange }) {
   const [hover, setHover] = useState(null);
+
 
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -26,6 +28,7 @@ function InteractiveStarRating({ value, onChange }) {
     </span>
   );
 }
+
 
 const TrackOrder = () => {
   const { trackingId } = useParams();
@@ -59,11 +62,11 @@ const TrackOrder = () => {
           .select(`
             id,
             tracking_id,
-            
+            shipment_created_at,
             shipment_status,
             ordered_at,
             amount,
-            
+            delivered_at,
             shipping_address,
             billing_address,
             full_name,
@@ -90,6 +93,8 @@ const TrackOrder = () => {
             trackingNumber: data.tracking_id,
             status: data.shipment_status,
             orderDate: data.ordered_at,
+            shipmentCreatedAt: data.shipment_created_at,
+            deliveredAt: data.delivered_at,
             estimatedDelivery: null, // can be added later
             totalAmount: data.amount,
             products: [
@@ -174,7 +179,7 @@ const TrackOrder = () => {
       setReviewLoading(false);
     }
   };
-  
+
   function VerticalOrderStatus({ status }) {
     const stepIndex = ORDER_STEPS.findIndex((step) =>
       status.toLowerCase().includes(step.key)
@@ -183,6 +188,31 @@ const TrackOrder = () => {
       <ol className="space-y-6 my-6 w-72 mx-auto">
         {ORDER_STEPS.map((step, i) => {
           const isActive = i <= stepIndex;
+          // Determine which date to show for this step
+          // Inside VerticalOrderStatus, where you determine timestamp:
+          let timestamp;
+          switch (step.key) {
+            case "pending":
+              timestamp = orderData.orderDate;
+              break;
+            case "confirm":
+              timestamp = orderData.orderDate
+                ? new Date(new Date(orderData.orderDate).getTime() + 24 * 3600 * 1000)
+                : null;
+              break;
+            case "shipped":
+              timestamp = orderData.shipmentCreatedAt;
+              break;
+            case "delivered":
+              timestamp = orderData.deliveredAt;
+              break;
+            default:
+              timestamp = null;
+          }
+
+
+
+
           return (
             <li key={step.key} className="relative flex items-center">
               <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2
@@ -199,9 +229,37 @@ const TrackOrder = () => {
               <span className={`ml-4 font-medium ${isActive ? 'text-green-700' : 'text-gray-500'}`}>
                 {step.label}
               </span>
-              {i < ORDER_STEPS.length - 1 && (
-                <div className={`absolute left-4 top-10 w-0.5 h-8 ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+              {step.key === "shipped" ? (
+                // Shipped step: show waiting if no timestamp, else formatted date
+                orderData.shipmentCreatedAt ? (
+                  <span className="ml-2 text-xs text-gray-400">
+                    {formatDate(orderData.shipmentCreatedAt)}
+                  </span>
+                ) : (
+                  <span className="ml-2 text-xs text-gray-500 italic">
+                    Waiting for shipment
+                  </span>
+                )
+              ) : step.key === "delivered" ? (
+                // Delivered step: only show if deliveredAt exists
+                orderData.deliveredAt && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    {formatDate(orderData.deliveredAt)}
+                  </span>
+                )
+              ) : (
+                // Pending & Confirm steps: show date if exists
+                timestamp && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    {formatDate(timestamp)}
+                  </span>
+                )
               )}
+
+              {i < ORDER_STEPS.length - 1 && (
+                <div className={`absolute left-4 top-8 w-0.5 h-8 ${isActive ? 'bg-green-500' : 'bg-gray-300'}`} />
+              )}
+
             </li>
           );
         })}
@@ -290,7 +348,7 @@ const TrackOrder = () => {
               </a>
             )}
           </div>
-          <VerticalOrderStatus status={orderData.status} />
+          <VerticalOrderStatus status={orderData.status} orderData={orderData} />
         </div>
       </div>
 
@@ -305,7 +363,8 @@ const TrackOrder = () => {
             {orderData.products.map((product) => (
               <div
                 key={product.id}
-                className="flex gap-4 py-4 border-b border-gray-100 last:border-b-0"
+                onClick={() => navigate(`/product?id=${product.id}`)}
+                className="flex gap-4 py-4 px-6 mb-4 rounded-lg border border-white/20 bg-white/10 backdrop-blur-md shadow-lg cursor-pointer transition-transform hover:scale-[1.02]"
               >
                 <img
                   src={product.image}

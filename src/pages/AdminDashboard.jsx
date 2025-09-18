@@ -3,8 +3,8 @@ import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 import { fetchTimeSeries } from '../utils/analytics';
 import TimeSeriesChart from '../components/TimeSeriesChart';
-
-
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // Timer component for order countdown (until 24hrs since placed)
 function OrderTimer({ orderedAt }) {
@@ -110,6 +110,7 @@ function AdminDashboard() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundUTR, setRefundUTR] = useState('');
+  const [shipDate, setShipDate] = useState(new Date());
   // for pin setup for each section
   // const [showPinModal, setShowPinModal] = useState(false);
   // const [pendingSection, setPendingSection] = useState(null);
@@ -913,6 +914,7 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+
         {/* Modal */}
         {showRefundModal && selectedOrder && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1223,20 +1225,12 @@ function AdminDashboard() {
               <OrderTimer orderedAt={selectedOrder.ordered_at} />
             )}
 
+
+
+
             {/* Tracking ID and extra charges Display */}
 
-            {['shipped', 'delivered'].includes(selectedOrder.shipment_status) && (
-              <>
-                <div className="mb-2 text-green-700">
-                  <strong>Tracking ID:</strong> {selectedOrder.tracking_id || ''}
-                </div>
-                {selectedOrder.extra_delivery_charges !== undefined && (
-                  <div className="mb-2 text-green-700">
-                    <strong>Extra Delivery Charges:</strong> ₹ {selectedOrder.extra_delivery_charges.toFixed(2)}
-                  </div>
-                )}
-              </>
-            )}
+
 
             {/* pin for every section
             {showPinModal && (
@@ -1290,15 +1284,33 @@ function AdminDashboard() {
             {/* Change Status button */}
             {(selectedOrder.shipment_status === 'pending' ||
               selectedOrder.shipment_status === 'confirm') && (
-                <button
-                  className={`block mx-auto mt-6 bg-blue-600 hover:bg-blue-700 text-white py-1 px-6 rounded ${modalLoading && 'opacity-50'}`}
-                  onClick={handleChangeStatus}
-                  disabled={modalLoading}
-                >
-                  {selectedOrder.shipment_status === 'pending'
-                    ? 'Mark as Confirmed'
-                    : 'Mark as Shipped'}
-                </button>
+                <>
+                  <button
+                    className={`block mx-auto mt-6 bg-blue-600 hover:bg-blue-700 text-white py-1 px-6 rounded ${modalLoading && 'opacity-50'}`}
+                    onClick={handleChangeStatus}
+                    disabled={modalLoading}
+                  >
+                    {selectedOrder.shipment_status === 'pending'
+                      ? 'Mark as Confirmed'
+                      : 'Mark as Shipped'}
+                  </button>
+                  {/* Only when confirming to ship */}
+                  {selectedOrder.shipment_status === 'confirm' && (
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium mb-1">
+                        Select Shipment Date & Time:
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={shipDate.toISOString().slice(0, 16)}
+                        onChange={e => setShipDate(new Date(e.target.value))}
+                        className="border rounded px-3 py-2 w-full"
+                        disabled={modalLoading}
+                      />
+                    </div>
+                  )}
+
+                </>
               )}
 
             {selectedOrder.shipment_status === 'shipped' && (
@@ -1310,7 +1322,7 @@ function AdminDashboard() {
                 Mark as Delivered
               </button>
             )}
-
+            
             {/* Tracking ID Modal */}
             {trackingModalOpen && (
               <form onSubmit={handleTrackingSubmit} className="mt-4">
