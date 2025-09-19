@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 
@@ -29,6 +29,14 @@ function ArtistDashboard() {
     { id: 'orders', label: 'Order Management', icon: '📦' },
     { id: 'payments', label: 'Payment Analysis', icon: '💰' }
   ];
+  const sectionRef = useRef(null);
+  const handleSectionClick = (sectionId) => {
+    setActiveSection(sectionId);
+    // Delay scroll to allow content to render
+    setTimeout(() => {
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
 
   // Load user and artist info
   useEffect(() => {
@@ -243,84 +251,89 @@ function ArtistDashboard() {
   function OrdersTable({ orders }) {
     if (orders.length === 0) {
       return (
-        <table className="w-full border text-sm">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="py-3 px-2">S.No</th>
-              <th className="py-3 px-2 text-center">Title</th>
-              <th className="py-3 px-2 text-center">Base Price</th>
-              <th className="py-3 px-2 text-center">Selling Cost</th>
-              <th className="py-3 px-2 text-center">Ordered</th>
-              <th className="py-3 px-2 text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td colSpan={5} className="text-center py-8 text-gray-600">
-                No orders found.
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full border text-xs sm:text-sm">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="py-3 px-2 sm:px-4 sm:py-3">S.No</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Title</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Base Price</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Selling Cost</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Ordered</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colSpan={5} className="text-center py-8 text-gray-600">
+                  No orders found.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       );
     }
 
     return (
-      <table className="w-full border text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="py-3 px-2">S.No</th>
-            <th className="py-3 px-2 text-center">Title</th>
-            <th className="py-3 px-2 text-center">Base Price</th>
-            <th className="py-3 px-2 text-center">Selling Cost</th>
-            <th className="py-3 px-2 text-center">Ordered</th>
-            <th className="py-3 px-2 text-center">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order, index) => (
-            <tr
-              key={order.id}
-              className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
-              onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
-            >
-              <td>{index + 1}</td>
-              <td className="text-blue-700 underline text-center align-middle">
-                {order.artwork?.title || 'Unknown'}
-              </td>
-              <td className="text-center align-middle">
-                ₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}
-              </td>
-              <td className="text-center align-middle">
-                ₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}
-              </td>
-              <td className="text-center align-middle">
-                {new Date(order.ordered_at).toLocaleDateString()}
-              </td>
-              <td className="text-center align-middle">
-                {order.shipment_status?.toUpperCase() || '-'}
-              </td>
+      <div className="overflow-x-auto">
+        <table className="w-full border text-sm">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="py-3 px-2">S.No</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Title</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Base Price</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Selling Cost</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Ordered</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {orders.map((order, index) => (
+              <tr
+                key={order.id}
+                className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
+                onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
+              >
+                <td>{index + 1}</td>
+                <td className="text-blue-700 underline text-center align-middle">
+                  {order.artwork?.title || 'Unknown'}
+                </td>
+                <td className="text-center align-middle">
+                  ₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}
+                </td>
+                <td className="text-center align-middle">
+                  ₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}
+                </td>
+                <td className="text-center align-middle">
+                  {new Date(order.ordered_at).toLocaleDateString()}
+                </td>
+                <td className="text-center align-middle">
+                  {order.shipment_status?.toUpperCase() || '-'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
+
   }
 
 
   function PaymentTable() {
     return (
       <div className="overflow-x-auto">
-        <table className="w-full border text-sm">
+        <table className="w-full border text-xs sm:text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-3 px-2 text-center">S.No</th>
-              <th className="py-3 px-2 text-center">Item</th>
-              <th className="py-3 px-2 text-center">Image</th>
-              <th className="py-3 px-2 text-center">Payment Amount</th>
-              <th className="py-3 px-2 text-center">Cost</th>
-              <th className="py-3 px-2 text-center">Artist UTR</th>
-              <th className="py-3 px-2 text-center">Status</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">S.No</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Item</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Image</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Payment Amount</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Cost</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Artist UTR</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -404,7 +417,7 @@ function ArtistDashboard() {
             {/* Filter Tabs */}
             <div className="mb-6">
               <div className="border-b border-gray-200">
-                <nav className="-mb-px flex space-x-8">
+                <nav className="flex flex-row space-x-4 overflow-x-auto">
                   {shipmentFilters.map((filter) => (
                     <button
                       key={filter.value}
@@ -462,9 +475,9 @@ function ArtistDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
-      <div className="flex">
+      <div className="flex flex-col md:flex-row">
         {/* LEFT SIDEBAR - 25% width */}
-        <div className="w-1/4 bg-white shadow-md min-h-screen">
+        <div className="w-full md:w-1/4 bg-white shadow-md">
           {/* Header */}
           <div className="p-6 border-b border-gray-200">
             <h1 className="text-xl font-bold text-gray-900">Artist Dashboard</h1>
@@ -473,14 +486,15 @@ function ArtistDashboard() {
 
           {/* Menu Items */}
           <div className="p-4">
-            <nav className="space-y-2">
+            {/* <nav className="flex md:flex-col space-x-4 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-visible"> */}
+            <nav className="flex flex-col space-y-2">
               {dashboardSections.map((section) => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
+                  onClick={() => handleSectionClick(section.id)}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-colors duration-200 flex items-center space-x-3 ${activeSection === section.id
-                    ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                    : 'hover:bg-gray-100 text-gray-700'
+                    ? "bg-blue-100 text-blue-700 border border-blue-200"
+                    : "hover:bg-gray-100 text-gray-700"
                     }`}
                 >
                   <span className="text-lg">{section.icon}</span>
@@ -493,7 +507,10 @@ function ArtistDashboard() {
 
         {/* RIGHT CONTENT AREA - 75% width */}
         <div className="flex-1 p-8">
-          <div className="bg-white rounded-lg shadow-sm min-h-96 p-6">
+          <div
+            ref={sectionRef}
+            className="flex-1 p-6 md:p-8 bg-white rounded-lg shadow-sm min-h-96"
+          >
             {renderMainContent()}
           </div>
         </div>
