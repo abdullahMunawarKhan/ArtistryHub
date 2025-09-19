@@ -417,7 +417,7 @@ function ArtistDashboard() {
             {/* Filter Tabs */}
             <div className="mb-6">
               <div className="border-b border-gray-200">
-                <nav className="flex flex-row space-x-4 overflow-x-auto">
+                <nav className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
                   {shipmentFilters.map((filter) => (
                     <button
                       key={filter.value}

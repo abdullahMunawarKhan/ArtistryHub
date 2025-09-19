@@ -852,17 +852,19 @@ function AdminDashboard() {
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
               Order Management ({orderList.length})
             </h3>
-            <div className="flex gap-3 mb-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
               {['all', 'pending', 'confirm', 'shipped', 'delivered', 'canceled'].map(tag => (
                 <button
                   key={tag}
-                  className={`px-4 py-1 rounded ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
+                  className={`px-4 py-1 rounded w-full transition ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
                   onClick={() => setOrderTag(tag)}
                 >
                   {tag.charAt(0).toUpperCase() + tag.slice(1)}
                 </button>
               ))}
             </div>
+
+
             <div className="overflow-x-auto rounded shadow bg-white">
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-200">
