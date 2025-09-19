@@ -52,7 +52,7 @@ function ArtistDashboard() {
       setLoadingPayments(true);
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, image_urls, cost, artist_payment, artist_id,base_price')
+        .select('id, title, image_urls, cost, artist_payment, artist_id,base_price,artist_utr')
         .eq('artist_id', artistId)
         .eq('shipment_status', 'delivered')
         .order('created_at', { ascending: false });
@@ -89,12 +89,13 @@ function ArtistDashboard() {
             image_urls,
             artist_id,
             base_price,
+            artist_utr,
             cost 
           )
         `)
         .not('shipment_status', 'is', null)
 
-        .eq('artwork.artistid', artistId);
+        .eq('artwork.artist_id', artistId);
 
       if (selectedFilter !== 'all') {
         query = query.eq('shipment_status', selectedFilter);
@@ -245,11 +246,12 @@ function ArtistDashboard() {
         <table className="w-full border text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-3 px-2">Title</th>
-              <th className="py-3 px-2">Base Price</th>
-              <th className="py-3 px-2">Selling Cost</th>
-              <th className="py-3 px-2">Ordered</th>
-              <th className="py-3 px-2">Status</th>
+              <th className="py-3 px-2">S.No</th>
+              <th className="py-3 px-2 text-center">Title</th>
+              <th className="py-3 px-2 text-center">Base Price</th>
+              <th className="py-3 px-2 text-center">Selling Cost</th>
+              <th className="py-3 px-2 text-center">Ordered</th>
+              <th className="py-3 px-2 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -267,22 +269,37 @@ function ArtistDashboard() {
       <table className="w-full border text-sm">
         <thead>
           <tr className="bg-gray-100">
-            <th className="py-3 px-2">Title</th>
-            <th className="py-3 px-2">Base Price</th>
-            <th className="py-3 px-2">Selling Cost</th>
-            <th className="py-3 px-2">Ordered</th>
-            <th className="py-3 px-2">Status</th>
+            <th className="py-3 px-2">S.No</th>
+            <th className="py-3 px-2 text-center">Title</th>
+            <th className="py-3 px-2 text-center">Base Price</th>
+            <th className="py-3 px-2 text-center">Selling Cost</th>
+            <th className="py-3 px-2 text-center">Ordered</th>
+            <th className="py-3 px-2 text-center">Status</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map(order => (
-            <tr key={order.id} className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
-              onClick={() => navigate(`/product?id=${order.artwork?.id}`)}>
-              <td className="text-blue-700 underline">{order.artwork?.title || 'Unknown'}</td>
-              <td>₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}</td>
-              <td>₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}</td>
-              <td>{new Date(order.ordered_at).toLocaleDateString()}</td>
-              <td>{order.shipment_status?.toUpperCase() || '-'}</td>
+          {orders.map((order, index) => (
+            <tr
+              key={order.id}
+              className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
+              onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
+            >
+              <td>{index + 1}</td>
+              <td className="text-blue-700 underline text-center align-middle">
+                {order.artwork?.title || 'Unknown'}
+              </td>
+              <td className="text-center align-middle">
+                ₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}
+              </td>
+              <td className="text-center align-middle">
+                ₹{order.artwork?.cost?.toFixed(2) ?? 'N/A'}
+              </td>
+              <td className="text-center align-middle">
+                {new Date(order.ordered_at).toLocaleDateString()}
+              </td>
+              <td className="text-center align-middle">
+                {order.shipment_status?.toUpperCase() || '-'}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -290,54 +307,69 @@ function ArtistDashboard() {
     );
   }
 
+
   function PaymentTable() {
     return (
       <div className="overflow-x-auto">
         <table className="w-full border text-sm">
           <thead>
             <tr className="bg-gray-100">
-              <th className="py-3 px-2">Item</th>
-              <th className="py-3 px-2">Image</th>
-              <th className="py-3 px-2">Base Price (payment amount)</th>
-              <th className="py-3 px-2">Cost</th>
-              <th className="py-3 px-2">Status</th>
+              <th className="py-3 px-2 text-center">S.No</th>
+              <th className="py-3 px-2 text-center">Item</th>
+              <th className="py-3 px-2 text-center">Image</th>
+              <th className="py-3 px-2 text-center">Payment Amount</th>
+              <th className="py-3 px-2 text-center">Cost</th>
+              <th className="py-3 px-2 text-center">Artist UTR</th>
+              <th className="py-3 px-2 text-center">Status</th>
             </tr>
           </thead>
           <tbody>
             {artworks.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-gray-600 py-8 text-center">
+                <td colSpan={6} className="text-gray-600 py-8 text-center">
                   No delivered artworks found for payment analysis.
                 </td>
               </tr>
             ) : (
-              artworks.map(artwork => {
+              artworks.map((artwork, index) => {
                 return (
-                  <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50">
+                  <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50"
+                    onClick={() => navigate(`/product?id=${artwork.id}`)}>
+                    <td className="text-center align-middle">{index + 1}</td>
                     <td
-                      className="text-blue-700 underline cursor-pointer"
-                      onClick={() => navigate(`/product?id=${artwork.id}`)}
+                      className="text-blue-700 underline cursor-pointer text-center align-middle"
+
                     >
+
                       {artwork.title}
                     </td>
-                    <td>
+                    <td className="text-center align-middle">
                       <img
                         src={Array.isArray(artwork.image_urls)
                           ? artwork.image_urls[0]
                           : artwork.image_urls}
                         alt={artwork.title}
-                        className="w-12 h-12 rounded cursor-pointer"
+                        className="w-12 h-12 rounded cursor-pointer mx-auto"
                         onClick={() => navigate(`/product?id=${artwork.id}`)}
                       />
                     </td>
-                    <td>₹{artwork.base_price}</td>
-                    <td>₹{artwork.cost}</td>
-                    <td>
-                      <span className={
-                        artwork.artist_payment === 'successful'
-                          ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
-                          : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
-                      }>
+                    <td className="text-center align-middle">₹{artwork.base_price}</td>
+                    <td className="text-center align-middle">₹{artwork.cost}</td>
+                    <td className="px-2 py-1 text-center align-middle">
+                      {artwork.artist_utr && String(artwork.artist_utr).trim() !== '' ? (
+                        artwork.artist_utr
+                      ) : (
+                        <span className="text-yellow-600 font-semibold">Waiting for payment</span>
+                      )}
+                    </td>
+                    <td className="text-center align-middle">
+                      <span
+                        className={
+                          artwork.artist_payment === 'successful'
+                            ? 'text-green-600 font-semibold px-2 py-1 bg-green-50 rounded'
+                            : 'text-yellow-600 font-semibold px-2 py-1 bg-yellow-50 rounded'
+                        }
+                      >
                         {artwork.artist_payment || 'Pending'}
                       </span>
                     </td>
@@ -350,6 +382,7 @@ function ArtistDashboard() {
       </div>
     );
   }
+
 
   // NEW FUNCTION: Render content based on active section
   function renderMainContent() {

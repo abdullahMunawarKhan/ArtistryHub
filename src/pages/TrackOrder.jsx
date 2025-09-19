@@ -51,7 +51,7 @@ const TrackOrder = () => {
     { key: 'pending', label: 'Order placed ' },
     { key: 'confirm', label: 'Order Confirmed' },
     { key: 'shipped', label: 'Shipped' },
-    { key: 'delivered', label: 'Delivery' },
+    { key: 'delivered' },
   ];
   const updateArtworkReview = async (artworkId, newReviewText, newRating) => {
     const numericRating = Number(newRating);
@@ -156,6 +156,23 @@ const TrackOrder = () => {
             trackingUrl: getTrackingUrl(data.tracking_id),
           };
           setOrderData(order);
+          if (order.products && order.products[0]) {
+            const product = order.products[0];
+            // You might need to fetch the review for this artwork/product from DB
+            // For example (assuming supabase, similar to your update logic):
+            let { data: artworkData, error } = await supabase
+              .from('artworks')
+              .select('review, rating')
+              .eq('id', product.id)
+              .single();
+
+            if (artworkData && artworkData.review && artworkData.rating) {
+              setReviewSubmitted(true); // Hide form, show submitted block
+              // Optionally, prefill these line if you want to show the values:
+              setStarRating(artworkData.rating);
+              setReviewText(artworkData.review);
+            }
+          }
         }
       } catch (err) {
         console.error("Unexpected error:", err);
@@ -255,8 +272,11 @@ const TrackOrder = () => {
                 )}
               </div>
               <span className={`ml-4 font-medium ${isActive ? 'text-green-700' : 'text-gray-500'}`}>
-                {step.label}
+                {step.key === 'delivered'
+                  ? orderData.status === 'delivered' ? 'Delivered' : 'Delivery'
+                  : step.label}
               </span>
+
               {step.key === "shipped" ? (
                 // Shipped step: show waiting if no timestamp, else formatted date
                 orderData.shipmentCreatedAt ? (
@@ -464,6 +484,25 @@ const TrackOrder = () => {
               <p className="text-gray-600">
                 Your feedback helps us improve our service.
               </p>
+              {/* Stars */}
+              <div className="flex justify-center mt-4 mb-2">
+                {[1, 2, 3, 4, 5].map((idx) => (
+                  <svg
+                    key={idx}
+                    width={28}
+                    height={28}
+                    viewBox="0 0 20 20"
+                    fill={idx <= starRating ? "#F59E0B" : "#E5E7EB"}
+                    style={{ marginRight: 4 }}
+                  >
+                    <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" />
+                  </svg>
+                ))}
+              </div>
+              {/* Review text */}
+              <div className="mt-4 text-gray-800 text-base italic">
+                "{reviewText}"
+              </div>
             </div>
           ) : (
             <div className="space-y-4">

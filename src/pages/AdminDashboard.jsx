@@ -111,6 +111,15 @@ function AdminDashboard() {
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [refundUTR, setRefundUTR] = useState('');
   const [shipDate, setShipDate] = useState(new Date());
+  const [utrModalOpen, setUtrModalOpen] = useState(false);
+  const [shownUtr, setShownUtr] = useState("");
+
+
+  const showUtrModal = utr => {
+    setShownUtr(utr);
+    setUtrModalOpen(true);
+  };
+
   // for pin setup for each section
   // const [showPinModal, setShowPinModal] = useState(false);
   // const [pendingSection, setPendingSection] = useState(null);
@@ -363,18 +372,22 @@ function AdminDashboard() {
     setModalLoading(false);
   }
   const handlePaymentSubmit = async () => {
+    // Update only on modal submit
     const { error } = await supabase
       .from('artworks')
-      .update({ artist_utr: enteredUtr, artist_payment: 'successful' })
+      .update({
+        artist_payment: 'successful',
+        artist_utr: enteredUtr
+      })
       .eq('id', currentArtworkId);
-
     if (!error) {
       setModalOpen(false);
-      // Optionally refetch artworks here to reflect changes
+      fetchArtworkPayments(); // refresh data in UI
     } else {
-      // Handle error (display error message)
+      alert('Payment update failed.');
     }
   };
+
 
   // Change Status button logic
   async function handleChangeStatus() {
@@ -382,28 +395,56 @@ function AdminDashboard() {
     setModalLoading(true);
     const artworkId = selectedOrder.artwork_id;
 
-    if (selectedOrder.shipment_status === 'pending') {
-      const placed = new Date(selectedOrder.ordered_at).getTime();
-      if (Date.now() - placed >= 24 * 60 * 60 * 1000) {
+    try {
+      if (selectedOrder.shipment_status === 'pending') {
+        const placed = new Date(selectedOrder.ordered_at).getTime();
+        if (Date.now() - placed >= 24 * 60 * 60 * 1000) {
+          const { error } = await supabase
+            .from('orders')
+            .update({ shipment_status: 'confirm' })
+            .eq('id', selectedOrder.id);
+
+          if (!error) {
+            setSelectedOrder({ ...selectedOrder, shipment_status: 'confirm' });
+            await updatePaintingsSoldIfConfirmed(artworkId, "confirm");
+            setOrderList(orderList.map(o =>
+              o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o
+            ));
+          }
+        } else {
+          alert('24 hours have not yet passed since the order was placed.');
+        }
+      } else if (selectedOrder.shipment_status === 'confirm') {
+        // When marking as shipped, include shipment_created_at date
+        const updates = { shipment_status: 'shipped' };
+
+        if (shipDate) {
+          updates.shipment_created_at = shipDate.toISOString();
+        }
+
         const { error } = await supabase
           .from('orders')
-          .update({ shipment_status: 'confirm' })
+          .update(updates)
           .eq('id', selectedOrder.id);
+
         if (!error) {
-          setSelectedOrder({ ...selectedOrder, shipment_status: 'confirm' });
-          await updatePaintingsSoldIfConfirmed(artworkId, "confirm");
+          setSelectedOrder({ ...selectedOrder, ...updates });
           setOrderList(orderList.map(o =>
-            o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o
+            o.id === selectedOrder.id ? { ...o, ...updates } : o
           ));
+          setTrackingModalOpen(false);
+        } else {
+          console.error(error);
+          alert('Error updating order status.');
         }
-      } else {
-        alert('24 hours have not yet passed since the order was placed.');
       }
-    } else if (selectedOrder.shipment_status === 'confirm') {
-      setTrackingModalOpen(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setModalLoading(false);
     }
-    setModalLoading(false);
   }
+
 
 
 
@@ -546,6 +587,7 @@ function AdminDashboard() {
     }
   };
 
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen text-2xl font-semibold text-gray-700 animate-pulse">
@@ -553,6 +595,7 @@ function AdminDashboard() {
       </div>
     );
   }
+
 
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-6">
@@ -766,7 +809,8 @@ function AdminDashboard() {
                     </tr>
                   ) : (
                     artworkList.map((art) => (
-                      <tr key={art.id} className="border-b hover:bg-gray-50">
+                      <tr key={art.id} className="border-b hover:bg-gray-50"
+                        onClick={() => navigate(`/product?id=${art.id}`)}>
                         <td className="p-2">{art.title}</td>
                         <td className="p-2">{art.artists?.name || 'Unknown'}</td>
                         <td className="p-2">
@@ -1017,14 +1061,23 @@ function AdminDashboard() {
                         <td className="p-2">{artwork.shipment_status}</td>
                         <td className="p-2">{artwork.base_price}</td>
                         <td className="p-2">
-                          <button
-                            className={`px-3 py-1 rounded text-white ${artwork.artist_payment === "pending" ? "bg-orange-500 hover:bg-orange-600" : "bg-green-600"}`}
-                            onClick={() => openPaymentModal(artwork.id)}
-                            disabled={artwork.artist_payment === "successful"}
-                          >
-                            {artwork.artist_payment.charAt(0).toUpperCase() + artwork.artist_payment.slice(1)}
-                          </button>
+                          {artwork.artist_payment === "pending" ? (
+                            <button
+                              className="px-3 py-1 rounded text-white bg-orange-500 hover:bg-orange-600"
+                              onClick={() => openPaymentModal(artwork.id)}
+                            >
+                              Pending
+                            </button>
+                          ) : (
+                            <button
+                              className="px-3 py-1 rounded text-white bg-green-600"
+                              onClick={() => showUtrModal(artwork.artist_utr)}
+                            >
+                              Successful
+                            </button>
+                          )}
                         </td>
+
                       </tr>
                     ))
                   )}
@@ -1033,6 +1086,33 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+        {modalOpen && (
+          <Modal onClose={() => setModalOpen(false)}>
+            <h3>Enter UTR Transaction ID</h3>
+            <input
+              type="text"
+              value={enteredUtr}
+              onChange={e => setEnteredUtr(e.target.value)}
+              placeholder="UTR Transaction ID"
+            />
+            <button
+              onClick={handlePaymentSubmit}
+              disabled={!enteredUtr}
+              className="bg-green-600 text-white px-4 py-2 rounded"
+            >
+              Submit
+            </button>
+            <button onClick={() => setModalOpen(false)}>Cancel</button>
+          </Modal>
+        )}
+        {utrModalOpen && (
+          <Modal onClose={() => setUtrModalOpen(false)}>
+            <h3>Artist UTR/Transaction ID</h3>
+            <div className="text-lg">{shownUtr}</div>
+            <button onClick={() => setUtrModalOpen(false)}>Close</button>
+          </Modal>
+        )}
+
         {selectedSection === 'earnings' && (
           <div className="mb-14 animate-fadeIn">
             <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
@@ -1294,6 +1374,7 @@ function AdminDashboard() {
                       ? 'Mark as Confirmed'
                       : 'Mark as Shipped'}
                   </button>
+
                   {/* Only when confirming to ship */}
                   {selectedOrder.shipment_status === 'confirm' && (
                     <div className="mt-4">
@@ -1309,9 +1390,9 @@ function AdminDashboard() {
                       />
                     </div>
                   )}
-
                 </>
               )}
+
 
             {selectedOrder.shipment_status === 'shipped' && (
               <button
@@ -1322,7 +1403,7 @@ function AdminDashboard() {
                 Mark as Delivered
               </button>
             )}
-            
+
             {/* Tracking ID Modal */}
             {trackingModalOpen && (
               <form onSubmit={handleTrackingSubmit} className="mt-4">
