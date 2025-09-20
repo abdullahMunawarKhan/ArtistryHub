@@ -142,7 +142,7 @@ function AdminDashboard() {
     *,
     artworks (
       id, title, image_urls, cost, base_price, length, width, height, weight,
-      pickupAddress, availability, shipment_status, artist_payment, artist_utr,
+      pickupAddress, availability, artist_payment, artist_utr,
       artist_id,
       artists (
         id, name, email, mobile, artwork_count, paintings_sold, artist_qr
@@ -248,25 +248,74 @@ function AdminDashboard() {
     // return () => clearInterval(timer);
   }, [period]);
 
+  // useEffect(() => {
+  //   async function fetchArtworkPayments() {
+  //     const { data, error } = await supabase
+  //       .from('orders')
+  //       .select(`
+  //       *,
+  //       artworks!fk_artwork (
+  //         id,
+  //         title,
+  //         image_urls,
+  //         base_price,
+  //         artist_payment,
+  //         artist_utr,
+  //         artists (
+  //           id,
+  //           name,
+  //           artist_qr
+  //         )
+  //       )
+  //     `)
+  //       .eq('shipment_status', 'delivered')
+  //       .filter('artworks.artist_payment', 'in', '(pending,successful)')
+
+  //     if (error) {
+  //       console.error('Error fetching artwork payments:', error)
+  //     } else {
+  //       setArtworkPayments(data || [])
+  //     }
+  //   }
+
+  //   fetchArtworkPayments()
+  // }, [])
+
+
+  // Fetch artists
+
   useEffect(() => {
     async function fetchArtworkPayments() {
-      // Fetch artworks with delivered shipment_status and payment pending/successful
       const { data, error } = await supabase
         .from('artworks')
         .select(`
-        *,
+        id,
+        title,
+        image_urls,
+        base_price,
+        artist_payment,
+        artist_utr,
+        orders!inner (
+          shipment_status
+        ),
         artists (
           id, name, artist_qr
         )
       `)
-        .eq('shipment_status', 'delivered')
-        .in('artist_payment', ['pending', 'successful']);
-      if (!error) setArtworkPayments(data || []);
+        .eq('orders.shipment_status', 'delivered') // only delivered orders
+        .in('artist_payment', ['pending', 'successful']); // payment filter
+
+      if (!error) {
+        setArtworkPayments(data || []);
+      } else {
+        console.error(error);
+      }
     }
+
     fetchArtworkPayments();
   }, []);
 
-  // Fetch artists
+
   useEffect(() => {
     async function fetchArtists() {
       const { data, error } = await supabase.from('artists').select('*');
@@ -502,35 +551,37 @@ function AdminDashboard() {
         id,
         amount,
         extra_delivery_charges,
-        earning,
-        orders_artwork_id_fkey:artworks (
+        shipment_status,
+        artworks:artworks (
           id,
           title,
           image_urls,
           base_price
         )
       `)
-        .not('orders_artwork_id_fkey:artworks', 'is', null); // Also update the not() clause
+        .eq('shipment_status', 'delivered')     // ← only delivered orders
+        .not('artworks', 'is', null);
 
       if (error) {
         console.error('Error fetching earnings:', error);
         return;
       }
 
-      // Process earnings data
       const processedEarnings = ordersData.map(order => {
+        const art = order.artworks;
         const razorpayCommission = order.amount * 0.02;
-        const calculatedEarning = order.amount -
-          order.artworks.base_price -
-          razorpayCommission -
-          (order.extra_delivery_charges || 0);
+        const calculatedEarning =
+          order.amount
+          - art.base_price
+          - razorpayCommission
+          - (order.extra_delivery_charges || 0);
 
         return {
           id: order.id,
-          artworkImage: order.artworks.image_urls,
-          title: order.artworks.title,
+          artworkImage: art.image_urls,
+          title: art.title,
           amount: order.amount,
-          basePrice: order.artworks.base_price,
+          basePrice: art.base_price,
           earning: calculatedEarning,
           razorpayCommission,
           extraDeliveryCharges: order.extra_delivery_charges || 0
@@ -544,6 +595,7 @@ function AdminDashboard() {
       setEarningsLoading(false);
     }
   };
+
   async function handleRefundSubmit() {
     if (!refundUTR) {
       alert('Please enter the refund UTR.');
@@ -1060,7 +1112,8 @@ function AdminDashboard() {
                             <span className="text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-2">{artwork.shipment_status}</td>
+                        <td className="p-2">{artwork.orders?.shipment_status || "N/A"}</td>
+
                         <td className="p-2">{artwork.base_price}</td>
                         <td className="p-2">
                           {artwork.artist_payment === "pending" ? (

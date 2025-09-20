@@ -78,6 +78,37 @@ function ArtworkShareButton({ artworkId }) {
     </button>
   );
 }
+function PriceDisplay({ cost }) {
+  const originalPrice = Math.round(cost * 1.15); // 15% increase
+  const discountPercent = 15;
+
+  return (
+    <div>
+      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#888",
+          marginRight: 8,
+        }}
+      >
+        ₹{originalPrice}
+      </span>
+      <span
+        style={{
+          color: "green",
+          fontWeight: 500,
+          marginRight: 8,
+        }}
+      >
+        ({discountPercent}% off)
+      </span>
+      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    </div>
+  );
+
+}
+
 
 export default function ProductDetails() {
   const location = useLocation();
@@ -338,7 +369,8 @@ export default function ProductDetails() {
               <StarRating value={artwork.avg_rating ?? 0} />
             </div>
           </div>
-          <p className="text-xl font-bold mt-2">₹{artwork.cost}</p>
+          <PriceDisplay cost={artwork.cost} />
+
           <p className="mt-1 text-slate-700">
             Availability: {isAvailable ? (
               <span className="font-semibold text-green-700">Yes</span>

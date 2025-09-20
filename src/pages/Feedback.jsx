@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "../utils/supabase";
 import { useNavigate } from 'react-router-dom';
 
+
 export default function Feedback() {
     const [name, setName] = useState("");
     const [emailId, setEmailId] = useState("");

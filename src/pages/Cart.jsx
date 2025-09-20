@@ -2,6 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
+function PriceDisplay({ cost }) {
+  const originalPrice = Math.round(cost * 1.15); // 15% increase
+  const discountPercent = 15;
+
+  return (
+    <div>
+      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#888",
+          marginRight: 8,
+        }}
+      >
+        ₹{originalPrice}
+      </span>
+      <span
+        style={{
+          color: "green",
+          fontWeight: 500,
+          marginRight: 8,
+        }}
+      >
+        ({discountPercent}% off)
+      </span>
+      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    </div>
+  );
+
+}
+
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +87,7 @@ function Cart() {
       .from('artworks')
       .select('availability, artist_id')
       .eq('id', artworkId)
-      
+
     if (error) {
       alert('Unable to verify availability. Please try again.');
       return;
@@ -88,43 +119,58 @@ function Cart() {
   }
 
   return (
-    <div className="min-h-[90vh] mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
-      <ul>
+    <div className="min-h-[90vh] mx-auto py-6 px-3 max-w-lg">
+      <h1 className="text-2xl font-bold mb-6 text-center">🛒 Your Cart</h1>
+      <ul className="space-y-6">
         {cartItems.map(item => (
-          <li key={item.id} className="mb-8 border-b pb-4">
-            <div className="flex items-center gap-6">
+          <li
+            key={item.id}
+            className="p-4 bg-white rounded-2xl shadow-md border hover:shadow-lg transition"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-6">
+              {/* Image */}
               <img
                 src={item.artworks?.image_urls?.[0] || '/default-image.png'}
                 alt={item.artworks?.title || 'Untitled'}
-                className="w-24 h-24 object-cover rounded cursor-pointer"
+                className="w-full sm:w-28 h-40 sm:h-28 object-cover rounded-xl cursor-pointer"
                 onClick={() => navigate(`/product?id=${item.artwork_id}`)}
               />
-              <div className="flex-1 cursor-pointer" onClick={() => navigate(`/product?id=${item.artwork_id}`)}>
-                <h3 className="text-lg font-semibold">{item.artworks?.title || 'Untitled'}</h3>
-                <div className="text-yellow-700 font-bold">₹{item.artworks?.cost}</div>
-                
+
+              {/* Details */}
+              <div
+                className="flex-1 mt-4 sm:mt-0 cursor-pointer"
+                onClick={() => navigate(`/product?id=${item.artwork_id}`)}
+              >
+                <h3 className="text-lg font-semibold truncate">
+                  {item.artworks?.title || 'Untitled'}
+                </h3>
+                <div className="mt-2">
+                  <PriceDisplay cost={item.artworks?.cost} />
+                </div>
               </div>
-              <div>
-                <button
-                  className="bg-green-600 text-white px-3 py-1 rounded mr-2 hover:bg-green-700"
-                  onClick={() => handleOrderNow(item.artwork_id)}
-                >
-                  Order Now
-                </button>
-                <button
-                  className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                  onClick={() => handleRemove(item.id)}
-                >
-                  Remove
-                </button>
-              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-4 flex gap-3">
+              <button
+                className="flex-1 bg-green-600 text-white py-2 rounded-xl font-medium shadow hover:bg-green-700 active:scale-95 transition"
+                onClick={() => handleOrderNow(item.artwork_id)}
+              >
+               Order Now
+              </button>
+              <button
+                className="flex-1 bg-red-600 text-white py-2 rounded-xl font-medium shadow hover:bg-red-700 active:scale-95 transition"
+                onClick={() => handleRemove(item.id)}
+              >
+                Remove
+              </button>
             </div>
           </li>
         ))}
       </ul>
     </div>
   );
+
 }
 
 export default Cart;

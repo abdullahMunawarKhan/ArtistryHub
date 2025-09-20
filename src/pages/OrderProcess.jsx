@@ -25,6 +25,70 @@ const POLICY_LINKS = [
   },
 ];
 
+function PriceDisplay({ cost }) {
+  const originalPrice = Math.round(cost * 1.15); // 15% increase
+  const discountPercent = 15;
+
+  return (
+    <div>
+      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#888",
+          marginRight: 8,
+        }}
+      >
+        ₹{originalPrice}
+      </span>
+      <span
+        style={{
+          color: "green",
+          fontWeight: 500,
+          marginRight: 8,
+        }}
+      >
+        ({discountPercent}% off)
+      </span>
+      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    </div>
+  );
+
+}
+function PaymentDetailsTable({ cost, DELIVERY_FEE = 50 }) {
+  const incrementedPrice = Math.round(cost * 1.15);
+  const discountPercent = 15;
+  const totalCost = cost + DELIVERY_FEE;
+
+  return (
+    <div>
+      <h3 className="font-bold text-lg mb-2">Payment Details</h3>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <tbody>
+          <tr>
+            <td className="py-1 text-gray-700">Actual Price</td>
+            <td className="py-1 text-gray-900 font-semibold">₹{incrementedPrice}</td>
+          </tr>
+          <tr>
+            <td className="py-1 text-green-700">Offer ({discountPercent}% off)</td>
+            <td className="py-1 text-gray-900 font-semibold">₹{cost}</td>
+          </tr>
+          <tr>
+            <td className="py-1 text-yellow-700">Shipping Fee</td>
+            <td className="py-1 text-yellow-700 font-semibold">₹{DELIVERY_FEE.toFixed(2)}</td>
+          </tr>
+          <tr>
+            <td className="py-2 font-bold text-gray-800">Total</td>
+            <td className="py-2 font-bold text-yellow-700 text-lg">
+              ₹{totalCost.toFixed(2)} <span className="font-normal text-sm"></span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function OrderProcess() {
   const navigate = useNavigate();
   const { state } = useLocation();
@@ -215,22 +279,21 @@ export default function OrderProcess() {
             <h1 className="text-3xl md:text-4xl font-bold text-gradient mb-3 font-['Nova_Round',cursive]">
               Purchase <span className="text-yellow-700">{artwork.title}</span>
             </h1>
-            <p className="text-lg mb-1 font-semibold text-gray-800">
-              Price: <span className="text-yellow-600">₹ {artwork.cost}</span>
-            </p>
-            <p className="mb-1 text-gray-700">
-              Shipping Fee: <span className="font-semibold text-yellow-700">₹{DELIVERY_FEE.toFixed(2)}</span>
-            </p>
             <p className={`mb-2 font-semibold ${isAvailable ? "text-green-600" : "text-red-600"}`}>
-              Availability: {isAvailable ? "Available" : "Not Available"}
+              Availability: {isAvailable ? "Yes" : "No"}
             </p>
+            <p className="text-lg mb-1 font-semibold text-gray-800">
+              <PriceDisplay cost={artwork.cost} />
+
+            </p>
+
 
           </div>
         </div>
 
 
         <div className="md:w-1/2 w-full p-6 flex flex-col justify-center">
-
+          <PaymentDetailsTable cost={artwork.cost} DELIVERY_FEE={50} />
 
           <form className="space-y-3" onSubmit={e => { e.preventDefault(); handlePayment(); }}>
             <label className="block">
@@ -311,9 +374,7 @@ export default function OrderProcess() {
                 </button>
               </span>
             </label>
-            <p className="text-xl font-semibold mb-2 text-gray-800">
-              Total: <span className="text-yellow-600 font-bold">₹{totalCost.toFixed(2)}</span> (including delivery)
-            </p>
+
             <div className="flex gap-4">
               <button
                 type="submit"

@@ -104,7 +104,7 @@ const FileUpload = ({
   onChange,
   preview,
   icon: Icon,
-  required = false,
+  required = true,
   description = ''
 }) => (
   <div className="space-y-2">
@@ -115,44 +115,41 @@ const FileUpload = ({
     </label>
     {description && <p className="text-xs text-gray-500">{description}</p>}
 
-    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors">
+    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors min-h-[180px] flex items-center justify-center">
       <input
         type="file"
         accept={accept}
         onChange={onChange}
         className="hidden"
         id={label.replace(/\s+/g, '-').toLowerCase()}
-
       />
       <label
         htmlFor={label.replace(/\s+/g, '-').toLowerCase()}
-        className="cursor-pointer block"
+        className="cursor-pointer block w-full h-full"
       >
-        {preview ? (
-          <div className="space-y-2">
-            {preview.startsWith('data:image') || preview.includes('image') ? (
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-24 h-24 mx-auto rounded-lg object-cover border-2 border-gray-200"
-              />
-            ) : (
-              <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
-            )}
+        {preview && (preview.startsWith('data:image') || preview.startsWith('blob:') || preview.includes('image')) ? (
+          <div className="flex flex-col items-center space-y-2">
+            <img
+              src={preview}
+              alt="Preview"
+              className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-gray-200"
+            />
             <p className="text-sm text-green-600 font-medium">File uploaded</p>
             <p className="text-xs text-gray-500">Click to change</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {Icon && <Icon className="w-12 h-12 mx-auto text-gray-400" />}
-            <p className="text-gray-600">Click to upload</p>
-            <p className="text-xs text-gray-400">or drag and drop</p>
+          <div className="flex flex-col items-center space-y-2">
+            <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
+            <p className="text-sm text-green-600 font-medium">File uploaded</p>
+            <p className="text-xs text-gray-500">Click to change</p>
           </div>
         )}
       </label>
     </div>
   </div>
 );
+
+
 
 export default function Register() {
   const [form, setForm] = useState({
@@ -207,7 +204,9 @@ export default function Register() {
         });
         if (existing.profile_image_url) setProfilePreview(existing.profile_image_url);
         if (existing.id_proof_url) setIdPreview(existing.id_proof_url);
+        if (existing.artist_qr) setQrCodePreview(existing.artist_qr);
       }
+
     })();
   }, [location, navigate]);
 
@@ -239,7 +238,6 @@ export default function Register() {
     if (!form.mobile.trim()) newErrors.mobile = 'Mobile number is required';
     if (!form.email.trim()) newErrors.email = 'Email is required';
     if (!form.location.trim()) newErrors.location = 'Location is required';
-    // if (!form.qualification.trim()) newErrors.qualification = 'Qualification is required';
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -257,11 +255,17 @@ export default function Register() {
       if (!profileImage) newErrors.profileImage = 'Profile image is required';
       if (!idFile) newErrors.idFile = 'ID proof document is required';
       if (!qrCodeFile) newErrors.qrCodeFile = 'Payment QR code image is required';
+    } else {
+      // If editing, allow submission if either a new file is chosen or existing preview exists
+      if (!profileImage && !profilePreview) newErrors.profileImage = 'Profile image is required';
+      if (!idFile && !idPreview) newErrors.idFile = 'ID proof document is required';
+      if (!qrCodeFile && !qrCodePreview) newErrors.qrCodeFile = 'Payment QR code image is required';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
 
   const uploadFile = async (file, folder) => {
     if (!file) return '';
@@ -384,7 +388,7 @@ export default function Register() {
                     placeholder="Enter your email address"
                     required
                   />
-                  {/* {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>} */}
+                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
 
                   <FormField
                     label="Location"
@@ -505,7 +509,8 @@ export default function Register() {
       {/* Terms Modal */}
       {showTerms && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-lg">
+            {/* Header */}
             <div className="p-6 border-b">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-800">Terms & Conditions</h2>
@@ -518,18 +523,20 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-96">
+            {/* Scrollable Terms Content */}
+            <div className="p-6 overflow-y-auto flex-1">
               <pre className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
                 {TERMS_TEXT}
               </pre>
             </div>
 
+            {/* Actions Footer */}
             <div className="p-6 border-t bg-gray-50">
               <div className="flex items-center mb-4">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
-                  onChange={() => setTermsAccepted(!termsAccepted)}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
                   id="terms"
                   className="mr-3 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                 />
@@ -567,6 +574,7 @@ export default function Register() {
           </div>
         </div>
       )}
+
     </div>
   );
 }

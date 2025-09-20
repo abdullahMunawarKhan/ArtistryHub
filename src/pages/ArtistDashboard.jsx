@@ -56,20 +56,52 @@ function ArtistDashboard() {
 
   // Fetch delivered artworks for payment analysis
   useEffect(() => {
-    async function fetchArtworks() {
+    async function fetchDeliveredArtworks() {
       setLoadingPayments(true);
-      const { data, error } = await supabase
-        .from('artworks')
-        .select('id, title, image_urls, cost, artist_payment, artist_id,base_price,artist_utr')
-        .eq('artist_id', artistId)
-        .eq('shipment_status', 'delivered')
-        .order('created_at', { ascending: false });
+      try {
+        // Fetch orders with artwork data where shipment_status = delivered and artwork belongs to artist
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+          artwork:artworks (
+            id,
+            title,
+            image_urls,
+            cost,
+            artist_payment,
+            artist_id,
+            base_price,
+            artist_utr
+          )
+        `)
+          .eq('shipment_status', 'delivered')
+          .eq('artwork.artist_id', artistId);
 
-      if (!error) setArtworks(data || []);
+        if (error) {
+          throw error;
+        }
+
+        const artworksFromDeliveredOrders = [];
+        const seenArtworkIds = new Set();
+
+        data.forEach(order => {
+          const artwork = order.artwork;
+          if (artwork && !seenArtworkIds.has(artwork.id)) {
+            seenArtworkIds.add(artwork.id);
+            artworksFromDeliveredOrders.push(artwork);
+          }
+        });
+
+        setArtworks(artworksFromDeliveredOrders);
+      } catch (err) {
+        console.error('Error fetching delivered artworks:', err.message);
+        setArtworks([]);
+      }
       setLoadingPayments(false);
     }
-    if (artistId) fetchArtworks();
+    if (artistId) fetchDeliveredArtworks();
   }, [artistId]);
+
 
   // Fetch orders for order management
   useEffect(() => {
@@ -81,29 +113,47 @@ function ArtistDashboard() {
   async function fetchOrderedArtworks() {
     setLoadingOrders(true);
     try {
+      // Fetch artwork IDs owned by this artist
+      const { data: artistArtworks, error: artworkError } = await supabase
+        .from('artworks')
+        .select('id')
+        .eq('artist_id', artistId);
+
+      if (artworkError) {
+        throw artworkError;
+      }
+
+      const artistArtworkIds = artistArtworks ? artistArtworks.map(a => a.id) : [];
+
+      if (artistArtworkIds.length === 0) {
+        setOrderedArtworks([]); // no artwork for artist, so no orders
+        setLoadingOrders(false);
+        return;
+      }
+
+      // Fetch orders where artwork_id is in the artist's artwork IDs
       let query = supabase
         .from('orders')
         .select(`
+        id,
+        artwork_id,
+        shipment_status,
+        ordered_at,
+        quantity,
+        shipping_address,
+        user_id,
+        artwork:artworks (
           id,
-          artwork_id,
-          shipment_status,
-          ordered_at,
-          quantity,
-          shipping_address,
-          user_id,
-          artwork:artworks (
-            id,
-            title,
-            image_urls,
-            artist_id,
-            base_price,
-            artist_utr,
-            cost 
-          )
-        `)
+          title,
+          image_urls,
+          artist_id,
+          base_price,
+          artist_utr,
+          cost 
+        )
+      `)
         .not('shipment_status', 'is', null)
-
-        .eq('artwork.artist_id', artistId);
+        .in('artwork_id', artistArtworkIds);
 
       if (selectedFilter !== 'all') {
         query = query.eq('shipment_status', selectedFilter);
@@ -123,6 +173,7 @@ function ArtistDashboard() {
     }
     setLoadingOrders(false);
   }
+
 
   // Pickup time/date logic for 'pending' orders
   async function updatePickupDetails(artworkId, pickupDate, pickupTime) {
@@ -296,8 +347,8 @@ function ArtistDashboard() {
                 onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
               >
                 <td>{index + 1}</td>
-                <td className="text-blue-700 underline text-center align-middle">
-                  {order.artwork?.title || 'Unknown'}
+                <td className="text-Black-700 text-center align-middle">
+                  {(order.artwork?.title || 'Unknown').toUpperCase()}
                 </td>
                 <td className="text-center align-middle">
                   ₹{order.artwork?.base_price?.toFixed(2) ?? 'N/A'}
@@ -332,7 +383,7 @@ function ArtistDashboard() {
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Image</th>
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Payment Amount</th>
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Cost</th>
-              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Artist UTR</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Payment UTR</th>
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
             </tr>
           </thead>
@@ -350,11 +401,11 @@ function ArtistDashboard() {
                     onClick={() => navigate(`/product?id=${artwork.id}`)}>
                     <td className="text-center align-middle">{index + 1}</td>
                     <td
-                      className="text-blue-700 underline cursor-pointer text-center align-middle"
+                      className="text-black-700 cursor-pointer text-center align-middle"
 
                     >
 
-                      {artwork.title}
+                      {artwork.title.toUpperCase()}
                     </td>
                     <td className="text-center align-middle">
                       <img
@@ -363,11 +414,11 @@ function ArtistDashboard() {
                           : artwork.image_urls}
                         alt={artwork.title}
                         className="w-12 h-12 rounded cursor-pointer mx-auto"
-                        onClick={() => navigate(`/product?id=${artwork.id}`)}
+
                       />
                     </td>
                     <td className="text-center align-middle">₹{artwork.base_price}</td>
-                    <td className="text-center align-middle">₹{artwork.cost}</td>
+                    <td className="text-center align-middle">₹M.R.P : ₹{artwork.cost}</td>
                     <td className="px-2 py-1 text-center align-middle">
                       {artwork.artist_utr && String(artwork.artist_utr).trim() !== '' ? (
                         artwork.artist_utr

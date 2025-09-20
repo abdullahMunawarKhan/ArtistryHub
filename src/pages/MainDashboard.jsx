@@ -28,6 +28,37 @@ function StarRating({ value }) {
   );
 }
 
+function PriceDisplay({ cost }) {
+  const originalPrice = Math.round(cost * 1.15); // 15% increase
+  const discountPercent = 15;
+
+  return (
+    <div>
+      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#888",
+          marginRight: 8,
+        }}
+      >
+        ₹{originalPrice}
+      </span>
+      <span
+        style={{
+          color: "green",
+          fontWeight: 500,
+          marginRight: 8,
+        }}
+      >
+        ({discountPercent}% off)
+      </span>
+      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    </div>
+  );
+
+}
+
 function MainDashboard() {
   const [userProfile, setUserProfile] = useState(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -254,7 +285,7 @@ function MainDashboard() {
       .update({ liked_artworks: updatedLikedArtworks })
       .eq('id', user.id)
       .select('liked_artworks')
-      // .single()
+    // .single()
 
     if (userErr) {
       console.error('Error updating user liked_artworks:', userErr);
@@ -553,9 +584,10 @@ function MainDashboard() {
 
                   {/* Price */}
                   <div className="mb-4">
-                    <span className="text-2xl font-bold text-gradient-primary">
-                      ₹{artwork.cost?.toLocaleString()}
-                    </span>
+                    {/* <span className="text-2xl font-bold text-gradient-primary">
+                      <span className="text-gray-500 text-base font-normal">M.R.P</span> - ₹{artwork.cost?.toLocaleString()}
+                    </span> */}
+                    <PriceDisplay cost={artwork.cost} />
                   </div>
 
                   {/* Description */}

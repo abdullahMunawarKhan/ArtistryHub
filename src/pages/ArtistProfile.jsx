@@ -131,6 +131,37 @@ function ArtistProfileShare({ artistId }) {
   );
 }
 
+function PriceDisplay({ cost }) {
+  const originalPrice = Math.round(cost * 1.15); // 15% increase
+  const discountPercent = 15;
+
+  return (
+    <div>
+      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
+      <span
+        style={{
+          textDecoration: "line-through",
+          color: "#888",
+          marginRight: 8,
+        }}
+      >
+        ₹{originalPrice}
+      </span>
+      <span
+        style={{
+          color: "green",
+          fontWeight: 500,
+          marginRight: 8,
+        }}
+      >
+        ({discountPercent}% off)
+      </span>
+      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    </div>
+  );
+
+}
+
 export default function ArtistProfile() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -298,57 +329,116 @@ export default function ArtistProfile() {
   // fetch artworks + reviews
   useEffect(() => {
     if (!artistId) return;
+
     async function fetchArtworks() {
       setLoadingArtworks(true);
-      const { data } = await supabase
+
+      // Fetch artworks for the artist without shipment_status
+      const { data: artworksData, error: artworkError } = await supabase
         .from("artworks")
-        .select("id, title, category, cost, image_urls, availability, rating, review, shipment_status")
+        .select("id, title, category, cost, image_urls, availability, rating, review")
         .eq("artist_id", artistId);
 
-      setArtworks(data || []);
-      setLoadingArtworks(false);
-      if (data) {
-        for (const art of data) {
-          if (art.shipment_status === "confirm" && art.availability !== false) {
-            await supabase.from("artworks").update({ availability: false }).eq("id", art.id);
-            art.availability = false;
-          }
+      if (artworkError) {
+        console.error("Failed to fetch artworks:", artworkError.message);
+        setLoadingArtworks(false);
+        return;
+      }
+
+      if (!artworksData || artworksData.length === 0) {
+        setArtworks([]);
+        setLoadingArtworks(false);
+        setAverageRating(0);
+        setReviews([]);
+        return;
+      }
+
+      // Extract artwork ids
+      const artworkIds = artworksData.map((art) => art.id);
+
+      // Fetch orders related to these artworks to get shipment_status
+      const { data: ordersData, error: ordersError } = await supabase
+        .from("orders")
+        .select("artwork_id, shipment_status")
+        .in("artwork_id", artworkIds);
+
+      if (ordersError) {
+        console.error("Failed to fetch orders:", ordersError.message);
+        setLoadingArtworks(false);
+        return;
+      }
+
+      // Map orders by artwork_id
+      const ordersMap = {};
+      if (ordersData) {
+        ordersData.forEach((order) => {
+          ordersMap[order.artwork_id] = order.shipment_status;
+        });
+      }
+
+      // Merge shipment_status from orders into artworks
+      const artworksWithStatus = artworksData.map((art) => ({
+        ...art,
+        shipment_status: ordersMap[art.id] || null,
+      }));
+
+      // Update availability in artworks if shipment_status is 'confirm'
+      for (const art of artworksWithStatus) {
+        if (art.shipment_status === "confirm" && art.availability !== false) {
+          // Update availability in DB and locally
+          await supabase
+            .from("artworks")
+            .update({ availability: false })
+            .eq("id", art.id);
+          art.availability = false;
         }
       }
 
-      if (data) {
-        const delivered = data.filter(
+      setArtworks(artworksWithStatus);
+      setLoadingArtworks(false);
+
+      // Filter artworks for delivered/shipped with ratings to calculate average
+      const delivered = artworksWithStatus.filter(
+        (a) =>
+          (a.shipment_status === "delivered" || a.shipment_status === "shipped") &&
+          typeof a.rating === "number"
+      );
+
+      if (delivered.length > 0) {
+        const avg =
+          delivered.reduce((sum, a) => sum + a.rating, 0) / delivered.length;
+        setAverageRating(avg);
+
+        // Update average rating in artists table
+        const { error } = await supabase
+          .from("artists")
+          .update({ avg_rating: avg })
+          .eq("id", artistId);
+        if (error) {
+          console.error("Failed to update avg_rating:", error.message);
+        }
+      } else {
+        setAverageRating(0);
+      }
+
+      // Set reviews from artworks with delivered/shipped and ratings
+      const revs = artworksWithStatus
+        .filter(
           (a) =>
             (a.shipment_status === "delivered" || a.shipment_status === "shipped") &&
             typeof a.rating === "number"
-        );
-        if (delivered.length > 0) {
-          const avg = delivered.reduce((sum, a) => sum + a.rating, 0) / delivered.length;
-          setAverageRating(avg);
-          // Add this block to store in Supabase
-          const updateAvgRating = async () => {
-            const { error } = await supabase.from("artists").update({ avg_rating: avg }).eq("id", artist.id);
-            if (error) {
-              console.error("Failed to update avg_rating:", error.message);
-            }
-          };
-          updateAvgRating();
-        }
-        const revs = data
-          .filter(
-            (a) =>
-              (a.shipment_status === "delivered" || a.shipment_status === "shipped") &&
-              typeof a.rating === "number"
-          )
-          .map((a) => ({
-            rating: a.rating,
-            review: a.review
-          }));
-        setReviews(revs);
-      }
+        )
+        .map((a) => ({
+          rating: a.rating,
+          review: a.review,
+        }));
+
+      setReviews(revs);
     }
+
     fetchArtworks();
   }, [artistId]);
+
 
   function handleEditProduct(artwork) {
     if (!artwork?.id) {
@@ -585,7 +675,7 @@ export default function ArtistProfile() {
                   <div className="mt-2">
                     <h3 className="font-semibold">{artwork.title}</h3>
                     {!isOwner && <p className="text-sm text-slate-600">{artwork.category}</p>}
-                    <p className="font-bold">₹{artwork.cost}</p>
+                    <PriceDisplay cost={artwork.cost} />
                   </div>
 
                   {/* Toggle availability */}
