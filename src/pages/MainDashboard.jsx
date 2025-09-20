@@ -503,9 +503,10 @@ function MainDashboard() {
 
                   {/* Category Badge */}
                   <div className="absolute top-3 right-3">
-                    <span className="badge-primary">
+                    <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-gray-100 to-indigo-100 shadow-md text-gray-900 font-semibold backdrop-blur">
                       {artwork.category}
                     </span>
+
                   </div>
                 </div>
 

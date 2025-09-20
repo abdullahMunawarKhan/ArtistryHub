@@ -19,6 +19,7 @@ function Welcome() {
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
+      onClick={handleEnter}
     >
       {/* Background decorative elements */}
       <div className="absolute inset-0">
@@ -29,8 +30,8 @@ function Welcome() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col md:flex-row items-start justify-between max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex flex-col justify-start items-center relative overflow-hidden w-full md:w-3/5">
+      <div className="flex flex-col md:flex-row md:items-center justify-between max-w-7xl mx-auto px-4 sm:px-6 py-6 min-h-[80vh]">
+        <div className="flex flex-col justify-center items-center relative overflow-hidden w-full md:w-3/5">
           {/* Decorative Gradients */}
           <div className="absolute left-0 top-0 w-40 sm:w-56 h-40 sm:h-56 bg-gradient-to-br from-purple-400 to-pink-300 rounded-full blur-2xl opacity-40" />
           <div className="absolute right-6 bottom-6 w-28 sm:w-36 h-28 sm:h-36 bg-gradient-to-br from-blue-400 to-purple-300 rounded-full blur-3xl opacity-30" />
@@ -87,29 +88,31 @@ function Welcome() {
         </div>
 
         {/* Feature highlights */}
-        <div className="flex flex-col gap-4 sm:gap-6 md:w-2/5 mx-auto md:mx-0 mt-6 md:mt-10 md:mr-10 w-full max-w-[95vw] z-10">
-          {[
-            { title: "Discover Art", desc: "Explore unique artworks from talented artists worldwide", bg: "/images/discover_art.png" },
-            { title: "Showcase Talent", desc: "Display your artwork and build your artistic portfolio", bg: "/images/showcase_talent.png" },
-            { title: "Connect & Create", desc: "Build meaningful connections in the art community", bg: "/images/connect_create.png" },
-          ].map((f, i) => (
-            <div
-              key={i}
-              className="relative p-4 sm:p-5 text-center rounded-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.12)] bg-white/25 backdrop-blur-[8px] border border-white/30 transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] group"
-              style={{
-                backgroundImage: `url('${f.bg}')`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            >
-              <h3 className="font-['Montserrat'] font-bold text-lg sm:text-xl text-[#123147] mb-1 leading-tight">
-                {f.title}
-              </h3>
-              <p className="font-['Poppins'] font-medium text-xs sm:text-base text-black leading-relaxed">
-                {f.desc}
-              </p>
-            </div>
-          ))}
+        <div className="flex flex-col justify-center items-center w-full md:w-2/5 h-full mt-8 md:mt-0">
+          <div className="flex flex-col gap-6 w-full max-w-md">
+            {[
+              { title: "Discover Art", desc: "Explore unique artworks from talented artists worldwide", bg: "/images/discover_art.png" },
+              { title: "Showcase Talent", desc: "Display your artwork and build your artistic portfolio", bg: "/images/showcase_talent.png" },
+              { title: "Connect & Create", desc: "Build meaningful connections in the art community", bg: "/images/connect_create.png" },
+            ].map((f, i) => (
+              <div
+                key={i}
+                className="relative p-4 sm:p-5 text-center rounded-[18px] shadow-[0_4px_16px_rgba(0,0,0,0.12)] bg-white/25 backdrop-blur-[8px] border border-white/30 transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_6px_20px_rgba(0,0,0,0.15)] group"
+                style={{
+                  backgroundImage: `url('${f.bg}')`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              >
+                <h3 className="font-['Montserrat'] font-bold text-lg sm:text-xl text-[#123147] mb-1 leading-tight">
+                  {f.title}
+                </h3>
+                <p className="font-['Poppins'] font-medium text-xs sm:text-base text-black leading-relaxed">
+                  {f.desc}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
