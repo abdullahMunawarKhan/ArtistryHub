@@ -38,7 +38,7 @@ function VideoFeed() {
         setUser(user);
         await fetchUserData(user.id);
       } else {
-        navigate('/login');
+        navigate('/user-login');
       }
     };
     getCurrentUser();

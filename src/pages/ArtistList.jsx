@@ -258,7 +258,7 @@ function ArtistList() {
         <div className="fixed top-5 right-5 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
           <p className="text-sm font-medium">Please log in to follow artists!</p>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/user-login')}
             className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
           >
             Login
