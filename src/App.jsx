@@ -226,11 +226,11 @@ function App() {
               </div>
 
               {/* Right Section: Contact */}
-              <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-8  pl-8">
                 <div className="sm:flex sm:gap-6 sm:items-center">
                   <div className="sm:w-3/5 flex flex-col justify-center">
                     <Link to="/contact-us" onClick={() => setFooterOpen(false)} className="text-lg font-bold text-white mb-3">
-                      Contact Us
+                      Contact us :
                     </Link>
                     <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Address:</span> NMIET campus, near Latis housing society, Talegaon Dabhade, Pune.
@@ -254,7 +254,35 @@ function App() {
                     </a>
                   </div>
                 </div>
+                <div className="h-0.5 bg-gray-500"></div>
+                <div className="mt-1 flex ">
+                  <div className="mb-4">
+                    <h2 className="text-xl font-bold text-gray-100 mb-1 inline-block">
+                      Connect us :
+                    </h2>
+                    <div className="h-0.5 bg-pink-500" style={{ width: "100px" }}></div>
+                  </div>
+                  <div className="pl-6">
+                    <a
+                      href="https://www.instagram.com/scopebrush.in"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="Instagram profile"
+                      className="inline-flex items-center justify-center w-12 h-12 bg-pink-600 hover:bg-pink-700 rounded-full text-white text-base font-semibold transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="w-7 h-7"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M7.75 2A5.75 5.75 0 002 7.75v8.5A5.75 5.75 0 007.75 22h8.5A5.75 5.75 0 0022 16.25v-8.5A5.75 5.75 0 0016.25 2h-8.5zm0 1.5h8.5c2.35 0 4.25 1.9 4.25 4.25v8.5c0 2.35-1.9 4.25-4.25 4.25h-8.5A4.25 4.25 0 013.5 16.25v-8.5c0-2.35 1.9-4.25 4.25-4.25zm8.75 1a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5zM12 7a5 5 0 100 10 5 5 0 000-10zm0 1.5a3.5 3.5 0 110 7 3.5 3.5 0 010-7z" />
+                      </svg>
+                    </a>
+                  </div>
 
+                </div>
+                <div className="h-0.5 bg-gray-500"></div>
                 <div className="flex flex-col gap-1">
                   <Link
                     to="/feedback-form"
@@ -278,6 +306,9 @@ function App() {
                     <span>see terms and conditions</span>
                   </Link>
                 </div>
+
+
+
 
               </div>
 
