@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://scopebrush.vercel.app/sitemap.xml
