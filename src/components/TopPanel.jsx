@@ -266,9 +266,9 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                     className="flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow transition"
                     type="button"
                   >
-                    Login 
+                    Login
                   </button>
-                 
+
                 </div>
                 <Link
                   to="/signup"
@@ -309,7 +309,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
-          <div className="px-6 py-4 space-y-4">
+          <div className="px-6 py-4 space-y-4 items-center">
             {!user && (
               <>
                 <button
