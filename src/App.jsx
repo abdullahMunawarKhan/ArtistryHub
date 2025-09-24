@@ -51,9 +51,9 @@ function App() {
 
   return (
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
-      {!(isWelcomePage || isComingSoonPage) && (
+      {/* {!(isWelcomePage || isComingSoonPage) && (
         <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />
-      )}
+      )} */}
 
 
       <main
