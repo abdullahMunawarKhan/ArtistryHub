@@ -25,12 +25,14 @@ import Feedback from './pages/Feedback';
 import ContactUs from './pages/ContactUs';
 import PrivacyPolicies from './pages/PrivacyPolicies';
 import TermsConditions from './pages/TermsCondition';
+import ComingSoon from './pages/ComingSoon';
 
 
 function App() {
   const location = useLocation();
   const [footerOpen, setFooterOpen] = useState(false);
   const isWelcomePage = location.pathname === '/';
+  const isComingSoonPage = location.pathname === '/coming-soon';
 
   const footerRef = useRef(null)
 
@@ -49,7 +51,9 @@ function App() {
 
   return (
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
-      {!isWelcomePage && (<TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />)}
+      {!(isWelcomePage || isComingSoonPage) && (
+        <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />
+      )}
 
 
       <main
@@ -90,6 +94,7 @@ function App() {
             <Route path="/contact-us" element={<ContactUs />} />
             <Route path="/privacy-policies" element={<PrivacyPolicies />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
+            <Route path="/coming-soon" element={<ComingSoon />} />
           </Routes>
         </div>
       </main>
