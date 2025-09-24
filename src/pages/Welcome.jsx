@@ -15,7 +15,7 @@ function Welcome() {
     <div
       className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-blue-100 relative overflow-hidden"
       style={{
-        backgroundImage: "url('/images/main_bg.png')",
+        backgroundImage: "url('/images/main_bg.jpeg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
@@ -39,7 +39,7 @@ function Welcome() {
           {/* Logo and Brand */}
           <div className="mb-6 text-center z-10 flex flex-row items-center justify-center">
             <motion.img
-              src="/images/logo2.png"
+              src="/images/logo2.jpeg"
               alt="ScopeBrush Logo"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -91,9 +91,9 @@ function Welcome() {
         <div className="flex flex-col justify-center items-center w-full md:w-2/5 h-full mt-8 md:mt-0">
           <div className="flex flex-col gap-6 w-full max-w-md">
             {[
-              { title: "Discover Art", desc: "Explore unique artworks from talented artists worldwide", bg: "/images/discover_art.png" },
-              { title: "Showcase Talent", desc: "Display your artwork and build your artistic portfolio", bg: "/images/showcase_talent.png" },
-              { title: "Connect & Create", desc: "Build meaningful connections in the art community", bg: "/images/connect_create.png" },
+              { title: "Discover Art", desc: "Explore unique artworks from talented artists worldwide", bg: "/images/discover_art.jpeg" },
+              { title: "Showcase Talent", desc: "Display your artwork and build your artistic portfolio", bg: "/images/showcase_talent.jpeg" },
+              { title: "Connect & Create", desc: "Build meaningful connections in the art community", bg: "/images/connect_create.jpeg" },
             ].map((f, i) => (
               <div
                 key={i}

@@ -167,7 +167,7 @@ function App() {
                         className="flex items-center px-4 py-1 rounded-lg text-white text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 hover:bg-opacity-90"
                       >
                         <img
-                          src="/images/profile.png"
+                          src="/images/profile.jpeg"
                           alt="Profile"
                           className="w-7 h-7 rounded-full mr-2 border-2 border-white"
                         />

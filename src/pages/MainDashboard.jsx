@@ -394,7 +394,7 @@ function MainDashboard() {
         <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50">
           <div className="flex items-center gap-4 mb-4 animate-fade-in">
             <img
-              src="/images/logo2.png"
+              src="/images/logo2.jpeg"
               alt="ScopeBrush Logo"
               className="h-16 w-16 rounded-full shadow-lg border-2 border-purple-300"
               style={{ marginRight: 0, verticalAlign: "middle" }}

@@ -158,7 +158,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
         {/* Left: Logo and Name, flush to left */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/images/logo2.png" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
+            <img src="/images/logo2.jpeg" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
             <span className="text-2xl font-bold" style={{ color: '#D740A1' }}>ScopeBrush</span>
           </Link>
 
