@@ -36,6 +36,7 @@ function App() {
 
   const footerRef = useRef(null)
 
+ 
   useEffect(() => {
     if (footerOpen) {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
@@ -47,6 +48,7 @@ function App() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
     }
   }
+
 
 
   return (
@@ -335,4 +337,6 @@ function App() {
 }
 
 export default App;
+
+
 

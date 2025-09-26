@@ -153,6 +153,8 @@ function ArtistDashboard() {
         )
       `)
         .not('shipment_status', 'is', null)
+        .not('shipment_status', 'eq', 'canceled')        // Exclude canceled orders
+        .not('shipment_status', 'eq', 'cancelled')
         .in('artwork_id', artistArtworkIds);
 
       if (selectedFilter !== 'all') {

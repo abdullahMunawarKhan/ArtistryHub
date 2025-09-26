@@ -207,7 +207,7 @@ function MainDashboard() {
       try {
         const { data, error } = await supabase
           .from('artworks')
-          .select('id, title, category, cost, image_urls, artist_id, artists (id, name), description, material, video_url, availability, likes, liked_count');
+          .select('id, title, category, cost, image_urls, artist_id, artists (id, name, avg_rating), description, material, video_url, availability, likes, liked_count');
 
         if (!error && data) {
           setArtworks(data);
@@ -279,44 +279,68 @@ function MainDashboard() {
       ? likedArtworks.filter(id => id !== artwork.id)
       : [...likedArtworks, artwork.id];
 
-    // 1) Update user.liked_artworks
-    const { data: userData, error: userErr } = await supabase
-      .from('user')
-      .update({ liked_artworks: updatedLikedArtworks })
-      .eq('id', user.id)
-      .select('liked_artworks')
-    // .single()
+    // ✅ 1) OPTIMISTIC UPDATE - Update UI immediately
+    setLikedArtworks(updatedLikedArtworks);
 
-    if (userErr) {
-      console.error('Error updating user liked_artworks:', userErr);
-      alert('Failed to update your likes.');
-      return;
-    }
-    console.log('User liked_artworks after update:', userData.liked_artworks);
-
-    // 2) Atomically update artworks.liked_count
-    // inside toggleLike()
-    const newCount = currentlyLiked
-      ? artwork.liked_count - 1
-      : artwork.liked_count + 1
-
-    const { data: artData, error: artErr } = await supabase
-      .from('artworks')
-      .update({ liked_count: newCount })
-      .eq('id', artwork.id)
-      .select('liked_count')
-      .single()
-
-    console.log('Artwork liked_count after update:', artData.liked_count);
-
-    // 3) Sync local state
-    setLikedArtworks(userData.liked_artworks);
+    // Update artwork's liked_count optimistically
+    const newCount = currentlyLiked ? artwork.liked_count - 1 : artwork.liked_count + 1;
     setArtworks(artworks.map(a =>
       a.id === artwork.id
-        ? { ...a, liked_count: artData.liked_count }
+        ? { ...a, liked_count: newCount }
         : a
     ));
+
+    try {
+      // ✅ 2) Update user.liked_artworks in database
+      const { data: userData, error: userErr } = await supabase
+        .from('user')
+        .update({ liked_artworks: updatedLikedArtworks })
+        .eq('id', user.id)
+        .select('liked_artworks');
+
+      if (userErr) {
+        console.error('Error updating user liked_artworks:', userErr);
+        // ✅ REVERT optimistic update on error
+        setLikedArtworks(likedArtworks);
+        setArtworks(artworks.map(a =>
+          a.id === artwork.id
+            ? { ...a, liked_count: artwork.liked_count }
+            : a
+        ));
+        alert('Failed to update your likes.');
+        return;
+      }
+
+      // ✅ 3) Update artworks.liked_count in database
+      const { data: artData, error: artErr } = await supabase
+        .from('artworks')
+        .update({ liked_count: newCount })
+        .eq('id', artwork.id)
+        .select('liked_count')
+        .single();
+
+      if (artErr) {
+        console.error('Error updating artwork liked_count:', artErr);
+        // Keep the UI updated since user's liked_artworks was successful
+        return;
+      }
+
+      // ✅ 4) Sync final state (usually not needed due to optimistic updates)
+      console.log('Successfully updated likes');
+
+    } catch (error) {
+      console.error('Error in toggleLike:', error);
+      // ✅ REVERT optimistic update on error
+      setLikedArtworks(likedArtworks);
+      setArtworks(artworks.map(a =>
+        a.id === artwork.id
+          ? { ...a, liked_count: artwork.liked_count }
+          : a
+      ));
+      alert('Failed to update likes.');
+    }
   }
+
 
 
 
@@ -480,8 +504,8 @@ function MainDashboard() {
             const firstImage = Array.isArray(artwork.image_urls)
               ? artwork.image_urls[0]
               : artwork.image_urls;
-            const isInCart = cartItems.includes(artwork.id);
-            const isLiked = likedArtworks.includes(artwork.id);
+            const isInCart = cartItems && cartItems.includes ? cartItems.includes(artwork.id) : false;
+            const isLiked = likedArtworks && likedArtworks.includes ? likedArtworks.includes(artwork.id) : false;
 
             return (
               <div key={artwork.id} className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
@@ -570,7 +594,7 @@ function MainDashboard() {
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        navigate(`/artist-profile?id=${artwork.artist_id}`);
+                        navigate(`/artist-profile?id=${artwork.artist_id}`); 
                       }}
                       className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
                     >
@@ -580,7 +604,8 @@ function MainDashboard() {
 
                   {/* Star Rating */}
                   <div className="mb-4">
-                    <StarRating value={artwork.avg_rating ?? 0} />
+                    <StarRating value={artwork.artists?.avg_rating ?? 0} />
+
                   </div>
 
                   {/* Price */}

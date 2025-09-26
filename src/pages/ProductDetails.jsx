@@ -142,7 +142,7 @@ export default function ProductDetails() {
 
       const { data, error } = await supabase
         .from('artworks')
-        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name), video_url, liked_count, actual_length, actual_height')
+        .select('id, title, category, cost, description, material, image_urls, artist_id, availability, artists (id, name,avg_rating), video_url, liked_count, actual_length, actual_height')
         .eq('id', artworkId)
 
 
@@ -167,7 +167,7 @@ export default function ProductDetails() {
           .select('liked_artworks')
           .eq('id', auth.user.id);
 
-        const liked = userData?.liked_artworks || [];
+        const liked = userData?.[0]?.liked_artworks || [];
         setLikedArtworks(liked);
         setIsLiked(liked.includes(artworkId));
 
@@ -182,7 +182,7 @@ export default function ProductDetails() {
       if (data?.category) {
         const { data: related } = await supabase
           .from("artworks")
-          .select("id, title, cost, image_urls, artist_id, artists(name)")
+          .select("id, title, cost, image_urls, artist_id, artists(name,avg_rating)")
           .eq("category", data.category)
           .neq("id", artworkId)   // exclude current artwork
           .limit(12);
@@ -256,44 +256,78 @@ export default function ProductDetails() {
     }
     navigate('/order-process', { state: { artworkId: artwork.id, artistId: artwork.artist_id } });
   }
-  async function toggleLike() {
+  async function toggleLike(artwork) {
     if (!user) {
       alert('Please log in to use the like feature.');
       return;
     }
 
-    // Compute new liked_artworks array and new liked_count
-    const isNowLiked = !isLiked;
-    const updatedLikedArtworks = isNowLiked
-      ? [...likedArtworks, artwork.id]
-      : likedArtworks.filter(id => id !== artwork.id);
+    const currentlyLiked = likedArtworks.includes(artwork.id);
+    const updatedLikedArtworks = currentlyLiked
+      ? likedArtworks.filter(id => id !== artwork.id)
+      : [...likedArtworks, artwork.id];
 
-    const newLikedCount = (artwork.liked_count || 0) + (isNowLiked ? 1 : -1);
+    // ✅ 1) OPTIMISTIC UPDATE - Update UI immediately
+    setLikedArtworks(updatedLikedArtworks);
+    setIsLiked(!currentlyLiked); // ✅ Update the isLiked state that controls the UI
+
+    // Update artwork's liked_count optimistically
+    const newCount = currentlyLiked ? artwork.liked_count - 1 : artwork.liked_count + 1;
+    setArtwork(prevArtwork => ({ // ✅ Update artwork (singular), not artworks
+      ...prevArtwork,
+      liked_count: newCount
+    }));
 
     try {
-      // 1. Update user's liked_artworks
-      const { error: userErr } = await supabase
+      // ✅ 2) Update user.liked_artworks in database
+      const { data: userData, error: userErr } = await supabase
         .from('user')
         .update({ liked_artworks: updatedLikedArtworks })
-        .eq('id', user.id);
-      if (userErr) throw userErr;
+        .eq('id', user.id)
+        .select('liked_artworks');
 
-      // 2. Update artwork's liked_count
-      const { error: artErr } = await supabase
+      if (userErr) {
+        console.error('Error updating user liked_artworks:', userErr);
+        // ✅ REVERT optimistic updates on error
+        setLikedArtworks(likedArtworks);
+        setIsLiked(currentlyLiked);
+        setArtwork(prevArtwork => ({
+          ...prevArtwork,
+          liked_count: artwork.liked_count
+        }));
+        alert('Failed to update your likes.');
+        return;
+      }
+
+      // ✅ 3) Update artworks.liked_count in database
+      const { data: artData, error: artErr } = await supabase
         .from('artworks')
-        .update({ liked_count: newLikedCount })
-        .eq('id', artwork.id);
-      if (artErr) throw artErr;
+        .update({ liked_count: newCount })
+        .eq('id', artwork.id)
+        .select('liked_count')
+        .single();
 
-      // 3. Reflect changes in local state
-      setLikedArtworks(updatedLikedArtworks);
-      setIsLiked(isNowLiked);
-      setArtwork({ ...artwork, liked_count: newLikedCount });
+      if (artErr) {
+        console.error('Error updating artwork liked_count:', artErr);
+        // Keep the UI updated since user's liked_artworks was successful
+        return;
+      }
+
+      console.log('Successfully updated likes');
+
     } catch (error) {
-      console.error('Error toggling like:', error);
-      alert('Failed to update like status. Please try again.');
+      console.error('Error in toggleLike:', error);
+      // ✅ REVERT optimistic updates on error
+      setLikedArtworks(likedArtworks);
+      setIsLiked(currentlyLiked);
+      setArtwork(prevArtwork => ({
+        ...prevArtwork,
+        liked_count: artwork.liked_count
+      }));
+      alert('Failed to update likes.');
     }
   }
+
 
 
 
@@ -366,7 +400,8 @@ export default function ProductDetails() {
             </span>
             {/* Star Rating */}
             <div className="mb-4">
-              <StarRating value={artwork.avg_rating ?? 0} />
+              <StarRating value={artwork.artists?.avg_rating ?? 0} />
+
             </div>
           </div>
           <PriceDisplay cost={artwork.cost} />
