@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 import { fetchTimeSeries } from '../utils/analytics';
@@ -6,9 +6,13 @@ import TimeSeriesChart from '../components/TimeSeriesChart';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-// Timer component for order countdown (until 24hrs since placed)
-function OrderTimer({ orderedAt }) {
+
+
+// Fix the OrderTimer component
+function OrderTimer({ orderedAt, shipmentStatus, orderId, onStatusUpdated }) {
   const [remaining, setRemaining] = useState(0);
+  const [didUpdate, setDidUpdate] = useState(false);
+  const updatingRef = useRef(false);
 
   useEffect(() => {
     function updateRemaining() {
@@ -17,26 +21,13 @@ function OrderTimer({ orderedAt }) {
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
 
-      if (diff === 0 && shipmentStatus === 'pending' && !updatingRef.current && !didUpdate) {
-        updatingRef.current = true;
-        supabase
-          .from('orders')
-          .update({ shipment_status: 'confirm' })
-          .eq('id', orderId)
-          .then(() => {
-            setDidUpdate(true);
-            if (onStatusUpdated) onStatusUpdated();
-          })
-          .finally(() => {
-            updatingRef.current = false;
-          });
-      }
+
     }
+
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [orderedAt, shipmentStatus, orderId, onStatusUpdated, didUpdate]);
-
+  }, [orderedAt]);
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -55,6 +46,9 @@ function OrderTimer({ orderedAt }) {
     </div>
   );
 }
+
+
+
 function Modal({ children, onClose }) {
   return (
     <div
@@ -77,6 +71,8 @@ function Modal({ children, onClose }) {
     </div>
   );
 }
+
+
 
 function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -342,8 +338,8 @@ function AdminDashboard() {
     setRefundUTR(order.refund_utr || '');
     setShowRefundModal(true);
   }
-  async function updatePaintingsSoldIfConfirmed(artworkId, newShipmentStatus) {
-    if (newShipmentStatus === "confirm") {
+  async function updatePaintingsSoldIfConfirmed(artworkId, Shipment_status) {
+    if (Shipment_status === "confirm") {
       // Fetch the artwork to get artist_id
       const { data: artwork, error: artworkError } = await supabase
         .from('artworks')
@@ -442,49 +438,45 @@ function AdminDashboard() {
   async function handleChangeStatus() {
     if (!selectedOrder) return;
     setModalLoading(true);
-    const artworkId = selectedOrder.artwork_id;
-
+    const artworkId = selectedOrder.artworkid;
     try {
-      if (selectedOrder.shipment_status === 'pending') {
-        const placed = new Date(selectedOrder.ordered_at).getTime();
-        if (Date.now() - placed >= 24 * 60 * 60 * 1000) {
+      if (selectedOrder.shipment_status === "pending") {
+        const placed = new Date(selectedOrder.orderedat).getTime();
+        if (Date.now() - placed < 24 * 60 * 60 * 1000) {
           const { error } = await supabase
-            .from('orders')
-            .update({ shipment_status: 'confirm' })
-            .eq('id', selectedOrder.id);
+            .from("orders")
+            .update({ shipment_status: "confirm" })  
+            .eq("id", selectedOrder.id);
 
           if (!error) {
-            setSelectedOrder({ ...selectedOrder, shipment_status: 'confirm' });
+            setSelectedOrder({ ...selectedOrder, shipment_status: "confirm" });
             await updatePaintingsSoldIfConfirmed(artworkId, "confirm");
-            setOrderList(orderList.map(o =>
-              o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o
-            ));
+            setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: "confirm" } : o));
+          } else {
+            alert("Error updating order status: " + error.message);
           }
         } else {
-          alert('24 hours have not yet passed since the order was placed.');
+          alert("24 hours have not yet passed since the order was placed.");
         }
-      } else if (selectedOrder.shipment_status === 'confirm') {
-        // When marking as shipped, include shipment_created_at date
-        const updates = { shipment_status: 'shipped' };
-
+      } else if (selectedOrder.shipment_status === "confirm") {
+        // When marking as shipped, include shipmentcreatedat date
+        const updates = { shipment_status: "shipped" };
         if (shipDate) {
           updates.shipment_created_at = shipDate.toISOString();
         }
 
         const { error } = await supabase
-          .from('orders')
+          .from("orders")
           .update(updates)
-          .eq('id', selectedOrder.id);
+          .eq("id", selectedOrder.id);
 
         if (!error) {
           setSelectedOrder({ ...selectedOrder, ...updates });
-          setOrderList(orderList.map(o =>
-            o.id === selectedOrder.id ? { ...o, ...updates } : o
-          ));
+          setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, ...updates } : o));
           setTrackingModalOpen(false);
         } else {
           console.error(error);
-          alert('Error updating order status.');
+          alert("Error updating order status.");
         }
       }
     } catch (err) {
@@ -493,6 +485,7 @@ function AdminDashboard() {
       setModalLoading(false);
     }
   }
+
 
 
 
@@ -515,7 +508,7 @@ function AdminDashboard() {
       .from('orders')
       .update({
         trackingid: trackingInput,
-        shipmentstatus: 'shipped',
+        shipment_status: 'shipped',
         extradeliverycharges: extraCharges,
         shipment_created_at: timestamp,    // ← Added
       })
@@ -527,7 +520,7 @@ function AdminDashboard() {
         o.id === selectedOrder.id
           ? {
             ...o,
-            shipmentstatus: 'shipped',
+            shipment_status: 'shipped',
             trackingid: trackingInput,
             extradeliverycharges: extraCharges,
             shipment_created_at: timestamp,  // ← Added
@@ -1332,7 +1325,7 @@ function AdminDashboard() {
               </div>
             </div>
             <div className="mb-2">
-              <strong>Pickup Address:</strong> {selectedOrder.pickup_address}
+              <strong>Pickup Address:</strong> {selectedOrder.artworks?.pickupAddress}
             </div>
             <div className="mb-2">
               <strong>Artwork Details:</strong>
@@ -1355,11 +1348,17 @@ function AdminDashboard() {
             <div className="mb-2">
               <strong>Shipment Status:</strong> <span>{selectedOrder.shipment_status}</span>
             </div>
-            {/* Timer and Change Status Logic */}
-            {selectedOrder.shipment_status === 'pending' && (
-              <OrderTimer orderedAt={selectedOrder.ordered_at} />
-            )}
 
+            {
+              selectedOrder.shipment_status === 'pending' && (
+                <OrderTimer
+                  orderedAt={selectedOrder.ordered_at}
+                  shipmentStatus={selectedOrder.shipment_status}
+                  orderId={selectedOrder.id}
+                  onStatusUpdated={fetchOrders}
+                />
+              )
+            }
 
 
 

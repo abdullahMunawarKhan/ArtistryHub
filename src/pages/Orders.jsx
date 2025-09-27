@@ -1,5 +1,5 @@
 // src/pages/Orders.jsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 
@@ -12,38 +12,21 @@ const ORDER_CATEGORIES = [
 ];
 
 // Place this code above your Orders component
-function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
+function OrderTimer({ orderedAt }) {
   const [remaining, setRemaining] = useState(0);
-  const [didUpdate, setDidUpdate] = useState(false);
-  const updatingRef = useRef(false);
 
   useEffect(() => {
     function updateRemaining() {
-      // Use the stored IST timestamp directly
       const placed = new Date(orderedAt).getTime();
       const now = Date.now();
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
-
-      if (diff === 0 && shipmentStatus === 'pending' && !updatingRef.current && !didUpdate) {
-        updatingRef.current = true;
-        supabase
-          .from('orders')
-          .update({ shipment_status: 'confirm' })
-          .eq('id', orderId)
-          .then(() => {
-            setDidUpdate(true);
-            if (onStatusUpdated) onStatusUpdated();
-          })
-          .finally(() => {
-            updatingRef.current = false;
-          });
-      }
     }
+
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [orderedAt, shipmentStatus, orderId, onStatusUpdated, didUpdate]);
+  }, [orderedAt]);
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -60,12 +43,14 @@ function OrderTimer({ orderedAt, orderId, shipmentStatus, onStatusUpdated }) {
         </span>
       ) : (
         <span className="text-green-600 font-semibold">
-          ✔️ 24 hours passed. Status can now be confirmed.
+          ✔️ 24 hours passed. Cancellation no longer available.
         </span>
       )}
     </div>
   );
 }
+
+
 
 
 export default function Orders() {
@@ -284,12 +269,8 @@ export default function Orders() {
                         <>
                           <span className="text-gray-500">Awaiting Shipment</span>
                           {order.shipment_status === 'pending' && (
-                            <OrderTimer
-                              orderedAt={order.ordered_at}
-                              orderId={order.id}
-                              shipmentStatus={order.shipment_status}
-                              onStatusUpdated={fetchOrders}
-                            />
+                            <OrderTimer orderedAt={order.ordered_at} />
+
                           )}
                         </>
                       )}
@@ -346,27 +327,51 @@ export default function Orders() {
                 )}
 
                 {/* Action Buttons */}
-                {order.shipment_status === 'pending' ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      cancelOrder(order.id);
-                    }}
-                    className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition"
-                  >
-                    Cancel
-                  </button>
-                ) : order.shipment_status === 'dilevered' ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteOrder(order.id);
-                    }}
-                    className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-400 text-gray-500 hover:bg-gray-50 transition"
-                  >
-                    Delete
-                  </button>
-                ) : null}
+                {(() => {
+                  // Calculate if 24 hours have passed
+                  const placedAt = new Date(order.ordered_at).getTime();
+                  const isExpired = Date.now() - placedAt >= 24 * 60 * 60 * 1000;
+
+                  if (order.shipment_status === 'pending') {
+                    if (isExpired) {
+                      // Show disabled button after 24 hours
+                      return (
+                        <button
+                          disabled
+                          className="w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50"
+                        >
+                          Cancellation Closed
+                        </button>
+                      );
+                    } else {
+                      // Show active cancel button within 24 hours
+                      return (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            cancelOrder(order.id);
+                          }}
+                          className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition"
+                        >
+                          Cancel
+                        </button>
+                      );
+                    }
+                  } else if (order.shipment_status === 'dilevered') {
+                    return (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteOrder(order.id);
+                        }}
+                        className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-400 text-gray-500 hover:bg-gray-50 transition"
+                      >
+                        Delete
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             </li>
           ))}
