@@ -18,7 +18,8 @@ function OrderTimer({ orderedAt, shipmentStatus, orderId, onStatusUpdated }) {
     function updateRemaining() {
       const placed = new Date(orderedAt).getTime();
       const now = Date.now();
-      const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
+      const elapsed = now - placed;
+      const diff = Math.max(0, 24 * 60 * 60 * 1000 - elapsed);
       setRemaining(diff);
 
 
@@ -442,10 +443,14 @@ function AdminDashboard() {
     try {
       if (selectedOrder.shipment_status === "pending") {
         const placed = new Date(selectedOrder.orderedat).getTime();
-        if (Date.now() - placed < 24 * 60 * 60 * 1000) {
-          const { error } = await supabase
+        const now = Date.now();
+        const twentyFourHours = 24 * 60 * 60 * 1000;
+
+        if (now - placed >= twentyFourHours) {
+          // 24h have passed—proceed with confirmation
+          await supabase
             .from("orders")
-            .update({ shipment_status: "confirm" })  
+            .update({ shipmentstatus: "confirm" })
             .eq("id", selectedOrder.id);
 
           if (!error) {

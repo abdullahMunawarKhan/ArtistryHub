@@ -12,12 +12,12 @@ const ORDER_CATEGORIES = [
 ];
 
 // Place this code above your Orders component
-function OrderTimer({ orderedAt }) {
+function OrderTimer({ ordered_at }) {
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
     function updateRemaining() {
-      const placed = new Date(orderedAt).getTime();
+      const placed = new Date(ordered_at).getTime();
       const now = Date.now();
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
       setRemaining(diff);
@@ -26,7 +26,7 @@ function OrderTimer({ orderedAt }) {
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [orderedAt]);
+  }, [ordered_at]);
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -269,7 +269,7 @@ export default function Orders() {
                         <>
                           <span className="text-gray-500">Awaiting Shipment</span>
                           {order.shipment_status === 'pending' && (
-                            <OrderTimer orderedAt={order.ordered_at} />
+                            <OrderTimer ordered_at={order.ordered_at} />
 
                           )}
                         </>

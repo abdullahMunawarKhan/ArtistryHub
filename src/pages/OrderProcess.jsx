@@ -180,7 +180,7 @@ export default function OrderProcess() {
                 amount: totalCost,
                 delivery_fee: DELIVERY_FEE,
                 status: "paid",
-                ordered_at: new Date().toISOString(),
+                ordered_at: new Date(), 
                 shipping_address: form.shippingAddress,
                 // billing_address: form.billingAddress,
                 full_name: form.fullName,
