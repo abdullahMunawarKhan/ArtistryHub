@@ -113,12 +113,39 @@ function AdminDashboard() {
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(new Date());
   const [deliveryExtraCharges, setDeliveryExtraCharges] = useState('');
+  const [artistUtr, setArtistUtr] = useState(null);
+  const [fetchingUtr, setFetchingUtr] = useState(false);
 
 
-  function showUtrModal(utr) {
-    setEnteredUtr(utr || "");
+  async function showUtrModal(artworkId) {
+    setCurrentArtworkId(artworkId);
     setUtrModalOpen(true);
+    setFetchingUtr(true);
+
+    const { data, error } = await supabase
+      .from('artworks')
+      .select('artist_utr')
+      .eq('id', artworkId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching UTR from artworks:', error);
+      setArtistUtr(null);
+    } else {
+      setArtistUtr(data?.artist_utr || null);
+    }
+
+    setFetchingUtr(false);
   }
+
+  const handleUtrModalClose = () => {
+    setUtrModalOpen(false);
+    setArtistUtr(null);
+    setEnteredUtr('');
+    setCurrentArtworkId(null);
+  };
+
+
 
 
   // for pin setup for each section
@@ -248,9 +275,6 @@ function AdminDashboard() {
     // const timer = setInterval(loadAnalytics, 60 * 60 * 1000); // hourly refresh
     // return () => clearInterval(timer);
   }, [period]);
-
-
-
 
   useEffect(() => {
     async function fetchArtworkPayments() {
@@ -403,21 +427,47 @@ function AdminDashboard() {
     setModalLoading(false);
   }
   const handlePaymentSubmit = async () => {
-    // Update only on modal submit
-    const { error } = await supabase
-      .from('artworks')
-      .update({
-        artist_payment: 'successful',
-        artist_utr: enteredUtr
-      })
-      .eq('id', currentArtworkId);
-    if (!error) {
-      setUtrModalOpen(false)
-      
-    } else {
+    if (!enteredUtr.trim()) return;
+
+    setModalLoading(true);
+
+    try {
+      // Get artist ID from artwork
+      const { data: artwork, error: artworkError } = await supabase
+        .from('artworks')
+        .select('artist_id')
+        .eq('id', currentArtworkId)
+        .maybeSingle();
+
+      if (artworkError) throw artworkError;
+
+      // Update artist UTR and artwork payment status
+      const [artistUpdateResult, artworkUpdateResult] = await Promise.all([
+        supabase
+          .from('artworks')
+          .update({ artist_utr: enteredUtr })
+          .eq('id', artwork.artist_id),
+        supabase
+          .from('artworks')
+          .update({ artist_payment: 'successful', artist_utr: enteredUtr })
+          .eq('id', currentArtworkId)
+      ]);
+
+      if (artistUpdateResult.error) throw artistUpdateResult.error;
+      if (artworkUpdateResult.error) throw artworkUpdateResult.error;
+
+      setArtistUtr(enteredUtr);
+      setEnteredUtr('');
+      // Don't close modal, just update the view
+
+    } catch (error) {
+      console.error('Error updating UTR:', error);
       alert('Payment update failed.');
+    } finally {
+      setModalLoading(false);
     }
   };
+
 
 
   async function handleChangeStatus() {
@@ -1029,14 +1079,7 @@ function AdminDashboard() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
               <h2 className="text-lg font-bold mb-4">Process Refund</h2>
-              <div className="flex flex-col items-center mb-4">
-                <img
-                  src={selectedOrder.artworks.artists.artist_qr}
-                  alt="QR for Refund"
-                  className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain"
-                />
-
-              </div>
+              
               <div className="mb-4">
                 <span className="font-semibold">Refund Amount: </span>
                 <span>{selectedOrder.refund_amount}</span>
@@ -1123,7 +1166,7 @@ function AdminDashboard() {
                             <span className="text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-2">{artwork.orders?.shipment_status || "N/A"}</td>
+                        <td className="p-2">{artwork.orders?.shipment_status || 'N/A'}</td>
 
                         <td className="p-2">{artwork.base_price}</td>
                         <td className="p-2">
@@ -1137,7 +1180,10 @@ function AdminDashboard() {
                           ) : (
                             <button
                               className="px-3 py-1 rounded text-white bg-green-600"
-                              onClick={() => showUtrModal(artwork.artist_utr)}
+                              onClick={() => showUtrModal(artwork.id)}
+
+
+
                             >
                               Successful
                             </button>
@@ -1154,45 +1200,68 @@ function AdminDashboard() {
         )}
 
         {utrModalOpen && (
-          <Modal onClose={() => setUtrModalOpen(false)}>
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fadeIn">
-              <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
-                <button
-                  className="absolute top-2 right-2 text-2xl px-2 text-gray-400 hover:text-red-600"
-                  onClick={() => setModalOpen(false)}
-                  aria-label="Close"
-                >×</button>
-                <h3 className="text-xl font-bold mb-4 text-blue-800">
-                  Enter UTR / Transaction ID
-                </h3>
-                <input
-                  type="text"
-                  value={enteredUtr}
-                  onChange={e => setEnteredUtr(e.target.value)}
-                  className="border rounded px-3 py-2 w-full mb-4 focus:ring-2 focus:ring-blue-500"
-                  placeholder="UTR / Transaction ID"
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full relative">
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
+                onClick={handleUtrModalClose}
+                aria-label="Close"
+              >
+                ×
+              </button>
 
-                />
-                <div className="flex justify-end gap-3">
-                  <button
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm"
-                    onClick={handlePaymentSubmit}
-                    disabled={modalLoading || !enteredUtr}
-                  >
-                    Submit
-                  </button>
-                  <button
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg"
-                    onClick={() => setModalOpen(false)}
-                    disabled={modalLoading}
-                  >
-                    Cancel
-                  </button>
+              <h3 className="text-xl font-semibold mb-4 text-blue-800">
+                {artistUtr ? 'UTR / Transaction ID' : 'Enter UTR / Transaction ID'}
+              </h3>
+
+              {fetchingUtr ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-blue-500 rounded-full"></div>
                 </div>
+              ) : artistUtr ? (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your UTR:
+                  </label>
+                  <div className="bg-gray-50 border rounded px-3 py-2 font-mono">
+                    {artistUtr}
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    value={enteredUtr}
+                    onChange={(e) => setEnteredUtr(e.target.value)}
+                    className="w-full border rounded px-3 py-2 focus:ring-blue-500"
+                    placeholder="Enter UTR / Transaction ID"
+                  />
+                  <div className="flex justify-end mt-4">
+                    <button
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                      onClick={handlePaymentSubmit}
+                      disabled={modalLoading || !enteredUtr.trim()}
+                    >
+                      {modalLoading ? 'Submitting…' : 'Submit'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-center mt-4">
+                <button
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded"
+                  onClick={handleUtrModalClose}
+                  disabled={modalLoading}
+                >
+                  Close
+                </button>
               </div>
             </div>
-          </Modal>
+          </div>
         )}
+
+
 
         {selectedSection === 'earnings' && (
           <div className="mb-14 animate-fadeIn">
