@@ -109,13 +109,17 @@ function AdminDashboard() {
   const [refundUTR, setRefundUTR] = useState('');
   const [shipDate, setShipDate] = useState(new Date());
   const [utrModalOpen, setUtrModalOpen] = useState(false);
-  const [shownUtr, setShownUtr] = useState("");
+
+  const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
+  const [deliveryDate, setDeliveryDate] = useState(new Date());
+  const [deliveryExtraCharges, setDeliveryExtraCharges] = useState('');
 
 
-  const showUtrModal = utr => {
-    setShownUtr(utr);
+  function showUtrModal(utr) {
+    setEnteredUtr(utr || "");
     setUtrModalOpen(true);
-  };
+  }
+
 
   // for pin setup for each section
   // const [showPinModal, setShowPinModal] = useState(false);
@@ -245,41 +249,8 @@ function AdminDashboard() {
     // return () => clearInterval(timer);
   }, [period]);
 
-  // useEffect(() => {
-  //   async function fetchArtworkPayments() {
-  //     const { data, error } = await supabase
-  //       .from('orders')
-  //       .select(`
-  //       *,
-  //       artworks!fk_artwork (
-  //         id,
-  //         title,
-  //         image_urls,
-  //         base_price,
-  //         artist_payment,
-  //         artist_utr,
-  //         artists (
-  //           id,
-  //           name,
-  //           artist_qr
-  //         )
-  //       )
-  //     `)
-  //       .eq('shipment_status', 'delivered')
-  //       .filter('artworks.artist_payment', 'in', '(pending,successful)')
-
-  //     if (error) {
-  //       console.error('Error fetching artwork payments:', error)
-  //     } else {
-  //       setArtworkPayments(data || [])
-  //     }
-  //   }
-
-  //   fetchArtworkPayments()
-  // }, [])
 
 
-  // Fetch artists
 
   useEffect(() => {
     async function fetchArtworkPayments() {
@@ -341,68 +312,82 @@ function AdminDashboard() {
   }
   async function updatePaintingsSoldIfConfirmed(artworkId, Shipment_status) {
     if (Shipment_status === "confirm") {
-      // Fetch the artwork to get artist_id
-      const { data: artwork, error: artworkError } = await supabase
-        .from('artworks')
-        .select('artist_id')
-        .eq('id', artworkId)
-        .single();
-
-      if (artwork && artwork.artist_id) {
-        // Get the current paintings_sold count
-        const { data: artist, error: artistError } = await supabase
-          .from('artists')
-          .select('paintings_sold')
-          .eq('id', artwork.artist_id)
+      try {
+        // Fetch the artwork to get artist_id
+        const { data: artwork, error: artworkError } = await supabase
+          .from('artworks')
+          .select('artist_id')
+          .eq('id', artworkId)
           .single();
 
-        if (artist) {
-          // Increment paintings_sold by 1
-          const newCount = (artist.paintings_sold || 0) + 1;
+        if (artworkError) {
+          console.error('Error fetching artwork:', artworkError);
+          return;
+        }
 
-          await supabase
+        if (artwork && artwork.artist_id) {
+          // Get the current paintings_sold count
+          const { data: artist, error: artistError } = await supabase
             .from('artists')
-            .update({ paintings_sold: newCount })
-            .eq('id', artwork.artist_id);
-          await supabase
-            .from('artworks')
-            .update({ artist_utr: enteredUtr, artist_payment: 'successful' })
-            .eq('id', artworkId);
+            .select('paintings_sold')
+            .eq('id', artwork.artist_id)
+            .single();
+
+          if (artistError) {
+            console.error('Error fetching artist:', artistError);
+            return;
+          }
+
+          if (artist) {
+            // Increment paintings_sold by 1
+            const newCount = (artist.paintings_sold || 0) + 1;
+
+            const { error: updateArtistError } = await supabase
+              .from('artists')
+              .update({ paintings_sold: newCount })
+              .eq('id', artwork.artist_id);
+
+            if (updateArtistError) {
+              console.error('Error updating artist:', updateArtistError);
+            }
+
+
+          }
         }
+      } catch (error) {
+        console.error('Error in updatePaintingsSoldIfConfirmed:', error);
+      }
+    }
+  }
+
+  async function handleRemoveArtwork(artwork) {
+    // 1. Remove images from Supabase storage
+    if (Array.isArray(artwork.image_urls)) {
+      for (const url of artwork.image_urls) {
+        // Extract storage path from URL: e.g. 'artist-assets/…'
+        const { data: { Key } } = supabase.storage.from('artist-assets')
+          .remove([new URL(url).pathname.split('/').pop()]);
       }
     }
 
+    // 2. Remove artwork record
+    const { error } = await supabase
+      .from('artworks')
+      .delete()
+      .eq('id', artwork.id);
 
-
-    async function handleRemoveArtwork(artwork) {
-      // 1. Remove images from Supabase storage
-      if (Array.isArray(artwork.image_urls)) {
-        for (const url of artwork.image_urls) {
-          // Extract storage path from URL: e.g. 'artist-assets/…'
-          const { data: { Key } } = supabase.storage.from('artist-assets')
-            .remove([new URL(url).pathname.split('/').pop()]);
-        }
-      }
-
-      // 2. Remove artwork record
-      const { error } = await supabase
-        .from('artworks')
-        .delete()
-        .eq('id', artwork.id);
-
-      if (!error) {
-        // Update local state
-        setArtworkList(list => list.filter(a => a.id !== artwork.id));
-      } else {
-        console.error('Failed to delete artwork:', error);
-      }
+    if (!error) {
+      // Update local state
+      setArtworkList(list => list.filter(a => a.id !== artwork.id));
+    } else {
+      console.error('Failed to delete artwork:', error);
     }
-
   }
 
   const openPaymentModal = (artworkId) => {
     setCurrentArtworkId(artworkId);
-    setModalOpen(true);
+    setEnteredUtr("");              // clear any prior UTR
+    setUtrModalOpen(true);
   };
 
   function handleViewOrderDetails(order) {
@@ -427,62 +412,48 @@ function AdminDashboard() {
       })
       .eq('id', currentArtworkId);
     if (!error) {
-      setModalOpen(false);
-      fetchArtworkPayments(); // refresh data in UI
+      setUtrModalOpen(false)
+      
     } else {
       alert('Payment update failed.');
     }
   };
 
 
-  // Change Status button logic
   async function handleChangeStatus() {
     if (!selectedOrder) return;
     setModalLoading(true);
-    const artworkId = selectedOrder.artworkid;
+    const artworkId = selectedOrder.artwork_id;
+
     try {
-      if (selectedOrder.shipment_status === "pending") {
-        const placed = new Date(selectedOrder.orderedat).getTime();
+      if (selectedOrder.shipment_status === 'pending') {
+        const placed = new Date(selectedOrder.ordered_at).getTime();
         const now = Date.now();
         const twentyFourHours = 24 * 60 * 60 * 1000;
 
         if (now - placed >= twentyFourHours) {
-          // 24h have passed—proceed with confirmation
-          await supabase
-            .from("orders")
-            .update({ shipmentstatus: "confirm" })
-            .eq("id", selectedOrder.id);
+          const { data, error } = await supabase
+            .from('orders')
+            .update({ shipment_status: 'confirm' })
+            .eq('id', selectedOrder.id);
 
           if (!error) {
-            setSelectedOrder({ ...selectedOrder, shipment_status: "confirm" });
-            await updatePaintingsSoldIfConfirmed(artworkId, "confirm");
-            setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, shipment_status: "confirm" } : o));
+            setSelectedOrder({ ...selectedOrder, shipment_status: 'confirm' });
+            await updatePaintingsSoldIfConfirmed(artworkId, 'confirm');
+            setOrderList(orderList.map(o =>
+              o.id === selectedOrder.id ? { ...o, shipment_status: 'confirm' } : o
+            ));
           } else {
-            alert("Error updating order status: " + error.message);
+            alert('Error updating order status: ' + error.message);
           }
         } else {
-          alert("24 hours have not yet passed since the order was placed.");
+          alert('24 hours have not yet passed since the order was placed.');
         }
-      } else if (selectedOrder.shipment_status === "confirm") {
-        // When marking as shipped, include shipmentcreatedat date
-        const updates = { shipment_status: "shipped" };
-        if (shipDate) {
-          updates.shipment_created_at = shipDate.toISOString();
-        }
-
-        const { error } = await supabase
-          .from("orders")
-          .update(updates)
-          .eq("id", selectedOrder.id);
-
-        if (!error) {
-          setSelectedOrder({ ...selectedOrder, ...updates });
-          setOrderList(orderList.map(o => o.id === selectedOrder.id ? { ...o, ...updates } : o));
-          setTrackingModalOpen(false);
-        } else {
-          console.error(error);
-          alert("Error updating order status.");
-        }
+      } else if (selectedOrder.shipment_status === 'confirm') {
+        // FIXED: Open tracking modal instead of directly shipping
+        setTrackingModalOpen(true);
+        setModalLoading(false); // Reset loading since we're showing modal
+        return; // Exit early, don't close modal
       }
     } catch (err) {
       console.error(err);
@@ -490,6 +461,9 @@ function AdminDashboard() {
       setModalLoading(false);
     }
   }
+
+
+
 
 
 
@@ -550,6 +524,7 @@ function AdminDashboard() {
         amount,
         extra_delivery_charges,
         shipment_status,
+        earning,
         artworks:artworks (
           id,
           title,
@@ -557,7 +532,7 @@ function AdminDashboard() {
           base_price
         )
       `)
-        .eq('shipment_status', 'delivered')     // ← only delivered orders
+        .eq('shipment_status', 'delivered')
         .not('artworks', 'is', null);
 
       if (error) {
@@ -565,16 +540,20 @@ function AdminDashboard() {
         return;
       }
 
-      const processedEarnings = ordersData.map(order => {
+      const processedEarnings = [];
+      const earningsUpdates = [];
+
+      ordersData.forEach(order => {
         const art = order.artworks;
         const razorpayCommission = order.amount * 0.02;
         const calculatedEarning =
           order.amount
           - art.base_price
           - razorpayCommission
+          - 100
           - (order.extra_delivery_charges || 0);
 
-        return {
+        processedEarnings.push({
           id: order.id,
           artworkImage: art.image_urls,
           title: art.title,
@@ -583,8 +562,32 @@ function AdminDashboard() {
           earning: calculatedEarning,
           razorpayCommission,
           extraDeliveryCharges: order.extra_delivery_charges || 0
-        };
+        });
+
+        // Prepare for bulk update if earning is not stored
+        if (order.earning === null || order.earning === undefined) {
+          earningsUpdates.push({
+            id: order.id,
+            earning: calculatedEarning
+          });
+        }
       });
+
+      // Bulk update earnings if needed
+      if (earningsUpdates.length > 0) {
+        console.log(`Updating earnings for ${earningsUpdates.length} orders...`);
+
+        // You can use upsert for bulk operations
+        const { error: updateError } = await supabase
+          .from('orders')
+          .upsert(earningsUpdates, { onConflict: 'id' });
+
+        if (updateError) {
+          console.error('Error updating earnings:', updateError);
+        } else {
+          console.log(`Successfully updated earnings for ${earningsUpdates.length} orders`);
+        }
+      }
 
       setTotalEarnings(processedEarnings);
     } catch (error) {
@@ -593,6 +596,7 @@ function AdminDashboard() {
       setEarningsLoading(false);
     }
   };
+
 
   async function handleRefundSubmit() {
     if (!refundUTR) {
@@ -617,17 +621,34 @@ function AdminDashboard() {
   }
   const handleMarkDelivered = async () => {
     if (!selectedOrder) return;
+
     try {
       setModalLoading(true);
+
+      // Parse extra charges (same as tracking modal logic)
+      const extraCharges = parseFloat(deliveryExtraCharges) || 0;
+
       const { error } = await supabase
         .from('orders')
-        .update({ shipment_status: 'delivered' })
+        .update({
+          shipment_status: 'delivered',
+          delivered_at: deliveryDate.toISOString(),
+          extra_delivery_charges: extraCharges // Add the extra charges
+        })
         .eq('id', selectedOrder.id);
+
       if (error) {
         alert('Failed to update status: ' + error.message);
       } else {
         alert('Shipment marked as delivered.');
-        setSelectedOrder({ ...selectedOrder, shipment_status: 'delivered' });
+        setSelectedOrder({
+          ...selectedOrder,
+          shipment_status: 'delivered',
+          delivered_at: deliveryDate.toISOString(),
+          extra_delivery_charges: extraCharges
+        });
+        setDeliveryModalOpen(false); // Close delivery modal
+        setDeliveryExtraCharges(''); // Reset charges input
         fetchOrders(); // Refresh order list
       }
     } catch (err) {
@@ -636,6 +657,7 @@ function AdminDashboard() {
       setModalLoading(false);
     }
   };
+
 
 
   if (loading) {
@@ -922,7 +944,7 @@ function AdminDashboard() {
                     <th className="p-2">Sr. No</th>
                     <th className="p-2">Image</th>
                     <th className="p-2">Title</th>
-                    <th className="p-2">Artist</th>
+
                     <th className="p-2">Shipment Status</th>
                     <th className="p-2">View Details</th>
                     {orderTag === 'canceled' && (
@@ -957,16 +979,7 @@ function AdminDashboard() {
                         >
                           {order.artworks?.title || "N/A"}
                         </td>
-                        <td className="p-2">
-                          {order.artists?.id ? (
-                            <button
-                              onClick={() => navigate(`/artist-profile?id=${order.artists.id}`)}
-                              className="text-blue-600 hover:underline"
-                            >
-                              {order.artists.name}
-                            </button>
-                          ) : 'N/A'}
-                        </td>
+
                         <td className="p-2">
                           <span
                             className={`
@@ -1139,30 +1152,45 @@ function AdminDashboard() {
             </div>
           </div>
         )}
-        {modalOpen && (
-          <Modal onClose={() => setModalOpen(false)}>
-            <h3>Enter UTR Transaction ID</h3>
-            <input
-              type="text"
-              value={enteredUtr}
-              onChange={e => setEnteredUtr(e.target.value)}
-              placeholder="UTR Transaction ID"
-            />
-            <button
-              onClick={handlePaymentSubmit}
-              disabled={!enteredUtr}
-              className="bg-green-600 text-white px-4 py-2 rounded"
-            >
-              Submit
-            </button>
-            <button onClick={() => setModalOpen(false)}>Cancel</button>
-          </Modal>
-        )}
+
         {utrModalOpen && (
           <Modal onClose={() => setUtrModalOpen(false)}>
-            <h3>Artist UTR/Transaction ID</h3>
-            <div className="text-lg">{shownUtr}</div>
-            <button onClick={() => setUtrModalOpen(false)}>Close</button>
+            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fadeIn">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
+                <button
+                  className="absolute top-2 right-2 text-2xl px-2 text-gray-400 hover:text-red-600"
+                  onClick={() => setModalOpen(false)}
+                  aria-label="Close"
+                >×</button>
+                <h3 className="text-xl font-bold mb-4 text-blue-800">
+                  Enter UTR / Transaction ID
+                </h3>
+                <input
+                  type="text"
+                  value={enteredUtr}
+                  onChange={e => setEnteredUtr(e.target.value)}
+                  className="border rounded px-3 py-2 w-full mb-4 focus:ring-2 focus:ring-blue-500"
+                  placeholder="UTR / Transaction ID"
+
+                />
+                <div className="flex justify-end gap-3">
+                  <button
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm"
+                    onClick={handlePaymentSubmit}
+                    disabled={modalLoading || !enteredUtr}
+                  >
+                    Submit
+                  </button>
+                  <button
+                    className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg"
+                    onClick={() => setModalOpen(false)}
+                    disabled={modalLoading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
           </Modal>
         )}
 
@@ -1238,49 +1266,6 @@ function AdminDashboard() {
           </div>
         )}
       </div>
-
-
-      {/* ALL EXISTING MODALS PRESERVED BELOW */}
-
-      {/* UTR Payment Modal */}
-      {modalOpen && !selectedOrder && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 animate-fadeIn">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
-            <button
-              className="absolute top-2 right-2 text-2xl px-2 text-gray-400 hover:text-red-600"
-              onClick={() => setModalOpen(false)}
-              aria-label="Close"
-            >×</button>
-            <h3 className="text-xl font-bold mb-4 text-blue-800">
-              Enter UTR / Transaction ID
-            </h3>
-            <input
-              type="text"
-              value={enteredUtr}
-              onChange={e => setEnteredUtr(e.target.value)}
-              className="border rounded px-3 py-2 w-full mb-4 focus:ring-2 focus:ring-blue-500"
-              placeholder="UTR / Transaction ID"
-              disabled={modalLoading}
-            />
-            <div className="flex justify-end gap-3">
-              <button
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg shadow-sm"
-                onClick={handlePaymentSubmit}
-                disabled={modalLoading || !enteredUtr}
-              >
-                Submit
-              </button>
-              <button
-                className="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg"
-                onClick={() => setModalOpen(false)}
-                disabled={modalLoading}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
 
       {/* Modal for image_view */}
@@ -1367,57 +1352,6 @@ function AdminDashboard() {
 
 
 
-            {/* Tracking ID and extra charges Display */}
-
-
-
-            {/* pin for every section
-            {showPinModal && (
-              <Modal onClose={() => {
-                setShowPinModal(false);
-                setEnteredPin('');
-                setPinError('');
-              }}>
-                <h3 className="text-lg font-bold mb-4">Enter PIN for {pendingSection?.toUpperCase()}</h3>
-                <input
-                  type="password"
-                  value={enteredPin}
-                  onChange={e => setEnteredPin(e.target.value)}
-                  className="border rounded px-3 py-2 w-full mb-2"
-                  placeholder="Enter PIN"
-                />
-                {pinError && <div className="text-red-600 text-sm mb-2">{pinError}</div>}
-                <div className="flex justify-end gap-2">
-                  <button
-                    className="bg-gray-300 px-4 py-2 rounded"
-                    onClick={() => {
-                      setShowPinModal(false);
-                      setEnteredPin('');
-                      setPinError('');
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="bg-blue-600 text-white px-4 py-2 rounded"
-                    onClick={() => {
-                      const requiredPin = SECTION_PINS[pendingSection];
-                      if (enteredPin === requiredPin) {
-                        setSelectedSection(pendingSection);
-                        setShowPinModal(false);
-                        setEnteredPin('');
-                        setPinError('');
-                      } else {
-                        setPinError('Incorrect PIN');
-                      }
-                    }}
-                  >
-                    Unlock
-                  </button>
-                </div>
-              </Modal>
-            )} */}
-
 
 
             {/* Change Status button */}
@@ -1455,51 +1389,16 @@ function AdminDashboard() {
 
             {selectedOrder.shipment_status === 'shipped' && (
               <button
-                className={`block mx-auto mt-6 bg-green-600 hover:bg-green-700 text-white py-1 px-6 rounded ${modalLoading && 'opacity-50'}`}
-                onClick={handleMarkDelivered}
+                className="block mx-auto mt-6 bg-green-600 hover:bg-green-700 text-white py-1 px-6 rounded disabled:opacity-50"
+                onClick={() => setDeliveryModalOpen(true)} // Open delivery modal instead
                 disabled={modalLoading}
               >
                 Mark as Delivered
               </button>
             )}
 
-            {/* Tracking ID Modal */}
-            {trackingModalOpen && (
-              <form onSubmit={handleTrackingSubmit} className="mt-4">
-                <label className="text-sm font-semibold mb-2 block">Enter Tracking ID:</label>
-                <input
-                  type="text"
-                  value={trackingInput}
-                  onChange={e => setTrackingInput(e.target.value)}
-                  className="border rounded px-2 py-1 w-full mb-2"
-                  disabled={modalLoading}
-                />
-                <label className="text-sm font-semibold mb-2 block">Extra Delivery Charges (₹):</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={extraDeliveryChargesInput}
-                  onChange={e => setExtraDeliveryChargesInput(e.target.value)}
-                  className="border rounded px-2 py-1 w-full mb-2"
-                  disabled={modalLoading}
-                  placeholder="Enter extra delivery charges"
-                />
-                <button
-                  type="submit"
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded mr-2"
-                  disabled={modalLoading || !trackingInput}
-                >
-                  Submit & Mark as Shipped
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTrackingModalOpen(false)}
-                  className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
-                  disabled={modalLoading}
-                >Cancel</button>
-              </form>
-            )}
+
+
             <button
               className="block mx-auto mt-6 bg-gray-300 hover:bg-gray-400 text-black py-1 px-6 rounded"
               onClick={closeModal}
@@ -1507,6 +1406,102 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+      {/* Tracking ID Modal */}
+      {trackingModalOpen && (
+        <form onSubmit={handleTrackingSubmit} className="mt-4">
+          <label className="text-sm font-semibold mb-2 block">Enter Tracking ID:</label>
+          <input
+            type="text"
+            value={trackingInput}
+            onChange={e => setTrackingInput(e.target.value)}
+            className="border rounded px-2 py-1 w-full mb-2"
+            disabled={modalLoading}
+          />
+          <label className="text-sm font-semibold mb-2 block">Extra Delivery Charges (₹):</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={extraDeliveryChargesInput}
+            onChange={e => setExtraDeliveryChargesInput(e.target.value)}
+            className="border rounded px-2 py-1 w-full mb-2"
+            disabled={modalLoading}
+            placeholder="Enter extra delivery charges"
+          />
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded mr-2"
+            disabled={modalLoading || !trackingInput}
+          >
+            Submit & Mark as Shipped
+          </button>
+          <button
+            type="button"
+            onClick={() => setTrackingModalOpen(false)}
+            className="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded"
+            disabled={modalLoading}
+          >Cancel</button>
+        </form>
+      )}
+
+
+      {/* Delivery Date Modal */}
+      {deliveryModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-xl font-bold mb-4">Mark as Delivered</h3>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleMarkDelivered();
+            }}>
+              <label className="text-sm font-semibold mb-2 block">Delivery Date & Time</label>
+              <input
+                type="datetime-local"
+                value={deliveryDate.toISOString().slice(0, 16)}
+                onChange={(e) => setDeliveryDate(new Date(e.target.value))}
+                className="border rounded px-3 py-2 w-full mb-4"
+                disabled={modalLoading}
+                required
+              />
+
+              {/* NEW: Extra Delivery Charges Input */}
+              <label className="text-sm font-semibold mb-2 block">Extra Delivery Charges (Optional)</label>
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={deliveryExtraCharges}
+                onChange={(e) => setDeliveryExtraCharges(e.target.value)}
+                className="border rounded px-3 py-2 w-full mb-4"
+                disabled={modalLoading}
+                placeholder="Enter extra delivery charges (if any)"
+              />
+
+              <div className="flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded"
+                  onClick={() => {
+                    setDeliveryModalOpen(false);
+                    setDeliveryExtraCharges(''); // Reset on cancel
+                  }}
+                  disabled={modalLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+                  disabled={modalLoading}
+                >
+                  Mark as Delivered
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
 
       {/* input pin Modal */}
 
