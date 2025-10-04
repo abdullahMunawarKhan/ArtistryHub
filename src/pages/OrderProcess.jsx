@@ -5,6 +5,7 @@ import { supabase } from "../utils/supabase";
 // import Autocomplete from "react-google-autocomplete";
 const DELIVERY_FEE = 50;
 const POLICY_LINKS = [
+
   {
     title: "Shipping Policy",
     url: "https://merchant.razorpay.com/policy/R9hxQi8w5g7gdt/shipping",
@@ -189,7 +190,7 @@ export default function OrderProcess() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 tracking_id: null,              // not yet known
                 shipment_status: "pending",     // waiting for shipment creation
-                shipment_created_at: null
+                // shipment_created_at: null
 
               },
             ]);

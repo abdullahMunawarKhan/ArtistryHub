@@ -17,9 +17,12 @@ function OrderTimer({ ordered_at }) {
 
   useEffect(() => {
     function updateRemaining() {
-      const placed = new Date(ordered_at).getTime();
-      const now = Date.now();
-      const diff = Math.max(0, 24 * 60 * 60 * 1000 - (now - placed));
+      // Ensure the timestamp is treated as UTC
+      const orderedDate = new Date(ordered_at + (ordered_at.includes('Z') ? '' : 'Z'));
+      const placed = orderedDate.getTime();
+      const now = Date.now(); // This is always UTC
+      const elapsed = now - placed;
+      const diff = Math.max(0, 24 * 60 * 60 * 1000 - elapsed);
       setRemaining(diff);
     }
 

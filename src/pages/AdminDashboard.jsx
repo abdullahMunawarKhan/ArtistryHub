@@ -16,19 +16,20 @@ function OrderTimer({ orderedAt, shipmentStatus, orderId, onStatusUpdated }) {
 
   useEffect(() => {
     function updateRemaining() {
-      const placed = new Date(orderedAt).getTime();
-      const now = Date.now();
+      // Ensure the timestamp is treated as UTC
+      const orderedDate = new Date(orderedAt + (orderedAt.includes('Z') ? '' : 'Z'));
+      const placed = orderedDate.getTime();
+      const now = Date.now(); // This is always UTC
       const elapsed = now - placed;
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - elapsed);
       setRemaining(diff);
-
-
     }
 
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
   }, [orderedAt]);
+
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -1079,7 +1080,7 @@ function AdminDashboard() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 max-w-md w-full">
               <h2 className="text-lg font-bold mb-4">Process Refund</h2>
-              
+
               <div className="mb-4">
                 <span className="font-semibold">Refund Amount: </span>
                 <span>{selectedOrder.refund_amount}</span>
@@ -1166,7 +1167,8 @@ function AdminDashboard() {
                             <span className="text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-2">{artwork.orders?.shipment_status || 'N/A'}</td>
+                        <td className="p-2">{artwork.orders?.[0]?.shipment_status || 'N/A'}</td>
+
 
                         <td className="p-2">{artwork.base_price}</td>
                         <td className="p-2">
