@@ -12,24 +12,28 @@ const ORDER_CATEGORIES = [
 ];
 
 // Place this code above your Orders component
-function OrderTimer({ ordered_at }) {
+function OrderTimer({ ordered_at, onRemainingUpdate }) {
   const [remaining, setRemaining] = useState(0);
 
   useEffect(() => {
     function updateRemaining() {
-      // Ensure the timestamp is treated as UTC
       const orderedDate = new Date(ordered_at + (ordered_at.includes('Z') ? '' : 'Z'));
       const placed = orderedDate.getTime();
-      const now = Date.now(); // This is always UTC
+      const now = Date.now();
       const elapsed = now - placed;
       const diff = Math.max(0, 24 * 60 * 60 * 1000 - elapsed);
       setRemaining(diff);
+
+      // Pass remaining time to parent component
+      if (onRemainingUpdate) {
+        onRemainingUpdate(diff);
+      }
     }
 
     updateRemaining();
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
-  }, [ordered_at]);
+  }, [ordered_at, onRemainingUpdate]);
 
   const hours = Math.floor(remaining / (60 * 60 * 1000));
   const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
@@ -39,14 +43,14 @@ function OrderTimer({ ordered_at }) {
     <div className="text-sm mt-3 mb-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-gray-700">
       {remaining > 0 ? (
         <span className="font-medium text-blue-700">
-          ⏳ Cancel before: {hours.toString().padStart(2, '0')}:
+          Cancel before: {hours.toString().padStart(2, '0')}:
           {minutes.toString().padStart(2, '0')}:
           {seconds.toString().padStart(2, '0')}<br />
           Afterwards not allowed to Cancel.
         </span>
       ) : (
         <span className="text-green-600 font-semibold">
-          ✔️ 24 hours passed. Cancellation no longer available.
+          24 hours passed. Cancellation no longer available.
         </span>
       )}
     </div>
@@ -56,12 +60,20 @@ function OrderTimer({ ordered_at }) {
 
 
 
+
 export default function Orders() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [orderTimers, setOrderTimers] = useState({});
   const navigate = useNavigate();
-
+  // Function to handle timer updates
+  const handleTimerUpdate = (orderId, remaining) => {
+    setOrderTimers(prev => ({
+      ...prev,
+      [orderId]: remaining
+    }));
+  };
   useEffect(() => {
     fetchOrders();
   }, [selectedCategory]);
@@ -268,14 +280,8 @@ export default function Orders() {
                             </div>
                           )}
                         </>
-                      ) : (
-                        <>
-                          <span className="text-gray-500">Awaiting Shipment</span>
-                          {order.shipment_status === 'pending' && (
-                            <OrderTimer ordered_at={order.ordered_at} />
-
-                          )}
-                        </>
+                      ) : order.shipment_status === 'pending' ? null : (
+                        <span className="text-gray-500">Awaiting Shipment</span>
                       )}
                     </div>
                   )}
@@ -330,51 +336,48 @@ export default function Orders() {
                 )}
 
                 {/* Action Buttons */}
-                {(() => {
-                  // Calculate if 24 hours have passed
-                  const placedAt = new Date(order.ordered_at).getTime();
-                  const isExpired = Date.now() - placedAt >= 24 * 60 * 60 * 1000;
+                {/* Action Buttons */}
+                {order.shipment_status === 'pending' && (
+                  <>
+                    <OrderTimer
+                      ordered_at={order.ordered_at}
+                      onRemainingUpdate={(remaining) => handleTimerUpdate(order.id, remaining)}
+                    />
 
-                  if (order.shipment_status === 'pending') {
-                    if (isExpired) {
-                      // Show disabled button after 24 hours
-                      return (
-                        <button
-                          disabled
-                          className="w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50"
-                        >
-                          Cancellation Closed
-                        </button>
-                      );
-                    } else {
-                      // Show active cancel button within 24 hours
-                      return (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cancelOrder(order.id);
-                          }}
-                          className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition"
-                        >
-                          Cancel
-                        </button>
-                      );
-                    }
-                  } else if (order.shipment_status === 'dilevered') {
-                    return (
+                    {/* Button logic using timer state */}
+                    {orderTimers[order.id] > 0 ? (
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          deleteOrder(order.id);
+                          cancelOrder(order.id);
                         }}
-                        className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-400 text-gray-500 hover:bg-gray-50 transition"
+                        className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-blue-400 text-blue-500 hover:bg-blue-50 transition"
                       >
-                        Delete
+                        Cancel
                       </button>
-                    );
-                  }
-                  return null;
-                })()}
+                    ) : (
+                      <button
+                        disabled
+                        className="w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-300 text-gray-400 cursor-not-allowed bg-gray-50"
+                      >
+                        Cancellation Closed
+                      </button>
+                    )}
+                  </>
+                )}
+
+                {order.shipment_status === 'dilevered' && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteOrder(order.id);
+                    }}
+                    className="btn-outline w-full sm:w-auto px-6 py-2 rounded-xl border border-gray-400 text-gray-500 hover:bg-gray-50 transition"
+                  >
+                    Delete
+                  </button>
+                )}
+
               </div>
             </li>
           ))}

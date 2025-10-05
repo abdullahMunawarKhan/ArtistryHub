@@ -420,7 +420,7 @@ function ArtistDashboard() {
                       />
                     </td>
                     <td className="text-center align-middle">₹{artwork.base_price}</td>
-                    <td className="text-center align-middle">₹M.R.P : ₹{artwork.cost}</td>
+                    <td className="text-center align-middle">₹ {artwork.cost}</td>
                     <td className="px-2 py-1 text-center align-middle">
                       {artwork.artist_utr && String(artwork.artist_utr).trim() !== '' ? (
                         artwork.artist_utr
