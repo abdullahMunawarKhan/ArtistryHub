@@ -183,6 +183,8 @@ function AdminDashboard() {
         id, name, email, mobile, artwork_count, paintings_sold, artist_qr
       )
     )
+      pickup_date, 
+      pickup_time   
   `);
 
     if (orderTag !== 'all') {
@@ -1398,6 +1400,39 @@ function AdminDashboard() {
             <div className="mb-3">
               <strong className="font-semibold">Pickup Address:</strong>
               <span className="font-normal"> {selectedOrder.artworks?.pickupAddress}</span>
+            </div>
+            <div className="mb-3">
+              <strong className="font-semibold">Pickup Date & Time:</strong>
+              <span className="font-normal ml-2">
+                {selectedOrder.pickup_date && selectedOrder.pickup_time
+                  ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })} at ${new Date(`1970-01-01T${selectedOrder.pickup_time}`).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })}`
+                  : selectedOrder.pickup_date
+                    ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US')} (Time not specified)`
+                    : 'Not specified'
+                }
+              </span>
+            </div>
+
+            <div className="mb-3">
+              <strong className="font-semibold">Pickup Time:</strong>
+              <span className="font-normal ml-2">
+                {selectedOrder.pickup_time
+                  ? new Date(`1970-01-01T${selectedOrder.pickup_time}`).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                  })
+                  : 'Not specified'
+                }
+              </span>
             </div>
             <div className="mb-3">
               <strong className="font-semibold">Artwork Details:</strong>

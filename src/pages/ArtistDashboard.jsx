@@ -15,6 +15,10 @@ function ArtistDashboard() {
   // NEW STATE: Track which section is selected
   const [activeSection, setActiveSection] = useState('home');
 
+  // NEW STATE: Modal state for pickup scheduling
+  const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
   const shipmentFilters = [
     { label: 'All Orders', value: 'all' },
     { label: 'Pending', value: 'pending' },
@@ -29,10 +33,10 @@ function ArtistDashboard() {
     { id: 'orders', label: 'Order Management', icon: '📦' },
     { id: 'payments', label: 'Payment Analysis', icon: '💰' }
   ];
+
   const sectionRef = useRef(null);
   const handleSectionClick = (sectionId) => {
     setActiveSection(sectionId);
-    // Delay scroll to allow content to render
     setTimeout(() => {
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
@@ -59,21 +63,20 @@ function ArtistDashboard() {
     async function fetchDeliveredArtworks() {
       setLoadingPayments(true);
       try {
-        // Fetch orders with artwork data where shipment_status = delivered and artwork belongs to artist
         const { data, error } = await supabase
           .from('orders')
           .select(`
-          artwork:artworks (
-            id,
-            title,
-            image_urls,
-            cost,
-            artist_payment,
-            artist_id,
-            base_price,
-            artist_utr
-          )
-        `)
+            artwork:artworks (
+              id,
+              title,
+              image_urls,
+              cost,
+              artist_payment,
+              artist_id,
+              base_price,
+              artist_utr
+            )
+          `)
           .eq('shipment_status', 'delivered')
           .eq('artwork.artist_id', artistId);
 
@@ -102,7 +105,6 @@ function ArtistDashboard() {
     if (artistId) fetchDeliveredArtworks();
   }, [artistId]);
 
-
   // Fetch orders for order management
   useEffect(() => {
     if (artistId) {
@@ -113,7 +115,6 @@ function ArtistDashboard() {
   async function fetchOrderedArtworks() {
     setLoadingOrders(true);
     try {
-      // Fetch artwork IDs owned by this artist
       const { data: artistArtworks, error: artworkError } = await supabase
         .from('artworks')
         .select('id')
@@ -126,34 +127,36 @@ function ArtistDashboard() {
       const artistArtworkIds = artistArtworks ? artistArtworks.map(a => a.id) : [];
 
       if (artistArtworkIds.length === 0) {
-        setOrderedArtworks([]); // no artwork for artist, so no orders
+        setOrderedArtworks([]);
         setLoadingOrders(false);
         return;
       }
 
-      // Fetch orders where artwork_id is in the artist's artwork IDs
+      // UPDATED QUERY: Include pickup_date and pickup_time from orders table
       let query = supabase
         .from('orders')
         .select(`
-        id,
-        artwork_id,
-        shipment_status,
-        ordered_at,
-        quantity,
-        shipping_address,
-        user_id,
-        artwork:artworks (
           id,
-          title,
-          image_urls,
-          artist_id,
-          base_price,
-          artist_utr,
-          cost 
-        )
-      `)
+          artwork_id,
+          shipment_status,
+          ordered_at,
+          quantity,
+          shipping_address,
+          user_id,
+          pickup_date,
+          pickup_time,
+          artwork:artworks (
+            id,
+            title,
+            image_urls,
+            artist_id,
+            base_price,
+            artist_utr,
+            cost 
+          )
+        `)
         .not('shipment_status', 'is', null)
-        .not('shipment_status', 'eq', 'canceled')        // Exclude canceled orders
+        .not('shipment_status', 'eq', 'canceled')
         .not('shipment_status', 'eq', 'cancelled')
         .in('artwork_id', artistArtworkIds);
 
@@ -176,35 +179,44 @@ function ArtistDashboard() {
     setLoadingOrders(false);
   }
 
-
-  // Pickup time/date logic for 'pending' orders
-  async function updatePickupDetails(artworkId, pickupDate, pickupTime) {
+  // NEW FUNCTION: Update pickup details in orders table
+  async function updatePickupDetails(orderId, pickupDate, pickupTime) {
     try {
-      const { error } = await supabase
-        .from('artworks')
+      console.log('Updating pickup details for order:', orderId, 'Date:', pickupDate, 'Time:', pickupTime);
+
+      const { data, error } = await supabase  // ✅ Now destructuring BOTH data and error
+        .from('orders')
         .update({
           pickup_date: pickupDate,
           pickup_time: pickupTime
         })
-        .eq('id', artworkId);
+        .eq('id', orderId)
+        .select(); // This returns the updated row for verification
+
+      console.log('Updated data:', data); // ✅ Now 'data' is properly defined
 
       if (error) {
         console.error('Error updating pickup details:', error);
         alert('Failed to save pickup details. Please try again.');
+        return false;
       } else {
         alert('Pickup details saved successfully!');
-        fetchOrderedArtworks(); // Refresh the data
+        // Force refresh the orders data
+        await fetchOrderedArtworks();
+        setIsPickupModalOpen(false);
+        setSelectedOrder(null);
+        return true;
       }
     } catch (error) {
       console.error('Error:', error);
       alert('Failed to save pickup details. Please try again.');
+      return false;
     }
   }
 
   function generateAvailableDates() {
     const dates = [];
     const today = new Date();
-    // Generate dates starting from 3 days after today
     for (let i = 3; i <= 5; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
@@ -225,83 +237,160 @@ function ArtistDashboard() {
     return slots;
   }
 
-  function PickupScheduler({ artwork }) {
-    const [selectedDate, setSelectedDate] = useState(artwork.pickup_date || '');
-    const [selectedTime, setSelectedTime] = useState(artwork.pickup_time || '');
+  // NEW COMPONENT: Pickup Modal
+  function PickupModal({ isOpen, onClose, order, onSubmit }) {
+    const [selectedDate, setSelectedDate] = useState(order?.pickup_date || '');
+    const [selectedTime, setSelectedTime] = useState(order?.pickup_time || '');
+    const [loading, setLoading] = useState(false);
+
     const availableDates = generateAvailableDates();
     const timeSlots = generateTimeSlots();
 
-    const handleSave = () => {
+    // Reset form when order changes
+    useEffect(() => {
+      if (order) {
+        setSelectedDate(order.pickup_date || '');
+        setSelectedTime(order.pickup_time || '');
+      }
+    }, [order]);
+
+    const handleSubmit = async () => {
       if (!selectedDate || !selectedTime) {
         alert('Please select both date and time for pickup.');
         return;
       }
-      updatePickupDetails(artwork.id, selectedDate, selectedTime);
+
+      setLoading(true);
+      const success = await onSubmit(order.id, selectedDate, selectedTime);
+      setLoading(false);
     };
 
+    const handleClose = () => {
+      setSelectedDate(order?.pickup_date || '');
+      setSelectedTime(order?.pickup_time || '');
+      onClose();
+    };
+
+    if (!isOpen) return null;
+
     return (
-      <div className="pickup-scheduler mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h4 className="font-semibold text-yellow-800 mb-3">📦 Schedule Pickup</h4>
-        <p className="text-sm text-yellow-700 mb-4">Be ready with packaging. Choose your preferred pickup date and time:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Date</label>
-            <select
-              value={selectedDate}
-              onChange={e => setSelectedDate(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Date</option>
-              {availableDates.map(date => (
-                <option key={date} value={date}>
-                  {new Date(date).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                📦 Schedule Pickup (you will be unable to resheduled once set)
+              </h3>
+              <button
+                onClick={handleClose}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Order Info */}
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+
+              <p className="text-sm text-blue-700">
+                <strong>Artwork:</strong> {order?.artwork?.title?.toUpperCase() || 'Unknown'}
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              Be ready with packaging. Choose your preferred pickup date and time:
+            </p>
+
+            {/* Date and Time Selection */}
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pickup Date
+                </label>
+                <select
+                  value={selectedDate}
+                  onChange={e => setSelectedDate(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Date</option>
+                  {availableDates.map(date => (
+                    <option key={date} value={date}>
+                      {new Date(date).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pickup Time
+                </label>
+                <select
+                  value={selectedTime}
+                  onChange={e => setSelectedTime(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="">Select Time</option>
+                  {timeSlots.map(slot => (
+                    <option key={slot.value} value={slot.value}>
+                      {slot.display}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Current Schedule Display */}
+            {(order?.pickup_date && order?.pickup_time) && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+                <p className="text-sm text-green-700">
+                  <strong>Current Schedule:</strong> {' '}
+                  {new Date(order.pickup_date).toLocaleDateString()} at {' '}
+                  {new Date(`2000-01-01T${order.pickup_time}`).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
                   })}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Pickup Time</label>
-            <select
-              value={selectedTime}
-              onChange={e => setSelectedTime(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select Time</option>
-              {timeSlots.map(slot => (
-                <option key={slot.value} value={slot.value}>{slot.display}</option>
-              ))}
-            </select>
+                </p>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex space-x-3">
+              <button
+                onClick={handleClose}
+                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors duration-200 font-medium"
+                disabled={loading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save Pickup Schedule'}
+              </button>
+            </div>
           </div>
         </div>
-        {(artwork.pickup_date && artwork.pickup_time) && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-            <p className="text-sm text-green-700">
-              <strong>Current Schedule:</strong> {' '}
-              {new Date(artwork.pickup_date).toLocaleDateString()} at {' '}
-              {new Date(`2000-01-01T${artwork.pickup_time}`).toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              })}
-            </p>
-          </div>
-        )}
-        <button
-          onClick={handleSave}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors duration-200 font-medium"
-        >
-          Save Pickup Schedule
-        </button>
       </div>
     );
   }
 
+  // UPDATED COMPONENT: Orders Table with Set Pickup column
   function OrdersTable({ orders }) {
+    const handleSetPickup = (order) => {
+      setSelectedOrder(order);
+      setIsPickupModalOpen(true);
+    };
+
     if (orders.length === 0) {
       return (
         <div className="overflow-x-auto">
@@ -314,11 +403,12 @@ function ArtistDashboard() {
                 <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Selling Cost</th>
                 <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Ordered</th>
                 <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
+                <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Set Pickup</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td colSpan={5} className="text-center py-8 text-gray-600">
+                <td colSpan={7} className="text-center py-8 text-gray-600">
                   No orders found.
                 </td>
               </tr>
@@ -339,17 +429,20 @@ function ArtistDashboard() {
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Selling Cost</th>
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Ordered</th>
               <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Status</th>
+              <th className="py-3 px-2 sm:px-4 sm:py-3 text-center">Set Pickup</th>
             </tr>
           </thead>
           <tbody>
             {orders.map((order, index) => (
               <tr
                 key={order.id}
-                className="even:bg-gray-50 hover:bg-blue-50 cursor-pointer"
-                onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
+                className="even:bg-gray-50 hover:bg-blue-50"
               >
-                <td>{index + 1}</td>
-                <td className="text-Black-700 text-center align-middle">
+                <td className="py-2 px-2 text-center">{index + 1}</td>
+                <td
+                  className="text-black-700 text-center align-middle cursor-pointer"
+                  onClick={() => navigate(`/product?id=${order.artwork?.id}`)}
+                >
                   {(order.artwork?.title || 'Unknown').toUpperCase()}
                 </td>
                 <td className="text-center align-middle">
@@ -362,7 +455,41 @@ function ArtistDashboard() {
                   {new Date(order.ordered_at).toLocaleDateString()}
                 </td>
                 <td className="text-center align-middle">
-                  {order.shipment_status?.toUpperCase() || '-'}
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${order.shipment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    order.shipment_status === 'confirm' ? 'bg-blue-100 text-blue-800' :
+                      order.shipment_status === 'shipped' ? 'bg-purple-100 text-purple-800' :
+                        order.shipment_status === 'delivered' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
+                    {order.shipment_status?.toUpperCase() || '-'}
+                  </span>
+                </td>
+                <td className="text-center align-middle py-2 px-2">
+                  {(order.pickup_date != null && order.pickup_time != null &&  order.pickup_date && order.pickup_time ? (
+                    <div className="text-xs">
+                      <div className="font-medium text-green-700">
+                        {new Date(order.pickup_date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
+                      <div className="text-green-600">
+                        {new Date(`2000-01-01T${order.pickup_time}`).toLocaleTimeString('en-US', {
+                          hour: 'numeric',
+                          minute: '2-digit',
+                          hour12: true
+                        })}
+                      </div>
+                     
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleSetPickup(order)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded-md text-xs hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      Set Pickup
+                    </button>
+                  ))}
                 </td>
               </tr>
             ))}
@@ -370,9 +497,7 @@ function ArtistDashboard() {
         </table>
       </div>
     );
-
   }
-
 
   function PaymentTable() {
     return (
@@ -392,7 +517,7 @@ function ArtistDashboard() {
           <tbody>
             {artworks.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-gray-600 py-8 text-center">
+                <td colSpan={7} className="text-gray-600 py-8 text-center">
                   No delivered artworks found for payment analysis.
                 </td>
               </tr>
@@ -402,11 +527,7 @@ function ArtistDashboard() {
                   <tr key={artwork.id} className="even:bg-gray-50 hover:bg-blue-50"
                     onClick={() => navigate(`/product?id=${artwork.id}`)}>
                     <td className="text-center align-middle">{index + 1}</td>
-                    <td
-                      className="text-black-700 cursor-pointer text-center align-middle"
-
-                    >
-
+                    <td className="text-black-700 cursor-pointer text-center align-middle">
                       {artwork.title.toUpperCase()}
                     </td>
                     <td className="text-center align-middle">
@@ -416,7 +537,6 @@ function ArtistDashboard() {
                           : artwork.image_urls}
                         alt={artwork.title}
                         className="w-12 h-12 rounded cursor-pointer mx-auto"
-
                       />
                     </td>
                     <td className="text-center align-middle">₹{artwork.base_price}</td>
@@ -449,8 +569,7 @@ function ArtistDashboard() {
     );
   }
 
-
-  // NEW FUNCTION: Render content based on active section
+  // Render content based on active section
   function renderMainContent() {
     switch (activeSection) {
       case 'home':
@@ -539,7 +658,6 @@ function ArtistDashboard() {
 
           {/* Menu Items */}
           <div className="p-4">
-            {/* <nav className="flex md:flex-col space-x-4 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-visible"> */}
             <nav className="flex flex-col space-y-2">
               {dashboardSections.map((section) => (
                 <button
@@ -568,6 +686,17 @@ function ArtistDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Pickup Modal */}
+      <PickupModal
+        isOpen={isPickupModalOpen}
+        onClose={() => {
+          setIsPickupModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        order={selectedOrder}
+        onSubmit={updatePickupDetails}
+      />
     </div>
   );
 }
