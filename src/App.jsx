@@ -36,7 +36,7 @@ function App() {
 
   const footerRef = useRef(null)
 
- 
+
   useEffect(() => {
     if (footerOpen) {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
@@ -52,6 +52,7 @@ function App() {
 
 
   return (
+
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
       {/* {!(isWelcomePage || isComingSoonPage) && (
         <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />
@@ -174,7 +175,7 @@ function App() {
                         className="flex items-center px-4 py-1 rounded-lg text-white text-sm font-semibold transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 hover:bg-opacity-90"
                       >
                         <img
-                          src="/images/profile.jpeg"
+                          src="/images/profile.png"
                           alt="Profile"
                           className="w-7 h-7 rounded-full mr-2 border-2 border-white"
                         />
@@ -244,7 +245,7 @@ function App() {
                     </p>
                     <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Email:</span>{' '}
-                      <span className="italic text-gray-400">abdullahk4503@gmail.com</span>
+                      <span className="italic text-gray-400">scopebrush25@gmail.com</span>
                     </p>
                     <p className="text-white font-semibold text-sm ml-7">
                       <span className="font-semibold">Mobile:</span>{' '}
@@ -265,7 +266,7 @@ function App() {
                 <div className="mt-1 flex ">
                   <div className="mb-4">
                     <h2 className="text-xl font-bold text-gray-100 mb-1 inline-block">
-                      Connect us :
+                      Social Links :
                     </h2>
                     <div className="h-0.5 bg-pink-500" style={{ width: "100px" }}></div>
                   </div>
@@ -294,23 +295,23 @@ function App() {
                   <Link
                     to="/feedback-form"
                     onClick={() => setFooterOpen(false)}
-                    className="inline-flex items-center gap-2 px-4 py-2  text-gray underline decoration-gray-400 hover:transition duration-200 w-fit"
+                    className="inline-flex items-center gap-2 px-4 py-2  text-gray decoration-gray-400 hover:transition duration-200 w-fit"
                   >
-                    <span>click to provide us your feedback</span>
+                    <span>▼ click here to provide us your feedback</span>
                   </Link>
                   <Link
                     to="/privacy-policies"
                     onClick={() => setFooterOpen(false)}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-gray underline decoration-gray-400 hover:transition duration-200 w-fit"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-gray  decoration-gray-400 hover:transition duration-200 w-fit"
                   >
-                    <span>see privacy policies</span>
+                    <span> ▼ see privacy policies</span>
                   </Link>
                   <Link
                     to="/terms-conditions"
                     onClick={() => setFooterOpen(false)}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-gray underline decoration-gray-400 hover:transition duration-200 w-fit"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-gray  decoration-gray-400 hover:transition duration-200 w-fit"
                   >
-                    <span>see terms and conditions</span>
+                    <span>▼ see terms and conditions</span>
                   </Link>
                 </div>
 

@@ -360,12 +360,17 @@ export default function ProductDetails() {
 
 
               <button
-                onClick={toggleLike}
-                onDoubleClick={toggleLike}
+                onClick={(e) => {
+                  e.preventDefault(); // Prevent any default behavior
+                  e.stopPropagation(); // Stop event bubbling
+                  toggleLike(artwork);
+                }}
+                // Remove onDoubleClick completely
                 className="flex items-center justify-center p-0 ml-2 cursor-pointer transition-all duration-200 active:scale-95"
                 aria-label="Like button"
                 title={isLiked ? 'Unlike' : 'Like'}
                 style={{ width: 40, height: 40 }}
+                disabled={!user} // Disable if no user is logged in
               >
                 <svg
                   width="30"
@@ -382,8 +387,8 @@ export default function ProductDetails() {
                 <span className="ml-1 text-sm font-medium">
                   {artwork.liked_count ?? 0}
                 </span>
-
               </button>
+
             </div>
 
           </div>

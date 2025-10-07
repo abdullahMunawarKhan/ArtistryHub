@@ -105,7 +105,7 @@ export default function PrivacyPolicies() {
 
                 <Section icon={EnvelopeIcon} title="Contact Us">
                     <p className="text-gray-700">
-                        For questions about this Privacy Policy, email us at <a href="mailto:abdullahk4503@gmail.com" className="text-blue-600 underline">abdullahk4503@gmail.com</a>.
+                        For questions about this Privacy Policy, email us at <a href="mailto:scopebrush25@gmail.com" className="text-blue-600 underline">scopebrush25@gmail.com</a>.
                     </p>
                 </Section>
             </div>

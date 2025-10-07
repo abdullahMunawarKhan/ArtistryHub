@@ -226,8 +226,8 @@ function ArtistList() {
       <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
         <button
           className={`px-5 py-2 rounded-xl shadow whitespace-nowrap ${filterTag === 'All'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-blue-600 border border-blue-600'
+            ? 'bg-blue-600 text-white'
+            : 'bg-white text-blue-600 border border-blue-600'
             }`}
           onClick={() => setFilterTag('All')}
         >
@@ -235,10 +235,10 @@ function ArtistList() {
         </button>
         <button
           className={`px-5 py-2 rounded-xl shadow whitespace-nowrap ${!user
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : filterTag === 'Following'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-blue-600 border border-blue-600'
+            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : filterTag === 'Following'
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-blue-600 border border-blue-600'
             }`}
           onClick={() => {
             if (!user) {
@@ -326,19 +326,21 @@ function ArtistList() {
                 </div>
 
                 {/* Rating */}
+                {/* Rating display */}
                 <div className="flex justify-center sm:justify-start items-center gap-2 mb-3">
-                  <StarRating value={artist.avg_rating} />
+                  <StarRating value={artist.avg_rating || 0} />
                   <span className="text-sm text-gray-600">
                     {artist.avg_rating ? artist.avg_rating.toFixed(1) : 'No ratings'}
                   </span>
                 </div>
 
+
                 {/* Follow Button */}
                 <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-3 mt-auto">
                   <button
                     className={`px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center gap-2 w-full sm:w-auto ${followingIds.includes(artist.id)
-                        ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+                      ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
                       } disabled:opacity-60 disabled:cursor-not-allowed`}
                     onClick={(e) => {
                       e.stopPropagation();

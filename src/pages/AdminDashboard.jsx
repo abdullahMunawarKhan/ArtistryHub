@@ -49,8 +49,6 @@ function OrderTimer({ orderedAt, shipmentStatus, orderId, onStatusUpdated }) {
   );
 }
 
-
-
 function Modal({ children, onClose }) {
   return (
     <div
@@ -73,8 +71,6 @@ function Modal({ children, onClose }) {
     </div>
   );
 }
-
-
 
 function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -111,18 +107,15 @@ function AdminDashboard() {
   const [shipDate, setShipDate] = useState(new Date());
   const [utrModalOpen, setUtrModalOpen] = useState(false);
   const [trackingSubmitted, setTrackingSubmitted] = useState(false);
-  // const {tracking_Id } = useParams();
+  const [pickupDate, setPickupDate] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false);
   const [deliveryDate, setDeliveryDate] = useState(new Date());
   const [deliveryExtraCharges, setDeliveryExtraCharges] = useState('');
   const [artistUtr, setArtistUtr] = useState(null);
   const [fetchingUtr, setFetchingUtr] = useState(false);
 
-  // Helper for courier-specific tracking URLs
-  // const getTrackingUrl = (tracking_Id) => {
-  //   if (!tracking_Id) return null;
-  //   return `https://shiprocket.co/tracking/${tracking_Id}`;
-  // };
+
 
   async function showUtrModal(artworkId) {
     setCurrentArtworkId(artworkId);
@@ -426,6 +419,8 @@ function AdminDashboard() {
   function handleViewOrderDetails(order) {
     setSelectedOrder(order);
     setModalOpen(true);
+    setPickupDate('');
+    setPickupTime('');
   }
 
   function closeModal() {
@@ -435,6 +430,9 @@ function AdminDashboard() {
     setTrackingInput('');
     setModalLoading(false);
     setTrackingSubmitted(false);
+    setPickupDate('');  // Reset pickup date
+    setPickupTime('');  // Reset pickup time
+
   }
   const handlePaymentSubmit = async () => {
     if (!enteredUtr.trim()) return;
@@ -550,7 +548,9 @@ function AdminDashboard() {
         tracking_id: trackingInput,
         shipment_status: 'shipped',
         extra_delivery_charges: extraCharges,
-        shipment_created_at: timestamp,    // ← Added
+        shipment_created_at: timestamp,
+        pickup_date: pickupDate || null,  // Add pickup date
+        pickup_time: pickupTime || null   // Add pickup time    
       })
       .eq('id', selectedOrder.id);
 
@@ -563,13 +563,17 @@ function AdminDashboard() {
             shipment_status: 'shipped',
             tracking_id: trackingInput,
             extra_delivery_charges: extraCharges,
-            shipment_created_at: timestamp,  // ← Added
+            shipment_created_at: timestamp,
+            pickup_date: pickupDate || null,
+            pickup_time: pickupTime || null
           }
           : o
       ));
       setTrackingModalOpen(false);
       setTrackingInput('');
       setExtraDeliveryChargesInput('');
+      setPickupDate('');
+      setPickupTime('');
       setTrackingSubmitted(true);
     }
 
@@ -1375,197 +1379,234 @@ function AdminDashboard() {
 
       {/* Modal for Order Details */}
       {modalOpen && selectedOrder && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-lg p-6 max-w-lg w-full shadow-xl relative text-sm">
-            <button
-              className="absolute top-2 right-2 text-xl px-2 text-gray-400 hover:text-red-600"
-              onClick={closeModal}
-              aria-label="Close"
-            >&times;</button>
-            <h3 className="text-lg font-bold mb-2 text-blue-800">
-              Artwork: {selectedOrder.artworks?.title}
-            </h3>
-            <div className="mb-3">
-              <strong className="font-semibold">Artist: </strong>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-xl relative">
+            {/* Header */}
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-blue-800">
+                Artwork: {selectedOrder.artworks?.title}
+              </h3>
               <button
-                onClick={() => navigate(`/artist-profile?id=${selectedOrder.artists?.id}`)}
-                className="text-blue-600 hover:underline text-sm font-normal"
-              >
-                {selectedOrder.artworks?.artists?.name}
-              </button>
-              <div className="text-xs">
-                {selectedOrder.artworks?.artists?.mobile} | Email: {selectedOrder.artworks?.artists?.email}
+                className="text-xl px-2 text-gray-400 hover:text-red-600 transition-colors"
+                onClick={closeModal}
+                aria-label="Close"
+              >&times;</button>
+            </div>
+
+            {/* Content Area - Responsive Grid */}
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6 text-sm">
+
+              {/* Left Column - Order Information */}
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <div>
+                    <strong className="font-semibold text-gray-700">Artist:</strong>
+                    <button
+                      onClick={() => navigate(`/artist-profile?id=${selectedOrder.artists?.id}`)}
+                      className="text-blue-600 hover:underline text-sm font-normal ml-2"
+                    >
+                      {selectedOrder.artworks?.artists?.name}
+                    </button>
+                    <div className="text-xs text-gray-600 mt-1">
+                      {selectedOrder.artworks?.artists?.mobile} | Email: {selectedOrder.artworks?.artists?.email}
+                    </div>
+                  </div>
+
+                  <div>
+                    <strong className="font-semibold text-gray-700">Pickup Address:</strong>
+                    <span className="font-normal ml-2">{selectedOrder.artworks?.pickupAddress}</span>
+                  </div>
+
+                  <div>
+                    <strong className="font-semibold text-gray-700">Pickup Date & Time:</strong>
+                    <span className="font-normal ml-2">
+                      {selectedOrder.pickup_date && selectedOrder.pickup_time
+                        ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })} at ${new Date(`1970-01-01T${selectedOrder.pickup_time}`).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true
+                        })}`
+                        : selectedOrder.pickup_date
+                          ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US')} (Time not specified)`
+                          : 'Not specified'
+                      }
+                    </span>
+                  </div>
+
+                  <div>
+                    <strong className="font-semibold text-gray-700">Shipment Status:</strong>
+                    <span className={`font-normal ml-2 px-2 py-1 rounded-full text-xs ${selectedOrder.shipment_status === 'confirm' ? 'bg-blue-100 text-blue-800' :
+                      selectedOrder.shipment_status === 'shipped' ? 'bg-green-100 text-green-800' :
+                        selectedOrder.shipment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                      }`}>
+                      {selectedOrder.shipment_status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Artwork Details Card */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <strong className="font-semibold text-gray-700 block mb-2">Artwork Details:</strong>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>Cost: ₹{selectedOrder.artworks?.cost}</div>
+                    <div>Length: {selectedOrder.artworks?.length} cm</div>
+                    <div>Width: {selectedOrder.artworks?.width} cm</div>
+                    <div>Height: {selectedOrder.artworks?.height} cm</div>
+                    <div className="col-span-2">Weight: {selectedOrder.artworks?.weight} kg</div>
+                  </div>
+                </div>
+
+                {/* Customer Details Card */}
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <strong className="font-semibold text-gray-700 block mb-2">Customer:</strong>
+                  <div className="space-y-1 text-xs">
+                    <div><strong>Name:</strong> {selectedOrder.full_name}</div>
+                    <div><strong>Mobile:</strong> {selectedOrder.mobile}</div>
+                    <div><strong>Address:</strong> {selectedOrder.shipping_address}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Actions and Tracking */}
+              <div className="space-y-4">
+                {/* Tracking Information */}
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <div className="space-y-2">
+                    <div className="text-xs">
+                      <strong className="font-semibold text-gray-700">Tracking ID:</strong>
+                      <span className="ml-2 font-mono">{selectedOrder.tracking_id || selectedOrder.trackingid || 'Not assigned'}</span>
+                    </div>
+                    <div className="text-xs">
+                      <strong className="font-semibold text-gray-700">Extra Delivery Charges:</strong>
+                      <span className="ml-2">₹{selectedOrder.extradeliverycharges ?? '0'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Timer */}
+                {selectedOrder.shipment_status === 'pending' && (
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <OrderTimer
+                      orderedAt={selectedOrder.ordered_at}
+                      shipmentStatus={selectedOrder.shipment_status}
+                      orderId={selectedOrder.id}
+                      onStatusUpdated={fetchOrders}
+                    />
+                  </div>
+                )}
+
+                {/* Action Forms */}
+                <div className="space-y-4">
+                  {selectedOrder.shipment_status === 'pending' && (
+                    <button
+                      className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-md text-sm font-medium transition-colors ${modalLoading && 'opacity-50'}`}
+                      onClick={handleChangeStatus}
+                      disabled={modalLoading}
+                    >
+                      Mark as Shipped
+                    </button>
+                  )}
+
+                  {selectedOrder.shipment_status === 'confirm' && (
+                    trackingSubmitted ? (
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <div className="space-y-2 text-xs">
+                          <div>
+                            <span className="font-semibold">Tracking ID:</span>
+                            <span className="ml-2 font-mono">{trackingInput}</span>
+                          </div>
+                          <div>
+                            <span className="font-semibold">Extra Delivery Charges:</span>
+                            <span className="ml-2">₹{extraDeliveryChargesInput}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleTrackingSubmit} className="space-y-4 bg-gray-50 p-4 rounded-lg">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-gray-700">Pickup Date</label>
+                            <input
+                              type="date"
+                              value={pickupDate}
+                              onChange={(e) => setPickupDate(e.target.value)}
+                              className="border border-gray-300 rounded-md px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              disabled={modalLoading}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-medium mb-1 text-gray-700">Pickup Time</label>
+                            <input
+                              type="time"
+                              value={pickupTime}
+                              onChange={(e) => setPickupTime(e.target.value)}
+                              className="border border-gray-300 rounded-md px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              disabled={modalLoading}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-medium mb-1 block text-gray-700">Enter Tracking ID:</label>
+                          <input
+                            type="text"
+                            value={trackingInput}
+                            onChange={e => setTrackingInput(e.target.value)}
+                            className="border border-gray-300 rounded-md px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={modalLoading}
+                            placeholder="Enter tracking number"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-medium mb-1 block text-gray-700">Extra Delivery Charges (₹):</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={extraDeliveryChargesInput}
+                            onChange={e => setExtraDeliveryChargesInput(e.target.value)}
+                            className="border border-gray-300 rounded-md px-3 py-2 w-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            disabled={modalLoading}
+                            placeholder="Enter extra delivery charges"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                          disabled={modalLoading || !trackingInput}
+                        >
+                          Submit & Mark as Shipped
+                        </button>
+                      </form>
+                    )
+                  )}
+
+                  {selectedOrder.shipment_status === 'shipped' && (
+                    <button
+                      className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                      onClick={() => setDeliveryModalOpen(true)}
+                      disabled={modalLoading}
+                    >
+                      Mark as Delivered
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="mb-3">
-              <strong className="font-semibold">Pickup Address:</strong>
-              <span className="font-normal"> {selectedOrder.artworks?.pickupAddress}</span>
-            </div>
-            <div className="mb-3">
-              <strong className="font-semibold">Pickup Date & Time:</strong>
-              <span className="font-normal ml-2">
-                {selectedOrder.pickup_date && selectedOrder.pickup_time
-                  ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })} at ${new Date(`1970-01-01T${selectedOrder.pickup_time}`).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                  })}`
-                  : selectedOrder.pickup_date
-                    ? `${new Date(selectedOrder.pickup_date).toLocaleDateString('en-US')} (Time not specified)`
-                    : 'Not specified'
-                }
-              </span>
-            </div>
-
-            <div className="mb-3">
-              <strong className="font-semibold">Pickup Time:</strong>
-              <span className="font-normal ml-2">
-                {selectedOrder.pickup_time
-                  ? new Date(`1970-01-01T${selectedOrder.pickup_time}`).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                  })
-                  : 'Not specified'
-                }
-              </span>
-            </div>
-            <div className="mb-3">
-              <strong className="font-semibold">Artwork Details:</strong>
-              <ul className="list-disc ml-6 mt-1 text-xs">
-                <li>Cost: ₹{selectedOrder.artworks?.cost}</li>
-                <li>Length: {selectedOrder.artworks?.length} cm</li>
-                <li>Width: {selectedOrder.artworks?.width} cm</li>
-                <li>Height: {selectedOrder.artworks?.height} cm</li>
-                <li>Weight: {selectedOrder.artworks?.weight} kg</li>
-              </ul>
-            </div>
-            <div className="mb-3">
-              <strong className="font-semibold">Customer:</strong>
-              <ul className="list-disc ml-6 mt-1 text-xs">
-                <li>Name: {selectedOrder.full_name}</li>
-                <li>Mobile: {selectedOrder.mobile}</li>
-                <li>Address: {selectedOrder.shipping_address}</li>
-              </ul>
-            </div>
-            <div className="mb-3">
-              <strong className="font-semibold">Shipment Status:</strong>
-              <span className="font-normal"> {selectedOrder.shipment_status}</span>
-            </div>
-
-            <div className="mb-3 text-xs">
-              <strong className="font-semibold">Tracking ID:</strong>
-              <span className="ml-2">{selectedOrder.tracking_id || selectedOrder.trackingid}</span>
-            </div>
-            <div className="mb-3 text-xs">
-              <strong className="font-semibold">Extra Delivery Charges (₹):</strong>
-              <span className="ml-2">{selectedOrder.extra_dilevery_charges ?? selectedOrder.extra_delivery_charges}</span>
-            </div>
-
-            {selectedOrder.shipment_status === 'pending' && (
-              <OrderTimer
-                orderedAt={selectedOrder.ordered_at}
-                shipmentStatus={selectedOrder.shipment_status}
-                orderId={selectedOrder.id}
-                onStatusUpdated={fetchOrders}
-              />
-            )}
-
-            {selectedOrder.shipment_status === 'pending' && (
-              <button
-                className={`block mx-auto mt-6 bg-blue-600 hover:bg-blue-700 text-white py-1 px-6 rounded-md text-sm ${modalLoading && 'opacity-50'}`}
-                onClick={handleChangeStatus}
-                disabled={modalLoading}
-              >
-                Mark as Shipped
-              </button>
-            )}
-
-            {selectedOrder.shipment_status === 'confirm' && (
-              trackingSubmitted ? (
-                <div className="mt-4 bg-gray-50 p-4 rounded-md">
-                  <div className="mb-2 text-xs">
-                    <span className="font-semibold">Tracking ID:</span>
-                    <span className="ml-2">{trackingInput}</span>
-                  </div>
-                  <div className="mb-2 text-xs">
-                    <span className="font-semibold">Extra Delivery Charges (₹):</span>
-                    <span className="ml-2">{extraDeliveryChargesInput}</span>
-                  </div>
-                  <button
-                    className="block mx-auto mt-6 bg-gray-300 hover:bg-gray-400 text-black py-1 px-6 rounded-md text-sm"
-                    onClick={closeModal}
-                  >Close
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleTrackingSubmit} className="mt-4 bg-gray-50 p-4 rounded-md">
-                  <label className="block text-xs font-medium mb-1">Select Shipment Date & Time:</label>
-                  <input
-                    type="datetime-local"
-                    value={shipDate.toISOString().slice(0, 16)}
-                    onChange={e => setShipDate(new Date(e.target.value))}
-                    className="border rounded-md px-3 py-2 w-full mb-3 text-sm"
-                    disabled={modalLoading}
-                  />
-                  <label className="text-xs font-medium mb-1 block">Enter Tracking ID:</label>
-                  <input
-                    type="text"
-                    value={trackingInput}
-                    onChange={e => setTrackingInput(e.target.value)}
-                    className="border rounded-md px-2 py-1 w-full mb-2 text-sm"
-                    disabled={modalLoading}
-                  />
-                  <label className="text-xs font-medium mb-1 block">Extra Delivery Charges (₹):</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={extraDeliveryChargesInput}
-                    onChange={e => setExtraDeliveryChargesInput(e.target.value)}
-                    className="border rounded-md px-2 py-1 w-full mb-2 text-sm"
-                    disabled={modalLoading}
-                    placeholder="Enter extra delivery charges"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-1 rounded-md mr-2 text-sm"
-                    disabled={modalLoading || !trackingInput}
-                  >
-                    Submit & Mark as Shipped
-                  </button>
-                  <button
-                    className="block mx-auto mt-6 bg-gray-300 hover:bg-gray-400 text-black py-1 px-6 rounded-md text-sm"
-                    onClick={closeModal}
-                  >Close
-                  </button>
-                </form>
-              )
-            )}
 
 
-            {selectedOrder.shipment_status === 'shipped' && (
-              <button
-                className="block mx-auto mt-6 bg-green-600 hover:bg-green-700 text-white py-1 px-6 rounded-md text-sm disabled:opacity-50"
-                onClick={() => setDeliveryModalOpen(true)}
-                disabled={modalLoading}
-              >
-                Mark as Delivered
-              </button>
-            )}
-
-            <button
-              className="block mx-auto mt-6 bg-gray-300 hover:bg-gray-400 text-black py-1 px-6 rounded-md text-sm"
-              onClick={closeModal}
-            >Close
-            </button>
           </div>
         </div>
       )}
+
 
 
 

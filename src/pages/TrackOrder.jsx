@@ -58,40 +58,46 @@ const TrackOrder = () => {
   const updateArtworkReview = async (artworkId, newReviewText, newRating) => {
     const numericRating = Number(newRating);
     if (isNaN(numericRating)) {
-      console.error("Invalid rating: not a number");
+      console.error('Invalid rating: not a number');
       return;
     }
 
-    // Fetch current review JSON array
-    const { data: artworkData, error: fetchError } = await supabase
-      .from("artworks")
-      .select("review, rating")
-      .eq("id", artworkId)
-      .single();
+    try {
+      // Fetch current review JSON array
+      const { data: artworkData, error: fetchError } = await supabase
+        .from('artworks')
+        .select('review, rating')
+        .eq('id', artworkId)
+        .single();
 
-    if (fetchError) {
-      console.error("Error fetching artwork data:", fetchError);
-      return;
-    }
+      if (fetchError) {
+        console.error('Error fetching artwork data:', fetchError);
+        return;
+      }
 
-    const currentReviews = artworkData?.review || [];
-    const updatedReviews = [...currentReviews, newReviewText];
+      const currentReviews = artworkData?.review || [];
+      const updatedReviews = [...currentReviews, newReviewText];
 
-    // Update review and rating columns with numeric rating value
-    const { error: updateError } = await supabase
-      .from("artworks")
-      .update({
-        review: updatedReviews,
-        rating: numericRating,
-      })
-      .eq("id", artworkId);
+      // Update review and rating columns - this will trigger the avg_rating calculation
+      const { error: updateError } = await supabase
+        .from('artworks')
+        .update({
+          review: updatedReviews,
+          rating: numericRating
+        })
+        .eq('id', artworkId);
 
-    if (updateError) {
-      console.error("Error updating artwork:", updateError);
-    } else {
-      console.log("Artwork review and rating updated successfully");
+      if (updateError) {
+        console.error('Error updating artwork:', updateError);
+      } else {
+        console.log('Artwork review and rating updated successfully');
+        console.log('Artist average rating will be automatically calculated by trigger');
+      }
+    } catch (error) {
+      console.error('Error in updateArtworkReview:', error);
     }
   };
+
 
   useEffect(() => {
     const fetchOrderData = async () => {

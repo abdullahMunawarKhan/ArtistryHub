@@ -98,24 +98,17 @@ const FormField = ({
   </div>
 );
 
-const FileUpload = ({
-  label,
-  accept,
-  onChange,
-  preview,
-  icon: Icon,
-  required = true,
-  description = ''
-}) => (
+const FileUpload = ({ label, accept, onChange, preview, icon: Icon, required = true, description }) => (
   <div className="space-y-2">
     <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-      {Icon && <Icon className="w-4 h-4" />}
+      <Icon className="w-4 h-4" />
       {label}
       {required && <span className="text-red-500">*</span>}
     </label>
     {description && <p className="text-xs text-gray-500">{description}</p>}
 
-    <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-colors min-h-[180px] flex items-center justify-center">
+    <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors min-h-[180px] flex items-center justify-center ${preview ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-purple-400'
+      }`}>
       <input
         type="file"
         accept={accept}
@@ -127,21 +120,27 @@ const FileUpload = ({
         htmlFor={label.replace(/\s+/g, '-').toLowerCase()}
         className="cursor-pointer block w-full h-full"
       >
-        {preview && (preview.startsWith('data:image') || preview.startsWith('blob:') || preview.includes('image')) ? (
-          <div className="flex flex-col items-center space-y-2">
-            <img
-              src={preview}
-              alt="Preview"
-              className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-gray-200"
-            />
-            <p className="text-sm text-green-600 font-medium">File uploaded</p>
-            <p className="text-xs text-gray-500">Click to change</p>
-          </div>
+        {preview ? (
+          // File uploaded state (green)
+          preview.startsWith('data:image') || preview.startsWith('blob') || preview.includes('image') ? (
+            <div className="flex flex-col items-center space-y-2">
+              <img src={preview} alt="Preview" className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-gray-200" />
+              <p className="text-sm text-green-600 font-medium">File uploaded</p>
+              <p className="text-xs text-gray-500">Click to change</p>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center space-y-2">
+              <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
+              <p className="text-sm text-green-600 font-medium">File uploaded</p>
+              <p className="text-xs text-gray-500">Click to change</p>
+            </div>
+          )
         ) : (
+          // No file uploaded state (gray)
           <div className="flex flex-col items-center space-y-2">
-            <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
-            <p className="text-sm text-green-600 font-medium">File uploaded</p>
-            <p className="text-xs text-gray-500">Click to change</p>
+            <Icon className="w-12 h-12 mx-auto text-gray-400" />
+            <p className="text-sm text-gray-600">Click to upload file</p>
+            <p className="text-xs text-gray-400">or drag and drop</p>
           </div>
         )}
       </label>
