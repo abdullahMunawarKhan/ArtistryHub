@@ -21,7 +21,6 @@ function UserLogin() {
     const checkAndRedirectUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Check if user has profile, if not create it
         await ensureUserProfile(user);
         navigate('/main-dashboard');
       }
@@ -29,7 +28,6 @@ function UserLogin() {
 
     checkAndRedirectUser();
 
-    // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         await ensureUserProfile(session.user);
@@ -49,19 +47,17 @@ function UserLogin() {
     }
   }, [resetStatus]);
 
-  // Helper function to ensure user profile exists
   const ensureUserProfile = async (user) => {
     try {
       console.log('Ensuring user profile for:', user.id);
-      
-      // First check if profile exists
+
       const { data: existingProfile, error: selectError } = await supabase
         .from('user')
         .select('id, role')
         .eq('id', user.id)
         .single();
 
-      if (selectError && selectError.code !== 'PGRST116') { // PGRST116 is "not found"
+      if (selectError && selectError.code !== 'PGRST116') {
         console.error('Error checking profile:', selectError);
         return null;
       }
@@ -71,7 +67,6 @@ function UserLogin() {
         return existingProfile;
       }
 
-      // Profile doesn't exist, create it
       console.log('Creating new profile for user:', user.id);
       const { data: newProfile, error: insertError } = await supabase
         .from('user')
@@ -126,7 +121,7 @@ function UserLogin() {
 
     setIsLoggingIn(true);
     setDebugInfo('Attempting to sign in...');
-    
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -158,16 +153,12 @@ function UserLogin() {
       console.log('Login successful for user:', data.user.id);
       setDebugInfo('Login successful, checking profile...');
 
-      // Ensure user profile exists and get role
       const userProfile = await ensureUserProfile(data.user);
-      
+
       if (!userProfile) {
-        // If profile creation failed, try a different approach
         console.log('Profile creation failed, attempting alternative method...');
-        
-        // Try to create profile without RLS (this might work if there's a policy issue)
+
         try {
-          // First disable RLS temporarily for this operation if needed
           const { error: directInsertError } = await supabase
             .from('user')
             .insert([{
@@ -175,17 +166,15 @@ function UserLogin() {
               email: data.user.email,
               role: 'user'
             }]);
-          
+
           if (directInsertError) {
             console.error('Direct insert also failed:', directInsertError);
             setLoginError('Unable to create user profile. Please contact support.');
             setIsLoggingIn(false);
             return;
           }
-          
+
           console.log('Profile created via direct insert');
-          // Set default profile
-          const userProfile = { role: 'user' };
         } catch (fallbackError) {
           console.error('Fallback profile creation failed:', fallbackError);
           setLoginError('Profile creation failed. Please try logging in again or contact support.');
@@ -194,15 +183,13 @@ function UserLogin() {
         }
       }
 
-      // Check role and redirect accordingly
       if (userProfile && userProfile.role === 'efbv') {
-        await supabase.auth.signOut(); // Sign out admin users
+        await supabase.auth.signOut();
         setLoginError('Please use the admin login page to sign in.');
         setIsLoggingIn(false);
         return;
       }
 
-      // Success - redirect to dashboard
       setDebugInfo('Login completed successfully!');
       navigate('/main-dashboard');
 
@@ -211,7 +198,7 @@ function UserLogin() {
       setLoginError('An unexpected error occurred. Please try again.');
       setDebugInfo(`Unexpected error: ${err.message}`);
     }
-    
+
     setIsLoggingIn(false);
   };
 
@@ -246,108 +233,176 @@ function UserLogin() {
   };
 
   return (
-    <div className="min-h-[90vh] bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md glass-card backdrop-blur-lg p-8 rounded-2xl shadow-xl">
-        <h2 className="text-2xl font-playfair text-gradient-primary text-center mb-6">
-          Sign in to ScopeBrush
-        </h2>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-3 sm:p-6">
+      {/* Mobile-optimized container */}
+      <div className="w-full max-w-xs sm:max-w-md">
+        {/* Main card - enhanced mobile styling */}
+        <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-xl sm:rounded-2xl p-5 sm:p-8">
 
-        {resetStatus && (
-          <div className="mb-4 text-center text-sm text-purple-700">
-            {resetStatus}
-          </div>
-        )}
-
-        {debugInfo && process.env.NODE_ENV === 'development' && (
-          <div className="mb-4 text-center text-xs text-gray-500 bg-gray-100 p-2 rounded">
-            Debug: {debugInfo}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <div>
-            <label className="form-label">Email</label>
-            <input
-              type="email"
-              className="form-input"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-            />
-            {errorEmail && (
-              <p className="text-red-500 text-sm mt-1">{errorEmail}</p>
-            )}
+          {/* Header - Mobile optimized */}
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
+              Sign in to
+            </h1>
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              ScopeBrush
+            </h2>
+            <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mt-3"></div>
           </div>
 
-          <div className="relative">
-            <label className="form-label">Password</label>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              className="form-input pr-10"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-            <button
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              type="button"
-            >
-              {showPassword ? (
-                <EyeSlashIcon className="w-5 h-5" />
-              ) : (
-                <EyeIcon className="w-5 h-5" />
-              )}
-            </button>
-            {errorPassword && (
-              <p className="text-red-500 text-sm mt-1">{errorPassword}</p>
-            )}
-          </div>
-
-          {loginError && (
-            <p className="text-red-600 text-center">{loginError}</p>
-          )}
-
-          <button
-            onClick={handleLogin}
-            disabled={isLoggingIn}
-            className="btn-primary w-full py-3 font-semibold"
-          >
-            {isLoggingIn ? 'Signing In...' : 'Sign In'}
-          </button>
-
-          <div className="flex justify-between text-sm mt-2">
-            <button
-              onClick={() => setShowForgotModal(!showForgotModal)}
-              className="text-purple-600 hover:underline"
-              type="button"
-            >
-              Forgot Password?
-            </button>
-            <button
-              onClick={() => navigate('/signup')}
-              className="text-purple-600 hover:underline"
-              type="button"
-            >
-              Create Account
-            </button>
-          </div>
-
-          {showForgotModal && (
-            <div className="mt-4 space-y-2">
-              <p className="text-sm text-slate-700">
-                Enter your registered email to receive a reset link.
-              </p>
-              <button
-                onClick={handleResetPassword}
-                disabled={isSending}
-                className="btn-outline w-full py-2 font-medium"
-                type="button"
-              >
-                {isSending ? 'Sending...' : 'Send Reset Email'}
-              </button>
+          {/* Status messages */}
+          {resetStatus && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs sm:text-sm text-blue-700 text-center">
+              {resetStatus}
             </div>
           )}
+
+          {debugInfo && process.env.NODE_ENV === 'development' && (
+            <div className="mb-4 text-center text-xs text-gray-500 bg-gray-100 p-2 rounded">
+              Debug: {debugInfo}
+            </div>
+          )}
+
+          {/* Form */}
+          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4 sm:space-y-5">
+
+            {/* Email field */}
+            <div>
+              <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorEmail
+                    ? 'border-red-300 bg-red-50 focus:border-red-400'
+                    : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
+                  }`}
+                placeholder="you@example.com"
+                autoComplete="email"
+              />
+              {errorEmail && (
+                <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errorEmail}
+                </p>
+              )}
+            </div>
+
+            {/* Password field */}
+            <div>
+              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorPassword
+                      ? 'border-red-300 bg-red-50 focus:border-red-400'
+                      : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
+                    }`}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : (
+                    <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  )}
+                </button>
+              </div>
+              {errorPassword && (
+                <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {errorPassword}
+                </p>
+              )}
+            </div>
+
+            {/* Login error */}
+            {loginError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-xs sm:text-sm text-red-700 text-center flex items-start justify-center">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {loginError}
+                </p>
+              </div>
+            )}
+
+            {/* Sign in button */}
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full py-2.5 sm:py-3 px-4 sm:px-6 text-white text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              {isLoggingIn ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Signing In...</span>
+                </div>
+              ) : (
+                'Sign In'
+              )}
+            </button>
+
+            {/* Footer links */}
+            <div className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:space-y-0 pt-2 sm:pt-4">
+              <button
+                type="button"
+                onClick={() => setShowForgotModal(!showForgotModal)}
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors text-center sm:text-left"
+              >
+                Forgot Password?
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate('/signup')}
+                className="text-xs sm:text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors text-center sm:text-right"
+              >
+                Create Account
+              </button>
+            </div>
+
+            {/* Forgot password section */}
+            {showForgotModal && (
+              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+                <p className="text-xs sm:text-sm text-gray-700">
+                  Enter your registered email to receive a reset link.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={isSending}
+                  className="w-full py-2 sm:py-2.5 px-4 text-xs sm:text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 transition-all duration-200"
+                >
+                  {isSending ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </div>
+                  ) : (
+                    'Send Reset Email'
+                  )}
+                </button>
+              </div>
+            )}
+          </form>
         </div>
       </div>
     </div>

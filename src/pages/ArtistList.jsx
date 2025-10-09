@@ -7,14 +7,14 @@ function StarRating({ value }) {
   const full = Math.floor(value || 0);
   const partial = Number(value) - full;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 1 }} className="scale-75 sm:scale-100">
       {[...Array(full)].map((_, i) => (
-        <svg key={`f-${i}`} width={24} height={24} viewBox="0 0 20 20" fill="#F59E0B">
+        <svg key={`f-${i}`} width={20} height={20} viewBox="0 0 20 20" fill="#F59E0B" className="w-4 h-4 sm:w-5 sm:h-5">
           <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" />
         </svg>
       ))}
       {partial > 0 && (
-        <svg width={24} height={24} viewBox="0 0 20 20">
+        <svg width={20} height={20} viewBox="0 0 20 20" className="w-4 h-4 sm:w-5 sm:h-5">
           <defs>
             <linearGradient id="partial-grad">
               <stop offset={`${partial * 100}%`} stopColor="#F59E0B" />
@@ -25,7 +25,7 @@ function StarRating({ value }) {
         </svg>
       )}
       {[...Array(5 - full - (partial > 0 ? 1 : 0))].map((_, i) => (
-        <svg key={`w-${i}`} width={24} height={24} viewBox="0 0 20 20" fill="#fff" stroke="#E5E7EB">
+        <svg key={`w-${i}`} width={20} height={20} viewBox="0 0 20 20" fill="#fff" stroke="#E5E7EB" className="w-4 h-4 sm:w-5 sm:h-5">
           <polygon points="10,1 12,7 19,7 13.5,11 15.5,18 10,13.5 4.5,18 6.5,11 1,7 8,7" />
         </svg>
       ))}
@@ -207,10 +207,10 @@ function ArtistList() {
     );
   }
   return (
-    <div className="p-4 sm:p-8 bg-gray-100 min-h-[90vh]">
+    <div className="p-3 sm:p-8 bg-gray-100 min-h-[90vh]">
       {/* Heading + Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center mb-6 gap-3 sm:gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gradient-primary">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-4">
+        <h1 className="text-xl sm:text-3xl font-bold text-gradient-primary">
           Artist Directory
         </h1>
         <input
@@ -218,14 +218,14 @@ function ArtistList() {
           placeholder="Search artist by name"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 rounded-xl border border-gray-300 flex-1 sm:max-w-sm w-full"
+          className="p-2 text-sm sm:text-base rounded-xl border border-gray-300 flex-1 sm:max-w-sm w-full"
         />
       </div>
 
       {/* Filter buttons */}
-      <div className="mb-6 flex gap-3 overflow-x-auto pb-2">
+      <div className="mb-4 sm:mb-6 flex gap-2 sm:gap-3 overflow-x-auto pb-2">
         <button
-          className={`px-5 py-2 rounded-xl shadow whitespace-nowrap ${filterTag === 'All'
+          className={`px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl shadow whitespace-nowrap ${filterTag === 'All'
             ? 'bg-blue-600 text-white'
             : 'bg-white text-blue-600 border border-blue-600'
             }`}
@@ -234,7 +234,7 @@ function ArtistList() {
           All
         </button>
         <button
-          className={`px-5 py-2 rounded-xl shadow whitespace-nowrap ${!user
+          className={`px-3 sm:px-5 py-1.5 sm:py-2 text-xs sm:text-sm rounded-xl shadow whitespace-nowrap ${!user
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
             : filterTag === 'Following'
               ? 'bg-blue-600 text-white'
@@ -255,29 +255,30 @@ function ArtistList() {
 
       {/* Login popup */}
       {showLoginMessage && (
-        <div className="fixed top-5 right-5 bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-3">
-          <p className="text-sm font-medium">Please log in to follow artists!</p>
+        <div className="fixed top-3 sm:top-5 right-3 sm:right-5 bg-red-100 border border-red-300 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-lg z-50 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 max-w-[90%] sm:max-w-md">
+          <p className="text-xs sm:text-sm font-medium text-center sm:text-left">Please log in to follow artists!</p>
           <button
             onClick={() => navigate('/user-login')}
-            className="px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition-colors"
+            className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto"
           >
             Login
           </button>
         </div>
       )}
 
+
       {/* Artist Cards */}
-      <div className="grid gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-2 sm:gap-3 md:gap-4 lg:gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filteredArtists.length === 0 ? (
-          <div className="text-center text-gray-600 col-span-full py-12">
-            <p className="text-lg mb-4">
+          <div className="text-center text-gray-600 col-span-full py-4 sm:py-6 md:py-8">
+            <p className="text-sm sm:text-base md:text-lg mb-2 sm:mb-3 md:mb-4">
               {filterTag === 'Following'
                 ? "You're not following any artists yet."
                 : "No artists found matching your search."}
             </p>
             {filterTag === 'Following' && (
               <button
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-3 sm:px-4 md:px-6 py-1 sm:py-1.5 md:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 onClick={() => setFilterTag('All')}
               >
                 View All Artists
@@ -288,29 +289,29 @@ function ArtistList() {
           filteredArtists.map((artist) => (
             <div
               key={artist.id}
-              className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full hover:shadow-2xl transition-shadow duration-300"
+              className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-1 sm:p-2 md:p-3 lg:p-4 flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 w-full hover:shadow-xl transition-shadow duration-300"
               onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
             >
               {/* Profile Image */}
               <img
                 src={artist.profile_image_url || '/default-avatar.jpg'}
                 alt={`${artist.name}'s profile`}
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-md ring-4 ring-indigo-100 flex-shrink-0 transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+                className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full object-cover shadow-md ring-1 sm:ring-2 md:ring-4 ring-indigo-100 flex-shrink-0 transform hover:scale-105 transition-transform duration-300 cursor-pointer"
                 loading="lazy"
               />
 
               {/* Info */}
-              <div className="flex flex-col flex-grow text-center sm:text-left">
+              <div className="flex flex-col flex-grow text-center sm:text-left w-full sm:w-auto">
                 <h2
-                  className="text-lg sm:text-xl font-bold text-gray-900 mb-1 tracking-tight cursor-pointer hover:text-blue-600 transition-colors"
+                  className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-0 tracking-tight cursor-pointer hover:text-blue-600 transition-colors truncate max-w-full leading-tight"
                 >
                   {artist.name}
                 </h2>
 
                 {/* Location */}
-                <div className="flex justify-center sm:justify-start items-center gap-1 text-indigo-600 text-sm mb-2">
+                <div className="flex justify-center sm:justify-start items-center gap-1 text-indigo-600 text-xs mb-0.5 sm:mb-1">
                   <svg
-                    className="w-4 h-4 opacity-80"
+                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 opacity-80"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -320,25 +321,25 @@ function ArtistList() {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="font-medium text-gray-700">
+                  <span className="font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] md:max-w-full leading-none">
                     {artist.location}
                   </span>
                 </div>
 
                 {/* Rating */}
-                {/* Rating display */}
-                <div className="flex justify-center sm:justify-start items-center gap-2 mb-3">
-                  <StarRating value={artist.avg_rating || 0} />
-                  <span className="text-sm text-gray-600">
+                <div className="flex justify-center sm:justify-start items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5">
+                  <div className="scale-75 sm:scale-90 md:scale-100 transform-origin-center sm:transform-origin-left">
+                    <StarRating value={artist.avg_rating || 0} />
+                  </div>
+                  <span className="text-xs text-gray-600 leading-none">
                     {artist.avg_rating ? artist.avg_rating.toFixed(1) : 'No ratings'}
                   </span>
                 </div>
 
-
                 {/* Follow Button */}
-                <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-3 mt-auto">
+                <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-1.5 sm:gap-2 md:gap-3 mt-0.5 sm:mt-auto">
                   <button
-                    className={`px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center gap-2 w-full sm:w-auto ${followingIds.includes(artist.id)
+                    className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 text-xs font-semibold rounded-lg shadow transition-all duration-200 flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto ${followingIds.includes(artist.id)
                       ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
                       : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
                       } disabled:opacity-60 disabled:cursor-not-allowed`}
@@ -349,39 +350,25 @@ function ArtistList() {
                     disabled={followLoading[artist.id]}
                   >
                     {followLoading[artist.id] ? (
-                      <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
+                      <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
                     ) : followingIds.includes(artist.id) ? (
                       <>
-                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
+                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         <span>Following</span>
                       </>
                     ) : (
                       <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                          />
+                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
                         <span>Follow</span>
                       </>
                     )}
                   </button>
 
-                  <span className="text-sm text-gray-600 font-medium">
+                  <span className="text-xs text-gray-600 font-medium leading-none">
                     {artist.followers || 0} followers
                   </span>
                 </div>
@@ -390,6 +377,7 @@ function ArtistList() {
           ))
         )}
       </div>
+
     </div>
   );
 

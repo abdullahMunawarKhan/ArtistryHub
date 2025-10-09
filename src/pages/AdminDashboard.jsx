@@ -785,13 +785,13 @@ function AdminDashboard() {
                 onClick={() => setSelectedSection(btn.key)}
                 //onClick={() => {setPendingSection(btn.key);  setShowPinModal(true);}}
 
-                className={`w-full py-3 px-4 rounded-lg text-left font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
+                className={`w-full py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-left text-sm sm:text-base font-semibold transition-all duration-200 flex items-center gap-1 sm:gap-2 ${selectedSection === btn.key
                   ? `bg-${btn.activeColor}-600 text-white shadow-md`
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
               >
-                {btn.icon && <span className="text-xl">{btn.icon}</span>}
-                {btn.label}
+                {btn.icon && <span className="text-lg sm:text-xl">{btn.icon}</span>}
+                <span className="truncate">{btn.label}</span>
               </button>
             ))}
           </div>
@@ -800,20 +800,20 @@ function AdminDashboard() {
       </div>
 
       {/* Left Side content area */}
-      <div className="flex-1 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 min-h-[70vh] animate-fadeIn">
-        <h2 className="text-3xl font-extrabold mb-10 text-center text-blue-800 tracking-tight drop-shadow-sm">
+      <div className="flex-1 bg-white p-2 sm:p-3 md:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-100 min-h-[70vh] animate-fadeIn overflow-hidden">
+        <h2 className="text-lg sm:text-xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6 text-center text-blue-800 tracking-tight drop-shadow-sm">
           Admin Dashboard
         </h2>
 
         {!selectedSection && (         //{selectedSection === 'home' && (
-          <div className="flex flex-col gap-10 ">
+          <div className="flex flex-col gap-4 sm:gap-6 md:gap-8">
             {/* Time Window Selector */}
-            <div className="flex gap-3 justify-center flex-wrap">
+            <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
               {['day', 'week', 'month'].map((p) => (
                 <button
                   key={p}
                   onClick={() => setPeriod(p)}
-                  className={`px-6 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all duration-200 ${period === p
+                  className={`px-2 sm:px-3 md:px-5 py-1 sm:py-2 rounded text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 ${period === p
                     ? 'bg-blue-600 text-white shadow-md scale-105'
                     : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                     }`}
@@ -824,9 +824,9 @@ function AdminDashboard() {
             </div>
 
             {/* Analytics Charts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-5">
               {[{
-                title: 'Users ',
+                title: 'Users',
                 data: signups
               }, {
                 title: 'Artist Registrations',
@@ -835,20 +835,20 @@ function AdminDashboard() {
                 title: 'Artworks Added',
                 data: artworksAdded
               }, {
-                title: 'dilevered Orders',
+                title: 'Delivered Orders',
                 data: pendingOrders
               }].map((chart, i) => (
                 <div
                   key={i}
-                  className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-md p-4 flex flex-col hover:shadow-lg transition duration-200"
+                  className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow p-2 sm:p-3 md:p-4 flex flex-col hover:shadow-lg transition duration-200"
                 >
-                  <h4 className="text-lg font-semibold mb-2 text-center text-gray-700">
+                  <h4 className="text-xs sm:text-sm md:text-base font-medium mb-1 text-center text-gray-700">
                     {chart.title}
                   </h4>
-                  <div className="w-full h-60">
+                  <div className="w-full h-32 sm:h-40 md:h-52">
                     <TimeSeriesChart data={chart.data} dataKey="count" title="" />
                   </div>
-                  <div className="mt-3 text-2xl font-bold text-blue-600 text-center">
+                  <div className="mt-2 text-lg sm:text-xl md:text-2xl font-bold text-blue-600 text-center">
                     {chart.data.reduce((sum, point) => sum + point.count, 0)}
                   </div>
                   <div className="text-xs text-gray-500 text-center">Total in this period</div>
@@ -860,19 +860,19 @@ function AdminDashboard() {
 
         {/* Existing Sections (Artist / Orders / Payments) */}
         {selectedSection === 'artist' && (
-          <div className="mb-14 animate-fadeIn">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Artist Management ({artistList.length})</h3>
-            <div className="overflow-x-auto rounded-xl shadow bg-white">
-              <table className="min-w-full text-sm">
+          <div className="mb-8 sm:mb-10 md:mb-14 animate-fadeIn">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 border-b pb-2">Artist Management ({artistList.length})</h3>
+            <div className="overflow-x-auto rounded-lg sm:rounded-xl shadow bg-white">
+              <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-100 text-gray-700 text-left">
                   <tr>
-                    <th className="p-3">Name</th>
-                    <th className="p-3">Email</th>
-                    <th className="p-3">Mobile</th>
-                    <th className="p-3">Location</th>
-                    <th className="p-3">Uploaded Artworks</th>
-                    <th className="p-3">Paintings Sold</th>
-                    <th className="p-3">ID Proof</th>
+                    <th className="p-2 sm:p-3">Name</th>
+                    <th className="p-2 sm:p-3 hidden sm:table-cell">Email</th>
+                    <th className="p-2 sm:p-3">Mobile</th>
+                    <th className="p-2 sm:p-3 hidden md:table-cell">Location</th>
+                    <th className="p-2 sm:p-3 hidden sm:table-cell">Artworks</th>
+                    <th className="p-2 sm:p-3">Sold</th>
+                    <th className="p-2 sm:p-3">ID</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -882,23 +882,23 @@ function AdminDashboard() {
                       className="border-b hover:bg-gray-50 transition"
                     >
                       <td
-                        className="p-3 cursor-pointer text-blue-700 hover:underline"
+                        className="p-2 sm:p-3 cursor-pointer text-blue-700 hover:underline font-medium"
                         onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
                       >
                         {artist.name}
                       </td>
-                      <td className="p-3">{artist.email}</td>
-                      <td className="p-3">{artist.mobile}</td>
-                      <td className="p-3">{artist.location}</td>
-                      <td className="p-3">{artist.artwork_count || 0}</td>
-                      <td className="p-3">{artist.paintings_sold || 0}</td>
-                      <td className="p-3">
+                      <td className="p-2 sm:p-3 hidden sm:table-cell text-gray-600">{artist.email}</td>
+                      <td className="p-2 sm:p-3 text-gray-600">{artist.mobile}</td>
+                      <td className="p-2 sm:p-3 hidden md:table-cell text-gray-600">{artist.location}</td>
+                      <td className="p-2 sm:p-3 hidden sm:table-cell text-gray-600">{artist.artwork_count || 0}</td>
+                      <td className="p-2 sm:p-3 text-gray-600">{artist.paintings_sold || 0}</td>
+                      <td className="p-2 sm:p-3">
                         {artist.id_proof_url ? (
                           <>
                             <img
                               src={artist.id_proof_url}
                               alt="ID Proof"
-                              className="w-16 h-16 object-cover rounded-lg border cursor-pointer hover:scale-105 transition-transform duration-200"
+                              className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 object-cover rounded-lg border cursor-pointer hover:scale-105 transition-transform duration-200"
                               onClick={() => setSelectedIdProofUrl(artist.id_proof_url)}
                             />
                           </>
@@ -924,18 +924,18 @@ function AdminDashboard() {
           </Modal>
         )}
         {selectedSection === 'artwork' && (
-          <div className="mb-14 animate-fadeIn">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+          <div className="mb-8 sm:mb-10 md:mb-14 animate-fadeIn">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-4 border-b pb-2">
               Artwork Management ({artworkList.length})
             </h3>
             <div className="overflow-x-auto rounded shadow bg-white">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-200 text-left">
                   <tr>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Artist Name</th>
-                    <th className="p-2">Images</th>
-                    <th className="p-2">Action</th>
+                    <th className="p-1 sm:p-2">Title</th>
+                    <th className="p-1 sm:p-2">Artist Name</th>
+                    <th className="p-1 sm:p-2">Images</th>
+                    <th className="p-1 sm:p-2">Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -986,15 +986,15 @@ function AdminDashboard() {
         )}
 
         {selectedSection === 'order' && (
-          <div className="mb-14 animate-fadeIn">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+          <div className="mb-8 sm:mb-10 md:mb-14 animate-fadeIn">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 border-b pb-2">
               Order Management ({orderList.length})
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 mb-4">
+            <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-1 sm:gap-2 mb-3 sm:mb-4">
               {['all', 'pending', 'confirm', 'shipped', 'delivered', 'canceled'].map(tag => (
                 <button
                   key={tag}
-                  className={`px-4 py-1 rounded w-full transition ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
+                  className={`px-2 sm:px-4 py-1 rounded text-xs sm:text-sm w-full transition ${tag === orderTag ? 'bg-blue-700 text-white' : 'bg-gray-200 text-gray-800 hover:bg-blue-200'}`}
                   onClick={() => setOrderTag(tag)}
                 >
                   {tag.charAt(0).toUpperCase() + tag.slice(1)}
@@ -1003,50 +1003,49 @@ function AdminDashboard() {
             </div>
 
 
-            <div className="overflow-x-auto rounded shadow bg-white">
-              <table className="min-w-full text-sm">
+            <div className="overflow-x-auto rounded-lg sm:rounded shadow bg-white">
+              <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-200">
                   <tr>
-                    <th className="p-2">Sr. No</th>
-                    <th className="p-2">Image</th>
-                    <th className="p-2">Title</th>
-
-                    <th className="p-2">Shipment Status</th>
-                    <th className="p-2">View Details</th>
+                    <th className="p-1.5 sm:p-2">No</th>
+                    <th className="p-1.5 sm:p-2">Image</th>
+                    <th className="p-1.5 sm:p-2">Title</th>
+                    <th className="p-1.5 sm:p-2">Status</th>
+                    <th className="p-1.5 sm:p-2">Details</th>
                     {orderTag === 'canceled' && (
-                      <th className="p-2">Refund Status</th>
+                      <th className="p-1.5 sm:p-2">Refund</th>
                     )}
                   </tr>
                 </thead>
                 <tbody>
                   {orderList.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="p-4 text-center text-gray-500">
+                      <td colSpan={6} className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
                         No active orders right now
                       </td>
                     </tr>
                   ) : (
                     orderList.map((order, index) => (
-                      <tr key={order.id} className="border-b">
-                        <td className="p-2">{index + 1}</td>
-                        <td className="p-2">
+                      <tr key={order.id} className="border-b hover:bg-gray-50">
+                        <td className="p-1.5 sm:p-2">{index + 1}</td>
+                        <td className="p-1.5 sm:p-2">
                           {order.artworks?.image_urls?.length > 0 && (
                             <img
                               onClick={() => navigate(`/product?id=${order.artworks.id}`)}
                               src={Array.isArray(order.artworks.image_urls) ? order.artworks.image_urls[0] : order.artworks.image_urls}
-                              className="w-16 h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition"
+                              className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded border cursor-pointer hover:opacity-80 transition"
                               alt={order.artworks.title || "Artwork"}
                             />
                           )}
                         </td>
                         <td
-                          className="p-2 cursor-pointer hover:text-blue-600"
+                          className="p-1.5 sm:p-2 cursor-pointer hover:text-blue-600 text-xs sm:text-sm font-medium"
                           onClick={() => navigate(`/product?id=${order.artworks.id}`)}
                         >
                           {order.artworks?.title || "N/A"}
                         </td>
 
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2">
                           <span
                             className={`
                                       px-2 py-0.5 rounded-full text-xs font-semibold
@@ -1122,51 +1121,51 @@ function AdminDashboard() {
 
 
         {selectedSection === 'payment' && (
-          <div className="mb-14 animate-fadeIn">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+          <div className="mb-8 sm:mb-10 md:mb-14 animate-fadeIn">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 border-b pb-2">
               Artist Payments ({artworkPayments.length})
             </h3>
-            <div className="overflow-x-auto rounded shadow bg-white">
-              <table className="min-w-full text-sm">
+            <div className="overflow-x-auto rounded-lg sm:rounded shadow bg-white">
+              <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-200">
                   <tr>
-                    <th className="p-2">Sr. No</th>
-                    <th className="p-2">Image</th>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Artist Name</th>
-                    <th className="p-2">Artist QR</th>
-                    <th className="p-2">Shipment Status</th>
-                    <th className="p-2">amount</th>
-                    <th className="p-2">Payment Status</th>
+                    <th className="p-1.5 sm:p-2">No</th>
+                    <th className="p-1.5 sm:p-2">Image</th>
+                    <th className="p-1.5 sm:p-2 hidden sm:table-cell">Title</th>
+                    <th className="p-1.5 sm:p-2">Artist</th>
+                    <th className="p-1.5 sm:p-2 hidden md:table-cell">QR</th>
+                    <th className="p-1.5 sm:p-2">Status</th>
+                    <th className="p-1.5 sm:p-2">Price</th>
+                    <th className="p-1.5 sm:p-2">Payment</th>
                   </tr>
                 </thead>
                 <tbody>
                   {artworkPayments.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-4 text-center text-gray-500">
+                      <td colSpan={8} className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
                         No delivered artworks pending payment.
                       </td>
                     </tr>
                   ) : (
                     artworkPayments.map((artwork, index) => (
-                      <tr key={artwork.id} className="border-b">
-                        <td className="p-2">{index + 1}</td>
-                        <td className="p-2">
+                      <tr key={artwork.id} className="border-b hover:bg-gray-50">
+                        <td className="p-1.5 sm:p-2">{index + 1}</td>
+                        <td className="p-1.5 sm:p-2">
                           <img
                             src={Array.isArray(artwork.image_urls) ? artwork.image_urls : artwork.image_urls}
                             alt={artwork.title || "Artwork"}
-                            className="w-16 h-16 object-cover rounded border"
+                            className="w-10 h-10 sm:w-14 sm:h-14 md:w-16 md:h-16 object-cover rounded border"
                           />
                         </td>
-                        <td className="p-2">{artwork.title}</td>
-                        <td className="p-2">{artwork.artists?.name || "N/A"}</td>
-                        <td className="p-2 text-center">
+                        <td className="p-1.5 sm:p-2 hidden sm:table-cell">{artwork.title}</td>
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm">{artwork.artists?.name || "N/A"}</td>
+                        <td className="p-1.5 sm:p-2 text-center hidden md:table-cell">
                           {artwork.artists?.artist_qr ? (
                             <>
                               <img
                                 src={artwork.artists.artist_qr}
                                 alt="Artist QR"
-                                className="w-14 h-14 object-cover border cursor-pointer"
+                                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 object-cover border cursor-pointer"
                                 onClick={() => {
                                   setQrImageSrc(artwork.artists.artist_qr);
                                   setShowQrModal(true);
@@ -1182,21 +1181,21 @@ function AdminDashboard() {
                             <span className="text-gray-400">N/A</span>
                           )}
                         </td>
-                        <td className="p-2">{artwork.orders?.[0]?.shipment_status || 'N/A'}</td>
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm">{artwork.orders?.[0]?.shipment_status || 'N/A'}</td>
 
 
-                        <td className="p-2">{artwork.base_price}</td>
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm">₹{artwork.base_price}</td>
+                        <td className="p-1.5 sm:p-2">
                           {artwork.artist_payment === "pending" ? (
                             <button
-                              className="px-3 py-1 rounded text-white bg-orange-500 hover:bg-orange-600"
+                              className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded text-white bg-orange-500 hover:bg-orange-600"
                               onClick={() => openPaymentModal(artwork.id)}
                             >
                               Pending
                             </button>
                           ) : (
                             <button
-                              className="px-3 py-1 rounded text-white bg-green-600"
+                              className="px-2 sm:px-3 py-0.5 sm:py-1 text-xs sm:text-sm rounded text-white bg-green-600"
                               onClick={() => showUtrModal(artwork.id)}
 
 
@@ -1281,19 +1280,19 @@ function AdminDashboard() {
 
 
         {selectedSection === 'earnings' && (
-          <div className="mb-14 animate-fadeIn">
-            <h3 className="text-xl font-bold text-gray-800 mb-4 border-b pb-2">
+          <div className="mb-8 sm:mb-10 md:mb-14 animate-fadeIn">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 sm:mb-4 border-b pb-2">
               Total Earnings ({totalEarnings.length})
             </h3>
             <div className="overflow-x-auto rounded shadow bg-white">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-200">
                   <tr>
-                    <th className="p-2">Artwork Image</th>
-                    <th className="p-2">Title</th>
-                    <th className="p-2">Amount</th>
-                    <th className="p-2">Base Price</th>
-                    <th className="p-2">Earning</th>
+                    <th className="p-1.5 sm:p-2">Image</th>
+                    <th className="p-1.5 sm:p-2 hidden sm:table-cell">Title</th>
+                    <th className="p-1.5 sm:p-2">Amount</th>
+                    <th className="p-1.5 sm:p-2">Base</th>
+                    <th className="p-1.5 sm:p-2">Earning</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1315,29 +1314,29 @@ function AdminDashboard() {
                   ) : (
                     totalEarnings.map((earning, index) => (
                       <tr key={earning.id} className="border-b hover:bg-gray-50">
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2">
                           {earning.artworkImage && (
                             <img
                               src={Array.isArray(earning.artworkImage)
                                 ? earning.artworkImage[0]
                                 : earning.artworkImage}
-                              className="w-16 h-16 object-cover rounded border"
+                              className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 object-cover rounded border"
                               alt={earning.title || "Artwork"}
                             />
                           )}
                         </td>
-                        <td className="p-2 font-medium">
+                        <td className="p-1.5 sm:p-2 font-medium hidden sm:table-cell">
                           {earning.title || "N/A"}
                         </td>
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm">
                           ₹{earning.amount?.toLocaleString() || 0}
                         </td>
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2 text-xs sm:text-sm">
                           ₹{earning.basePrice?.toLocaleString() || 0}
                         </td>
-                        <td className="p-2">
+                        <td className="p-1.5 sm:p-2">
                           <span
-                            className={`font-semibold ${earning.earning < 0 ? 'text-red-600' : 'text-green-600'
+                            className={`text-xs sm:text-sm font-semibold ${earning.earning < 0 ? 'text-red-600' : 'text-green-600'
                               }`}
                           >
                             ₹{earning.earning?.toLocaleString() || 0}

@@ -8,8 +8,8 @@ function Welcome() {
   // Navigate to dashboard when button is clicked
   const handleEnter = (event) => {
     if (event) event.stopPropagation();
-    // navigate("/main-dashboard");
-    navigate("/coming-soon");
+    navigate("/main-dashboard");
+    // navigate("/coming-soon");
   };
 
   return (
