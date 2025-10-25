@@ -26,6 +26,7 @@ import ContactUs from './pages/ContactUs';
 import PrivacyPolicies from './pages/PrivacyPolicies';
 import TermsConditions from './pages/TermsCondition';
 import ComingSoon from './pages/ComingSoon';
+import Demo from './pages/Demo';
 
 
 function App() {
@@ -98,6 +99,7 @@ function App() {
             <Route path="/privacy-policies" element={<PrivacyPolicies />} />
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
+            <Route path="/sample-upload" element={<Demo />}/>
           </Routes>
         </div>
       </main>

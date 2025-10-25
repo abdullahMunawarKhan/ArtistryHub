@@ -88,6 +88,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [pickupAddress, setPickupAddress] = useState("");
 
   const defaultCategories = [
@@ -260,24 +263,87 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     const { data } = supabase.storage.from("artist-assets").getPublicUrl(filename);
     return data.publicUrl;
   }
-  function goToPrevImage() {
-    setCurrentImageIndex((prev) =>
-      prev > 0 ? prev - 1 : previewUrls.length - 1
-    );
-  }
 
-  function goToNextImage() {
-    setCurrentImageIndex((prev) =>
-      prev < previewUrls.length - 1 ? prev + 1 : 0
-    );
-  }
-  function zoomOut() {
-    setZoom(prev => Math.max(prev - zoomStep, minZoom));
-  }
+  // Reset position when image changes or zoom resets
+  const resetImageView = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  };
 
-  function zoomIn() {
-    setZoom(prev => Math.min(prev + zoomStep, maxZoom));
-  }
+  // Update zoom functions to reset position when zooming out to minimum
+  const zoomIn = () => {
+    if (zoom < maxZoom) {
+      setZoom(prev => Math.min(prev + 0.25, maxZoom));
+    }
+  };
+
+  const zoomOut = () => {
+    const newZoom = Math.max(zoom - 0.25, minZoom);
+    setZoom(newZoom);
+    if (newZoom === minZoom) {
+      setPosition({ x: 0, y: 0 }); // Reset position when fully zoomed out
+    }
+  };
+
+  // Pan handlers
+  const handleMouseDown = (e) => {
+    if (zoom > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+    }
+  };
+
+  const handleMouseMove = (e) => {
+    if (isDragging && zoom > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // Touch handlers for mobile
+  const handleTouchStart = (e) => {
+    if (zoom > 1 && e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (isDragging && zoom > 1 && e.touches.length === 1) {
+      setPosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Update navigation functions to reset view
+  const goToNextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % previewUrls.length);
+    resetImageView();
+  };
+
+  const goToPrevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + previewUrls.length) % previewUrls.length);
+    resetImageView();
+  };
+
 
 
   async function handleSubmit(e) {
@@ -926,50 +992,93 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       </form>
 
       {/* Image Viewer Modal */}
-      {imageViewerOpen && (
+      {imageViewerOpen && previewUrls.length > 0 && (
         <div
           onClick={() => setImageViewerOpen(false)}
-          className="fixed inset-0 w-screen h-screen bg-black bg-opacity-80 flex justify-center items-center z-[10000] select-none"
+          className="fixed inset-0 w-screen h-screen bg-black bg-opacity-90 flex justify-center items-center z-50 select-none p-4"
         >
           <div
-            onClick={e => e.stopPropagation()}
-            className="relative max-w-[90vw] max-h-[90vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full h-full flex flex-col items-center justify-center"
           >
-            {/* Close Button - Enhanced Cross Mark */}
+            {/* Close Button */}
             <button
               onClick={() => setImageViewerOpen(false)}
-              className="absolute top-3 right-3 z-10 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center text-white text-2xl font-bold cursor-pointer transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-black"
+              className="fixed top-6 right-6 z-20 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center text-white text-2xl font-bold cursor-pointer transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white"
               aria-label="Close image viewer"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={3}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
-            <img
-              src={previewUrls[currentImageIndex]}
-              alt={`artwork-viewer-${currentImageIndex}`}
-              className="max-w-full max-h-[80vh] rounded-lg shadow-2xl select-none transition-transform duration-300 ease-in-out"
-              style={{
-                transform: `scale(${zoom})`,
-                boxShadow: '0 0 30px rgba(255,255,255,0.3)',
-              }}
-              draggable={false}
-            />
+            {/* Fixed Zoom Controls - Bottom Right */}
+            <div className="fixed bottom-6 right-6 z-20 flex flex-col gap-2 bg-black bg-opacity-40 p-2 rounded-lg backdrop-blur-sm">
+              <button
+                onClick={zoomIn}
+                disabled={zoom >= maxZoom}
+                className={`w-10 h-10 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center ${zoom >= maxZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
+                  }`}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
 
-            {/* Controls */}
-            <div className="mt-4 flex gap-3 items-center">
+              <span className="text-white font-semibold text-xs bg-black bg-opacity-30 px-2 py-1 rounded text-center">
+                {(zoom * 100).toFixed(0)}%
+              </span>
+
+              <button
+                onClick={zoomOut}
+                disabled={zoom <= minZoom}
+                className={`w-10 h-10 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center ${zoom <= minZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
+                  }`}
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+
+              {/* Reset View Button */}
+              {(zoom > 1 || position.x !== 0 || position.y !== 0) && (
+                <button
+                  onClick={resetImageView}
+                  className="w-10 h-10 text-xs bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center cursor-pointer"
+                  aria-label="Reset view"
+                  title="Reset view"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Image Container with Pan Support */}
+            <div
+              className="relative flex items-center justify-center max-w-[90vw] max-h-[90vh] overflow-hidden"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              <img
+                src={previewUrls[currentImageIndex]}
+                alt={`artwork-viewer-${currentImageIndex}`}
+                className="max-w-full max-h-[80vh] rounded-lg shadow-2xl select-none transition-transform duration-200 ease-out"
+                style={{
+                  transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
+                  cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                  boxShadow: '0 0 30px rgba(255,255,255,0.3)',
+                }}
+                draggable="false"
+              />
+            </div>
+
+            {/* Navigation Controls - Bottom Center */}
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex gap-3 items-center bg-black bg-opacity-40 px-4 py-2 rounded-lg backdrop-blur-sm">
               <button
                 onClick={goToPrevImage}
                 className="px-4 py-2 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white"
@@ -978,29 +1087,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 ‹
               </button>
 
-              <button
-                onClick={zoomOut}
-                disabled={zoom <= minZoom}
-                className={`px-4 py-2 text-sm bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white ${zoom <= minZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
-                  }`}
-                aria-label="Zoom out"
-              >
-                −
-              </button>
-
-              <span className="text-white font-semibold text-sm bg-black bg-opacity-30 px-3 py-2 rounded-lg">
-                {(zoom * 100).toFixed(0)}%
+              <span className="text-white text-sm bg-black bg-opacity-30 px-3 py-1 rounded-lg">
+                {currentImageIndex + 1} / {previewUrls.length}
               </span>
-
-              <button
-                onClick={zoomIn}
-                disabled={zoom >= maxZoom}
-                className={`px-4 py-2 text-sm bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white ${zoom >= maxZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
-                  }`}
-                aria-label="Zoom in"
-              >
-                +
-              </button>
 
               <button
                 onClick={goToNextImage}
@@ -1010,9 +1099,18 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 ›
               </button>
             </div>
+
+            {/* Pan Hint - Shows when zoomed in */}
+            {zoom > 1 && !isDragging && (
+              <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-20 text-white text-sm bg-black bg-opacity-40 px-4 py-2 rounded-lg backdrop-blur-sm animate-fade-in">
+                Click and drag to pan
+              </div>
+            )}
           </div>
         </div>
       )}
+
+
       {showRemoveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-lg p-8">
