@@ -484,7 +484,7 @@ export default function ArtistProfile() {
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full p-6">
       {/* ARTIST CARD: Top on mobile, LEFT on desktop (25% width) - MOVED TO FIRST POSITION */}
-      <div className="relative w-full md:w-1/4 bg-white rounded-xl shadow-md p-4 flex flex-col h-fit mb-4">
+      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-md p-5 flex flex-col h-fit mb-4 transition-all duration-300 hover:shadow-xl">
         {/* Top row: Share + Edit */}
         <div className="flex items-center justify-between mb-3">
           <ArtistProfileShare artistId={artist.id} />
@@ -503,7 +503,7 @@ export default function ArtistProfile() {
         <img
           src={artist.profile_image_url}
           alt={artist.name}
-          className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border border-gray-200"
+          className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4 border-blue-500 shadow-md"
           loading="lazy"
         />
 
@@ -517,10 +517,10 @@ export default function ArtistProfile() {
 
         {/* Info */}
         <h2 className="text-lg font-semibold text-center text-gray-900">{artist.name}</h2>
-        <p className="text-xs text-gray-600 text-center mb-2">{artist.location}</p>
+        <p className="text-xs text-gray-600 text-center mb-3">{artist.location}</p>
 
         {(isOwner || userRole === "efbv") && (
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm mx-auto w-full">
+          <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm mx-auto w-full mb-3">
             <div className="flex justify-between text-sm text-gray-800">
               <span className="font-semibold text-xs text-gray-600">Mobile:</span>
               <span className="truncate">{artist.mobile}</span>
@@ -532,13 +532,13 @@ export default function ArtistProfile() {
           </div>
         )}
 
-
-        {/* Follow button */}
-        <div className="flex items-center gap-3 mt-auto">
+        {/* Follow + Followers Row */}
+        <div className="flex justify-between items-center gap-3 mt-auto pt-3 border-t border-gray-100">
+          {/* Follow Button */}
           <button
-            className={`px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center gap-2 ${followingIds.includes(artist.id)
-              ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
-              : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
+            className={`flex-1 px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center justify-center gap-2 ${followingIds.includes(artist.id)
+                ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
+                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
               } disabled:opacity-60 disabled:cursor-not-allowed`}
             onClick={(e) => {
               e.stopPropagation();
@@ -555,23 +555,38 @@ export default function ArtistProfile() {
             ) : followingIds.includes(artist.id) ? (
               <>
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  <path
+                    fillRule="evenodd"
+                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <span>Following</span>
               </>
             ) : (
               <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
                 </svg>
                 <span>Follow</span>
               </>
             )}
           </button>
 
-          <span className="text-sm text-gray-600 font-medium">
+          {/* Followers Count */}
+          <div className="flex-1 px-4 py-2 text-sm font-medium text-center bg-gray-50 border border-gray-300 rounded-lg text-gray-700 shadow-sm">
             {artist.followers || 0} followers
-          </span>
+          </div>
         </div>
 
         {/* Reviews */}
@@ -589,7 +604,7 @@ export default function ArtistProfile() {
                   <StarRating value={rev.rating} />
                   <p className="mt-1 text-gray-700">
                     {Array.isArray(rev.review)
-                      ? rev.review.join(", ")       // This will display all strings in the array
+                      ? rev.review.join(", ")
                       : rev.review}
                   </p>
                   {isOwner && rev.email && (
@@ -605,12 +620,13 @@ export default function ArtistProfile() {
       </div>
 
 
+
       <div className="w-full md:w-3/4">
         <div className="flex flex-col gap-3 mb-4">
           {isOwner && (
             <div className="flex items-center justify-end gap-2 sm:gap-3">
               <button
-                onClick={() => navigate("/upload-work")}
+                onClick={() => navigate("/sample-upload")}
                 className="flex items-center px-3 sm:px-4 py-2 rounded-lg font-semibold bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white shadow-md hover:scale-105 hover:shadow-lg transition-transform duration-200 text-sm sm:text-base"
               >
                 <svg

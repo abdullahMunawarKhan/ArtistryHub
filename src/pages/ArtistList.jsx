@@ -268,17 +268,17 @@ function ArtistList() {
 
 
       {/* Artist Cards */}
-      <div className="grid gap-2 sm:gap-3 md:gap-4 lg:gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-5 md:gap-6 lg:gap-8 md:grid-cols-2 lg:grid-cols-3">
         {filteredArtists.length === 0 ? (
-          <div className="text-center text-gray-600 col-span-full py-4 sm:py-6 md:py-8">
-            <p className="text-sm sm:text-base md:text-lg mb-2 sm:mb-3 md:mb-4">
+          <div className="text-center text-gray-600 col-span-full py-8">
+            <p className="text-base md:text-lg mb-3">
               {filterTag === 'Following'
                 ? "You're not following any artists yet."
                 : "No artists found matching your search."}
             </p>
             {filterTag === 'Following' && (
               <button
-                className="px-3 sm:px-4 md:px-6 py-1 sm:py-1.5 md:py-2 text-xs sm:text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
                 onClick={() => setFilterTag('All')}
               >
                 View All Artists
@@ -289,94 +289,115 @@ function ArtistList() {
           filteredArtists.map((artist) => (
             <div
               key={artist.id}
-              className="bg-white rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg p-1 sm:p-2 md:p-3 lg:p-4 flex flex-col sm:flex-row items-center gap-1 sm:gap-2 md:gap-3 lg:gap-4 w-full hover:shadow-xl transition-shadow duration-300"
               onClick={() => navigate(`/artist-profile?id=${artist.id}`)}
+              className="relative bg-white border border-gray-200 rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col items-center text-center sm:text-left p-5"
             >
-              {/* Profile Image */}
-              <img
-                src={artist.profile_image_url || '/default-avatar.jpg'}
-                alt={`${artist.name}'s profile`}
-                className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-full object-cover shadow-md ring-1 sm:ring-2 md:ring-4 ring-indigo-100 flex-shrink-0 transform hover:scale-105 transition-transform duration-300 cursor-pointer"
-                loading="lazy"
-              />
+              {/* Profile Section */}
+              <div className="flex flex-col items-center sm:flex-row sm:items-center sm:gap-5 w-full">
+                {/* Profile Image */}
+                <img
+                  src={artist.profile_image_url || '/default-avatar.jpg'}
+                  alt={`${artist.name}'s profile`}
+                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-blue-500 shadow-md transform hover:scale-105 transition-transform duration-300 cursor-pointer"
+                  loading="lazy"
+                />
 
-              {/* Info */}
-              <div className="flex flex-col flex-grow text-center sm:text-left w-full sm:w-auto">
-                <h2
-                  className="text-sm sm:text-base md:text-lg lg:text-xl font-bold text-gray-900 mb-0 tracking-tight cursor-pointer hover:text-blue-600 transition-colors truncate max-w-full leading-tight"
-                >
-                  {artist.name}
-                </h2>
+                {/* Artist Info */}
+                <div className="flex flex-col justify-center mt-3 sm:mt-0 w-full sm:w-auto text-center sm:text-left">
+                  <h2 className="text-lg md:text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors truncate">
+                    {artist.name}
+                  </h2>
 
-                {/* Location */}
-                <div className="flex justify-center sm:justify-start items-center gap-1 text-indigo-600 text-xs mb-0.5 sm:mb-1">
-                  <svg
-                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 md:w-4 md:h-4 opacity-80"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="font-medium text-gray-700 truncate max-w-[120px] sm:max-w-[150px] md:max-w-full leading-none">
-                    {artist.location}
-                  </span>
-                </div>
-
-                {/* Rating */}
-                <div className="flex justify-center sm:justify-start items-center gap-1 sm:gap-1.5 md:gap-2 mb-1 sm:mb-1.5">
-                  <div className="scale-75 sm:scale-90 md:scale-100 transform-origin-center sm:transform-origin-left">
-                    <StarRating value={artist.avg_rating || 0} />
+                  {/* Location */}
+                  <div className="flex justify-center sm:justify-start items-center gap-1 text-indigo-600 text-xs mt-1">
+                    <svg
+                      className="w-3 h-3 opacity-80"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    <span className="font-medium text-gray-700 truncate max-w-[150px] md:max-w-full">
+                      {artist.location}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-600 leading-none">
-                    {artist.avg_rating ? artist.avg_rating.toFixed(1) : 'No ratings'}
-                  </span>
+
+                  {/* Rating */}
+                  <div className="flex justify-center sm:justify-start items-center gap-1.5 mt-1">
+                    <div className="scale-90 sm:scale-100">
+                      <StarRating value={artist.avg_rating || 0} />
+                    </div>
+                    <span className="text-xs text-gray-600">
+                      {artist.avg_rating ? artist.avg_rating.toFixed(1) : 'No ratings'}
+                    </span>
+                  </div>
                 </div>
+              </div>
 
+              {/* Divider */}
+              <div className="w-full border-t border-gray-200 mt-4 mb-3"></div>
+
+              {/* Follow + Follower Count Section */}
+              <div className="flex flex-row justify-between items-center gap-3 w-full">
                 {/* Follow Button */}
-                <div className="flex flex-col sm:flex-row justify-center sm:justify-start items-center gap-1.5 sm:gap-2 md:gap-3 mt-0.5 sm:mt-auto">
-                  <button
-                    className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 text-xs font-semibold rounded-lg shadow transition-all duration-200 flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto ${followingIds.includes(artist.id)
-                      ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
-                      : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
-                      } disabled:opacity-60 disabled:cursor-not-allowed`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleFollowToggle(artist.id);
-                    }}
-                    disabled={followLoading[artist.id]}
-                  >
-                    {followLoading[artist.id] ? (
-                      <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
-                    ) : followingIds.includes(artist.id) ? (
-                      <>
-                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                        <span>Following</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span>Follow</span>
-                      </>
-                    )}
-                  </button>
+                <button
+                  className={`flex-1 px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center justify-center gap-2 ${followingIds.includes(artist.id)
+                      ? 'bg-green-600 text-white hover:bg-red-600'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFollowToggle(artist.id);
+                  }}
+                  disabled={followLoading[artist.id]}
+                >
+                  {followLoading[artist.id] ? (
+                    <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
+                  ) : followingIds.includes(artist.id) ? (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                          fillRule="evenodd"
+                          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span>Following</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                        />
+                      </svg>
+                      <span>Follow</span>
+                    </>
+                  )}
+                </button>
 
-                  <span className="text-xs text-gray-600 font-medium leading-none">
-                    {artist.followers || 0} followers
-                  </span>
+                {/* Follower Count */}
+                <div className="flex-1 px-4 py-2 text-sm font-medium rounded-lg bg-gray-50 border border-gray-300 text-gray-700 text-center">
+                  {artist.followers || 0} followers
                 </div>
               </div>
             </div>
           ))
         )}
       </div>
+
 
     </div>
   );

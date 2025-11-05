@@ -114,7 +114,7 @@ function AdminDashboard() {
   const [deliveryExtraCharges, setDeliveryExtraCharges] = useState('');
   const [artistUtr, setArtistUtr] = useState(null);
   const [fetchingUtr, setFetchingUtr] = useState(false);
-
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
 
 
   async function showUtrModal(artworkId) {
@@ -738,54 +738,83 @@ function AdminDashboard() {
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-4 md:p-6 flex flex-col md:flex-row gap-6">
       {/* Right Side column menu */}
-      <div className="w-full md:w-72 bg-white rounded-2xl shadow-lg sticky top-4 h-fit animate-fadeIn">
-        <div className="p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
+      <div className="w-full md:w-72 bg-white rounded-2xl shadow-lg sticky top-4 h-fit animate-fadeIn relative">
+
+        {/* Mobile Dropdown Button */}
+        <div className="md:hidden flex justify-between items-center px-4 py-3 border-b border-gray-200">
+          <h3 className="text-base font-bold text-gray-800">Dashboard Sections</h3>
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="flex items-center gap-1 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-lg transition-all duration-200"
+          >
+            <span>See More</span>
+            <svg
+              className={`w-4 h-4 transform transition-transform duration-300 ${showMobileMenu ? 'rotate-180' : 'rotate-0'}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Full Menu (visible always on desktop, toggled on mobile) */}
+        <div className={`p-6 md:block ${showMobileMenu ? 'block' : 'hidden md:block'}`}>
+          {/* Title for desktop */}
+          <h3 className="hidden md:block text-lg font-bold text-gray-800 mb-6 text-center">
             Dashboard Sections
           </h3>
+
           <div className="space-y-3">
-            {[{
-              key: null,// 'home',
-
-              label: 'Home',
-              icon: '🏠',
-              activeColor: 'green'
-            }, {
-              key: 'artist',
-
-              label: 'Artist Management',
-              icon: '🎨',
-              activeColor: 'blue'
-            },
-            {
-              key: 'artwork',
-              label: 'Artwork Management',
-              icon: '🖼️',
-              activeColor: 'blue'
-            }, {
-              key: 'order',
-              label: 'Order Management',
-              icon: '🛒',
-              activeColor: 'blue'
-            }, {
-              key: 'payment',
-              label: 'Artist Payments',
-              icon: '💳',
-              activeColor: 'blue'
-            },
-            {
-              key: 'earnings',
-              label: 'Total Earnings',
-              icon: '💰',
-              activeColor: 'blue'
-            }
+            {[
+              {
+                key: null,
+                label: 'Home',
+                icon: '🏠',
+                activeColor: 'green'
+              },
+              {
+                key: 'artist',
+                label: 'Artist Management',
+                icon: '🎨',
+                activeColor: 'blue'
+              },
+              {
+                key: 'artwork',
+                label: 'Artwork Management',
+                icon: '🖼️',
+                activeColor: 'blue'
+              },
+              {
+                key: 'order',
+                label: 'Order Management',
+                icon: '🛒',
+                activeColor: 'blue'
+              },
+              {
+                key: 'payment',
+                label: 'Artist Payments',
+                icon: '💳',
+                activeColor: 'blue'
+              },
+              {
+                key: 'earnings',
+                label: 'Total Earnings',
+                icon: '💰',
+                activeColor: 'blue'
+              }
             ].map((btn, i) => (
               <button
                 key={i}
-                onClick={() => setSelectedSection(btn.key)}
-                //onClick={() => {setPendingSection(btn.key);  setShowPinModal(true);}}
-
-                className={`w-full py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-left text-sm sm:text-base font-semibold transition-all duration-200 flex items-center gap-1 sm:gap-2 ${selectedSection === btn.key
+                onClick={() => {
+                  setSelectedSection(btn.key);
+                  // Auto close dropdown on mobile when not "Home"
+                  if (btn.key !== null) {
+                    setShowMobileMenu(false);
+                  }
+                }}
+                className={`w-full py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-left text-sm sm:text-base font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
                   ? `bg-${btn.activeColor}-600 text-white shadow-md`
                   : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
@@ -795,9 +824,9 @@ function AdminDashboard() {
               </button>
             ))}
           </div>
-
         </div>
       </div>
+
 
       {/* Left Side content area */}
       <div className="flex-1 bg-white p-2 sm:p-3 md:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-lg border border-gray-100 min-h-[70vh] animate-fadeIn overflow-hidden">
