@@ -309,99 +309,153 @@ function TopPanel({ footerOpen, setFooterOpen }) {
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
-          <div className="px-6 py-4 space-y-4 items-center">
-            {!user && (
-              <>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    navigate('/user-login');
-                  }}
-                  className="block nav-link py-2 w-full text-left"
-                >
-                  Login
-                </button>
-                <Link
-                  to="/signup"
-                  onClick={() => setMenuOpen(false)}
-                  className="block nav-link py-2 w-full text-left"
-                >
-                  Sign Up
-                </Link>
-              </>
-            )}
-            <button onClick={() => navOrLogin('/feed')} className="nav-link">
-              Explore Arts
-            </button>
-            <Link
-              to="/main-dashboard"
-              onClick={() => handleNav('/main-dashboard')}
-              className="block nav-link py-2"
-            >
-              🏠 Home
-            </Link>
-            <Link
-              to="/artist-list"
-              onClick={() => handleNav('/artist-list')}
-              className="block nav-link py-2"
-            >
-              👨‍🎨 Artists
-            </Link>
-
-            {!isAdmin && (
-              <>
-                <button
-                  onClick={() => navOrLogin('/cart')}
-                  className="block nav-link py-2 w-full text-left"
-                >
-                  🛒 Cart
-                </button>
-                <button
-                  onClick={() => navOrLogin('/orders')}
-                  className="block nav-link py-2 w-full text-left"
-                >
-                  📦 Orders
-                </button>
-                {artistProfile && (
-                  <Link
-                    to={`/artist-profile?id=${artistProfile.id}`}
-                    onClick={() => handleNav(`/artist-profile?id=${artistProfile.id}`)}
-                    className="block nav-link py-2"
-                  >
-                    👤 My Profile
-                  </Link>
+          <div className="menu-container">
+            <nav className="glass-menu">
+              <ul className="menu-list">
+                {!user && (
+                  <>
+                    <li>
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navigate('/user-login');
+                        }}
+                      >
+                        Login
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navigate('/signup');
+                        }}
+                      >
+                        Sign Up
+                      </button>
+                    </li>
+                  </>
                 )}
-                {!artistProfile && (
+                <li>
                   <button
-                    onClick={() => navOrLogin('/register')}
-                    className="block nav-link py-2 w-full text-left"
+                    className="menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navOrLogin('/feed');
+                    }}
                   >
-                    ✨ Become Artist
+                    Explore Arts
                   </button>
+                </li>
+                <li>
+                  <button
+                    className="menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate('/main-dashboard');
+                    }}
+                  >
+                    🏠 Home
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      navigate('/artist-list');
+                    }}
+                  >
+                    👨‍🎨 Artists
+                  </button>
+                </li>
+
+                {!isAdmin && (
+                  <>
+                    <li>
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navOrLogin('/cart');
+                        }}
+                      >
+                        🛒 Cart
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        className="menu-item"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          navOrLogin('/orders');
+                        }}
+                      >
+                        📦 Orders
+                      </button>
+                    </li>
+
+                    {artistProfile ? (
+                      <li>
+                        <button
+                          className="menu-item"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            navigate(`/artist-profile?id=${artistProfile.id}`);
+                          }}
+                        >
+                          👤 My Profile
+                        </button>
+                      </li>
+                    ) : (
+                      <li>
+                        <button
+                          className="menu-item"
+                          onClick={() => {
+                            setMenuOpen(false);
+                            navOrLogin('/register');
+                          }}
+                        >
+                          ✨ Become Artist
+                        </button>
+                      </li>
+                    )}
+                  </>
                 )}
-              </>
-            )}
-            {isAdmin && (
-              <button
-                onClick={handleAdminDashboard}
-                className="block nav-link py-2 w-full text-left"
-              >
-                ⚙️ Admin Dashboard
-              </button>
-            )}
-            <button
-              onClick={handleAboutUsClick}
 
-              className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
-            >
-              About Us
-            </button>
+                {isAdmin && (
+                  <li>
+                    <button
+                      className="menu-item"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleAdminDashboard();
+                      }}
+                    >
+                      ⚙️ Admin Dashboard
+                    </button>
+                  </li>
+                )}
 
-
+                <li className="full-width">
+                  <button
+                    className="menu-item full-width"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      handleAboutUsClick();
+                    }}
+                  >
+                    About Us
+                  </button>
+                </li>
+              </ul>
+            </nav>
           </div>
-
         </div>
       )}
+
 
       {/* Login Modal */}
       {showLoginModal && (
