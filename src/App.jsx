@@ -69,7 +69,7 @@ function App() {
       >
         <div
           className={`
-            ${isWelcomePage ? 'w-full' : 'w-full max-w-7xl mx-auto'}
+            ${'w-full'}
             flex-grow flex flex-col
           `}
         >

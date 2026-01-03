@@ -305,7 +305,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
         </div>
 
       </nav>
-
+                       
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
