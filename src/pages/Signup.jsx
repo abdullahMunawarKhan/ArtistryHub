@@ -102,7 +102,9 @@ function Signup() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 via-orange-50 to-amber-50 flex items-center justify-center p-3 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 
+                flex items-start justify-center 
+                pt-10 sm:pt-10 px-3 sm:px-6">
       {/* Mobile-optimized container */}
       <div className="w-full max-w-xs sm:max-w-md">
         {/* Main card - enhanced mobile styling */}
@@ -122,8 +124,8 @@ function Signup() {
           {/* Status message */}
           {message.text && (
             <div className={`mb-4 p-3 border rounded-lg text-xs sm:text-sm text-center ${message.type === 'error'
-                ? 'bg-red-50 border-red-200 text-red-700'
-                : 'bg-green-50 border-green-200 text-green-700'
+              ? 'bg-red-50 border-red-200 text-red-700'
+              : 'bg-green-50 border-green-200 text-green-700'
               }`}>
               <div className="flex items-center justify-center">
                 {message.type === 'error' ? (

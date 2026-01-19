@@ -1,6 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import {
+  Home,
+  Users,
+  ShoppingCart,
+  PackageCheck,
+  User,
+  Sparkles,
+  LayoutDashboard,
+  Package,
+  Image as ImageIcon,
+  Info,
+} from "lucide-react";
+import { UserRound, ChevronDown, Menu, X } from "lucide-react";
+import { KeyRound, LogOut, Mail } from "lucide-react";
 
 
 function TopPanel({ footerOpen, setFooterOpen }) {
@@ -10,13 +24,23 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [artistProfile, setArtistProfile] = useState(null);
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+
 
   const navigate = useNavigate();
   const adminMenuRef = useRef();
   const loginDropdownRef = useRef();
   const profileMenuRef = useRef();
+  const [showLoginToast, setShowLoginToast] = useState(false);
+
+  // Auto-close after 2 seconds
+  useEffect(() => {
+    if (showLoginToast) {
+      const timer = setTimeout(() => setShowLoginToast(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [showLoginToast]);
 
   useEffect(() => {
     const getUserData = async () => {
@@ -137,7 +161,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
     if (user) {
       navigate(path);
     } else {
-      setShowLoginModal(true);
+      setShowLoginToast(true);
     }
     setMenuOpen(false);
     setAdminMenuOpen(false);
@@ -153,7 +177,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush">
+    <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-10 pr-10">
       <nav className="flex items-center justify-between px-2 md:px-8 py-2 w-full">
         {/* Left: Logo and Name, flush to left */}
         <div className="flex items-center flex-shrink-0">
@@ -169,113 +193,143 @@ function TopPanel({ footerOpen, setFooterOpen }) {
           <button onClick={() => navOrLogin('/feed')} className="nav-link">
             Explore Arts
           </button>
-          <Link to="/main-dashboard" className="nav-link">
-            🏠 Home
+          <Link to="/main-dashboard" className="nav-link flex items-center gap-2">
+            <Home size={18} />
+            Home
           </Link>
-          <Link to="/artist-list" className="nav-link">
-            👨‍🎨 Artists
+
+          <Link to="/artist-list" className="nav-link flex items-center gap-2">
+            <Users size={18} />
+            Artists
           </Link>
+
           {!isAdmin && (
             <>
-              <button onClick={() => navOrLogin('/cart')} className="nav-link">
-                🛒 Cart
-              </button>
-              <button onClick={() => navOrLogin('/orders')} className="nav-link">
-                📦 Orders
-              </button>
               {artistProfile && (
-                <Link to={`/artist-profile?id=${artistProfile.id}`} className="nav-link">
-                  👤 <br />My Profile
+                <Link
+                  to={`/artist-profile?id=${artistProfile.id}`}
+                  className="nav-link flex items-center gap-2"
+                >
+                  <User size={18} />
+                  My Profile
                 </Link>
               )}
+
               {!artistProfile && (
-                <button onClick={() => navOrLogin('/register')} className="nav-link">
-                  ✨ Become Artist
+                <button onClick={() => navOrLogin('/register')} className="nav-link flex items-center gap-2">
+                  <Sparkles size={18} />
+                  Become Artist
                 </button>
               )}
+              <button
+                onClick={handleAboutUsClick}
+
+                className="nav-link flex items-center gap-2"
+              >
+                About Us
+              </button>
+
             </>
           )}
+
           {isAdmin && (
             <div className="relative" ref={adminMenuRef}>
               <button
                 onClick={handleAdminDashboard}
-                className="w-full text-left px-3 py-2 nav-link rounded-lg"
+                className="w-full text-left px-3 py-2 nav-link rounded-lg flex items-center gap-2"
               >
-                ⚙️📊 Admin Dashboard
+                <LayoutDashboard size={18} />
+                Admin Dashboard
               </button>
             </div>
           )}
-          <button
-            onClick={handleAboutUsClick}
 
-            className="px-4 py-2 rounded-2xl text-gray-700 hover:text-white hover:bg-gray-700 transition-colors duration-300 shadow-sm"
-          >
-            About Us
-          </button>
+
 
         </div>
 
         {/* Right: User icon and text, flush to right */}
         <div className="flex items-center flex-shrink-0 justify-end">
-          <div className="flex items-center gap-3">
+          {/* Cart + Orders → only on Laptop/Desktop */}
+          <div className="hidden md:flex items-center">
+            <button onClick={() => navOrLogin('/cart')} className="nav-link flex items-center gap-2">
+              <ShoppingCart size={24} />
+            </button>
+
+            <button onClick={() => navOrLogin('/orders')} className="nav-link flex items-center gap-2">
+              <PackageCheck size={24} />
+            </button>
+          </div>
+          <div className="flex items-center gap-4 md:gap-6 pl-4">
+
             {user ? (
               <div className="relative" ref={profileMenuRef}>
+
                 {/* Profile Button */}
                 <button
                   onClick={() => setProfileMenuOpen(prev => !prev)}
-                  className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                  className="flex items-center justify-center w-10 h-10
+                   rounded-full bg-white/70 backdrop-blur-md 
+                   border border-purple-300 shadow-md 
+                   hover:shadow-lg hover:scale-105 transition-all"
                   aria-label="User profile menu"
                 >
-                  <img
-                    src="/images/user_profile.png"
-                    alt="Profile Icon"
-                    className="w-9 h-9 rounded-full border-2 border-purple-300 shadow-sm hover:scale-105 transition-transform"
-                  />
+                  <UserRound size={22} className="text-purple-600" />
                 </button>
 
                 {/* Dropdown Menu */}
                 {profileMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white rounded-xl shadow-lg border border-gray-200 z-50 overflow-hidden animate-fadeIn">
-                    <div className="px-4 py-3 text-sm border-b border-gray-100">
-                      <p className="text-gray-500">Signed in as</p>
-                      <p className="font-semibold text-gray-900 break-words">
-                        {user.email}
-                      </p>
+                  <div
+                    className="absolute right-0 mt-3 w-60 bg-white/80 backdrop-blur-2xl
+             rounded-2xl shadow-2xl border border-white/40 
+             z-50 overflow-hidden animate-fadeIn"
+                  >
+                    {/* Header Section */}
+                    <div className="px-4 py-4 text-sm border-b border-gray-200/60">
+                      <p className="text-gray-500 text-xs">Signed in as</p>
+
+                      <div className="flex items-center gap-2 mt-1 text-gray-900 break-words leading-snug">
+                        <Mail size={16} className="text-purple-600" />
+                        <span className="font-semibold">{user.email}</span>
+                      </div>
                     </div>
+
+                    {/* Reset Password */}
                     <button
                       onClick={() => navigate("/update-password")}
-                      className="w-full px-4 py-3 text-left text-sm font-medium text-blue-600 hover:bg-blue-50 transition"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm 
+               font-medium text-blue-600 hover:bg-blue-50/70 
+               transition-all duration-150"
                     >
+                      <KeyRound size={18} className="text-blue-600" />
                       Reset Password
                     </button>
+
+                    {/* Logout */}
                     <button
                       onClick={handleLogout}
-                      className="w-full px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm 
+               font-medium text-red-600 hover:bg-red-50/70 
+               transition-all duration-150"
                     >
+                      <LogOut size={18} className="text-red-600" />
                       Logout
                     </button>
                   </div>
+
                 )}
+
               </div>
             ) : (
-              <div className="hidden md:flex items-center gap-3 relative">
-                {/* Login Dropdown */}
-                <div className="relative">
-                  <button
-                    onClick={() => navigate("/user-login")}
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 shadow transition"
-                    type="button"
-                  >
-                    Login
-                  </button>
-
-                </div>
-                <Link
-                  to="/signup"
-                  className="px-5 py-2 rounded-lg border border-purple-300 text-purple-700 font-medium hover:bg-purple-50 transition"
+              <div className="hidden md:flex items-center gap-3">
+                <button
+                  onClick={() => navigate("/user-login")}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg 
+                   bg-purple-600 text-white font-medium 
+                   hover:bg-purple-700 shadow transition-all"
                 >
-                  Sign Up
-                </Link>
+                  Login
+                </button>
               </div>
             )}
 
@@ -285,163 +339,181 @@ function TopPanel({ footerOpen, setFooterOpen }) {
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Toggle menu"
             >
-              {/* Hamburger icon */}
-              <div className="w-6 h-6 flex flex-col justify-center space-y-1">
-                <span
-                  className={`block h-0.5 w-6 bg-gray-700 transition-transform ${menuOpen ? "rotate-45 translate-y-1" : ""
-                    }`}
-                ></span>
-                <span
-                  className={`block h-0.5 w-6 bg-gray-700 transition-opacity ${menuOpen ? "opacity-0" : ""
-                    }`}
-                ></span>
-                <span
-                  className={`block h-0.5 w-6 bg-gray-700 transition-transform ${menuOpen ? "-rotate-45 -translate-y-1" : ""
-                    }`}
-                ></span>
-              </div>
+              {menuOpen ? (
+                <X size={26} className="text-gray-700" />
+              ) : (
+                <Menu size={26} className="text-gray-700" />
+              )}
             </button>
+
           </div>
+
         </div>
 
       </nav>
-                       
+
       {/* Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-gray-100 shadow-lg">
           <div className="menu-container">
             <nav className="glass-menu">
               <ul className="menu-list">
+
+                {/* Login & Signup (when no user) */}
                 {!user && (
                   <>
                     <li>
                       <button
-                        className="menu-item"
+                        className="menu-item flex items-center justify-center gap-2 w-full text-center"
                         onClick={() => {
                           setMenuOpen(false);
                           navigate('/user-login');
                         }}
                       >
+                        <User size={18} />
                         Login
                       </button>
                     </li>
+
                     <li>
                       <button
-                        className="menu-item"
+                        className="menu-item flex items-center justify-center gap-2 w-full text-center"
                         onClick={() => {
                           setMenuOpen(false);
                           navigate('/signup');
                         }}
                       >
+                        <Sparkles size={18} />
                         Sign Up
                       </button>
                     </li>
                   </>
                 )}
+
+                {/* Explore */}
                 <li>
                   <button
-                    className="menu-item"
+                    className="menu-item flex items-center justify-center gap-2 w-full text-center"
                     onClick={() => {
                       setMenuOpen(false);
                       navOrLogin('/feed');
                     }}
                   >
-                    Explore Arts
+                    <ImageIcon size={18} />
+                    Explore
                   </button>
                 </li>
+
+                {/* Home */}
                 <li>
                   <button
-                    className="menu-item"
+                    className="menu-item flex items-center justify-center gap-2 w-full text-center"
                     onClick={() => {
                       setMenuOpen(false);
                       navigate('/main-dashboard');
                     }}
                   >
-                    🏠 Home
+                    <Home size={18} />
+                    Home
                   </button>
                 </li>
+
+                {/* Artists */}
                 <li>
                   <button
-                    className="menu-item"
+                    className="menu-item flex items-center justify-center gap-2 w-full text-center"
                     onClick={() => {
                       setMenuOpen(false);
                       navigate('/artist-list');
                     }}
                   >
-                    👨‍🎨 Artists
+                    <Users size={18} />
+                    Artists
                   </button>
                 </li>
 
+                {/* User-Only Items */}
                 {!isAdmin && (
                   <>
+                    {/* Cart */}
                     <li>
                       <button
-                        className="menu-item"
+                        className="menu-item flex items-center justify-center gap-2 w-full text-center"
                         onClick={() => {
                           setMenuOpen(false);
                           navOrLogin('/cart');
                         }}
                       >
-                        🛒 Cart
+                        <ShoppingCart size={18} />
+                        Cart
                       </button>
                     </li>
+
+                    {/* Orders */}
                     <li>
                       <button
-                        className="menu-item"
+                        className="menu-item flex items-center justify-center gap-2 w-full text-center"
                         onClick={() => {
                           setMenuOpen(false);
                           navOrLogin('/orders');
                         }}
                       >
-                        📦 Orders
+                        <Package size={18} />
+                        Orders
                       </button>
                     </li>
 
+                    {/* My Profile */}
                     {artistProfile ? (
                       <li>
                         <button
-                          className="menu-item"
+                          className="menu-item flex items-center justify-center gap-2 w-full text-center"
                           onClick={() => {
                             setMenuOpen(false);
                             navigate(`/artist-profile?id=${artistProfile.id}`);
                           }}
                         >
-                          👤 My Profile
+                          <User size={18} />
+                          My Profile
                         </button>
                       </li>
                     ) : (
                       <li>
                         <button
-                          className="menu-item"
+                          className="menu-item flex items-center justify-center gap-2 w-full text-center"
                           onClick={() => {
                             setMenuOpen(false);
                             navOrLogin('/register');
                           }}
                         >
-                          ✨ Become Artist
+                          <Sparkles size={18} />
+                          Become Artist
                         </button>
                       </li>
                     )}
                   </>
                 )}
 
+                {/* Admin */}
                 {isAdmin && (
                   <li>
                     <button
-                      className="menu-item"
+                      className="menu-item flex items-center justify-center gap-2 w-full text-center"
                       onClick={() => {
                         setMenuOpen(false);
                         handleAdminDashboard();
                       }}
                     >
-                      ⚙️ Admin Dashboard
+                      <LayoutDashboard size={18} />
+                      Admin Dashboard
                     </button>
                   </li>
                 )}
 
+                {/* About */}
                 <li className="full-width">
                   <button
-                    className="menu-item full-width"
+                    className="menu-item flex items-center justify-center gap-2 w-full text-center"
                     onClick={() => {
                       setMenuOpen(false);
                       handleAboutUsClick();
@@ -450,31 +522,41 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                     About Us
                   </button>
                 </li>
+
               </ul>
             </nav>
           </div>
         </div>
       )}
 
+      {showLoginToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 
+                  bg-white/90 backdrop-blur-xl 
+                  border border-purple-200 shadow-lg
+                  rounded-xl px-4 py-3 z-50 w-[90%] max-w-md
+                  flex items-center justify-between gap-3 animate-toastSlideDown">
 
-      {/* Login Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-sm mx-auto">
-            <h2 className="text-lg font-bold mb-4">Please Login</h2>
-            <p className="mb-6">Login to use this feature.</p>
-            <button
-              className="bg-blue-600 text-white px-4 py-2 rounded"
-              onClick={() => {
-                setShowLoginModal(false);
-                navigate('/main-dashboard'); // redirect on modal close
-              }}
-            >
-              Close
-            </button>
+          {/* Left side: Icon + Text */}
+          <div className="flex items-center gap-3">
+            <Info size={20} className="text-purple-600" />
+
+            <p className="text-gray-800 text-sm font-medium">
+              Please log in to use this feature.
+            </p>
           </div>
+
+          {/* Login Button */}
+          <button
+            onClick={() => navigate('/user-login')}
+            className="px-3 py-1.5 rounded-lg text-white text-xs font-semibold 
+                 bg-gradient-to-r from-purple-500 to-pink-500
+                 hover:scale-[1.05] transition-all shadow"
+          >
+            Login
+          </button>
         </div>
       )}
+
     </header>
   );
 

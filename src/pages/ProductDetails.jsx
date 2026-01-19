@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { Heart } from "lucide-react";
+
 
 function StarRating({ value }) {
   const full = Math.floor(value || 0);
@@ -372,18 +374,22 @@ export default function ProductDetails() {
                 style={{ width: 40, height: 40 }}
                 disabled={!user} // Disable if no user is logged in
               >
-                <svg
-                  width="30"
-                  height="30"
-                  viewBox="0 0 24 24"
-                  fill={isLiked ? 'red' : 'none'}
-                  stroke={isLiked ? 'red' : '#a1a1aa'}
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
-                </svg>
+                <Heart
+                  size={40}
+                  fill={isLiked ? "red" : "none"}
+                  stroke={isLiked ? "red" : "#a1a1aa"}
+                  strokeWidth={1.5}
+                  style={{
+                    transition: "fill 0.2s, stroke 0.2s",
+                    background: "transparent",
+                    border: "none",
+                    borderRadius: 0,
+                    boxShadow: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => setIsLiked(!isLiked)}
+                />
+
                 <span className="ml-1 text-sm font-medium">
                   {artwork.liked_count ?? 0}
                 </span>

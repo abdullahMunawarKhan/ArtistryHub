@@ -14,7 +14,18 @@ import {
   CheckCircleIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
-
+import {
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  GraduationCap,
+  FileText,
+  Image as ImageIcon,
+  IdCard,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 const proofOptions = [
   { value: 'PAN', label: 'PAN Card' },
   { value: 'Aadhar', label: 'Aadhar Card' },
@@ -329,53 +340,54 @@ export default function Register() {
 
   return (
     <div className="min-h-[90vh] bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10">
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gradient-primary mb-2">
-            {isEdit ? '✏️ Edit Artist Profile' : '🎨 Artist Registration'}
+        <div className="text-center mb-6 sm:mb-10">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 text-transparent bg-clip-text mb-2">
+            {isEdit ? "Edit Profile" : "Artist Registration"}
           </h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
             {isEdit
-              ? 'Update your artist profile information and documents'
-              : 'Join our community of talented artists and showcase your work to the world'
-            }
+              ? "Update your information"
+              : "Join our community of artists & showcase your creativity to the world."}
           </p>
         </div>
 
         {/* Registration Form */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg p-5 sm:p-8 border border-gray-100">
             <form onSubmit={handleSubmit} noValidate className="space-y-8">
 
-              {/* Personal Information */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                  <UserIcon className="w-5 h-5" />
+              {/* PERSONAL INFO */}
+              <section>
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
+                  <User size={18} />
                   Personal Information
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <FormField
                     label="Full Name"
                     name="name"
                     value={form.name}
                     onChange={handleChange}
-                    icon={UserIcon}
+                    icon={User}
                     placeholder="Enter your full name"
                     required
                   />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+                  {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
 
                   <FormField
                     label="Mobile Number"
                     name="mobile"
                     value={form.mobile}
                     onChange={handleChange}
-                    icon={PhoneIcon}
+                    icon={Phone}
                     placeholder="Enter 10-digit mobile number"
                     required
                   />
-                  {errors.mobile && <p className="text-red-500 text-sm mt-1">{errors.mobile}</p>}
+                  {errors.mobile && <p className="text-red-500 text-xs">{errors.mobile}</p>}
 
                   <FormField
                     label="Email Address"
@@ -383,197 +395,184 @@ export default function Register() {
                     type="email"
                     value={form.email}
                     onChange={handleChange}
-                    icon={EnvelopeIcon}
-                    placeholder="Enter your email address"
+                    icon={Mail}
+                    placeholder="Enter your email"
                     required
                   />
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
 
                   <FormField
                     label="Location"
                     name="location"
                     value={form.location}
                     onChange={handleChange}
-                    icon={MapPinIcon}
+                    icon={MapPin}
                     placeholder="City, State"
                     required
                   />
-                  {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+                  {errors.location && <p className="text-red-500 text-xs">{errors.location}</p>}
                 </div>
-              </div>
+              </section>
 
-              {/* Professional Information */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                  <AcademicCapIcon className="w-5 h-5" />
+              {/* PROFESSIONAL INFO */}
+              <section>
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
+                  <GraduationCap size={18} />
                   Professional Information
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <FormField
                     label="Qualification"
                     name="qualification"
                     value={form.qualification}
                     onChange={handleChange}
-                    icon={AcademicCapIcon}
+                    icon={GraduationCap}
                     placeholder="e.g., Bachelor of Fine Arts"
-
                   />
-                  {errors.qualification && <p className="text-red-500 text-sm mt-1">{errors.qualification}</p>}
+                  {errors.qualification && <p className="text-red-500 text-xs">{errors.qualification}</p>}
 
                   <FormField
                     label="ID Proof Type"
                     name="id_proof_type"
                     value={form.id_proof_type}
                     onChange={handleChange}
-                    icon={IdentificationIcon}
+                    icon={IdCard}
                     options={proofOptions}
                     required
                   />
                 </div>
-              </div>
+              </section>
 
-              {/* Document Uploads */}
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center gap-2">
-                  <DocumentIcon className="w-5 h-5" />
+              {/* DOCUMENT UPLOADS */}
+              <section>
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
+                  <FileText size={18} />
                   Document Uploads
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <FileUpload
-                      label="Profile Image"
-                      accept="image/*"
-                      onChange={(e) => handleFile(e, setProfileImage, setProfilePreview)}
-                      preview={profilePreview}
-                      icon={PhotoIcon}
-                      required={!isEdit}
-                      description="Upload a clear photo of yourself (JPG, PNG)"
-                    />
-                    {errors.profileImage && <p className="text-red-500 text-sm mt-1">{errors.profileImage}</p>}
-                  </div>
 
-                  <div>
-                    <FileUpload
-                      label={`${form.id_proof_type} Document`}
-                      accept=".png,.jpg,.jpeg,.pdf"
-                      onChange={(e) => handleFile(e, setIdFile, setIdPreview)}
-                      preview={idPreview}
-                      icon={IdentificationIcon}
-                      required={!isEdit}
-                      description="Upload your ID proof document (JPG, PNG, PDF)"
-                    />
-                    {errors.idFile && <p className="text-red-500 text-sm mt-1">{errors.idFile}</p>}
-                  </div>
-                  <div>
-                    <FileUpload
-                      label="Payment QR Code"
-                      accept="image/*"
-                      onChange={(e) => handleFile(e, setQrCodeFile, setQrCodePreview)}
-                      preview={qrCodePreview}
-                      icon={PhotoIcon}
-                      required={!isEdit}  // optionally required if new registration
-                      description="Upload your payment QR code image (JPG, PNG)"
-                    />
-                    {errors.qrCodeFile && <p className="text-red-500 text-sm mt-1">{errors.qrCodeFile}</p>}
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <FileUpload
+                    label="Profile Image"
+                    accept="image/*"
+                    onChange={(e) => handleFile(e, setProfileImage, setProfilePreview)}
+                    preview={profilePreview}
+                    icon={ImageIcon}
+                    required={!isEdit}
+                    description="Upload a clear profile photo"
+                  />
+                  {errors.profileImage && <p className="text-red-500 text-xs">{errors.profileImage}</p>}
 
+                  <FileUpload
+                    label={`${form.id_proof_type} Document`}
+                    accept=".png,.jpg,.jpeg,.pdf"
+                    onChange={(e) => handleFile(e, setIdFile, setIdPreview)}
+                    preview={idPreview}
+                    icon={IdCard}
+                    required={!isEdit}
+                    description="Upload your ID proof document"
+                  />
+                  {errors.idFile && <p className="text-red-500 text-xs">{errors.idFile}</p>}
+
+                  <FileUpload
+                    label="Payment QR Code"
+                    accept="image/*"
+                    onChange={(e) => handleFile(e, setQrCodeFile, setQrCodePreview)}
+                    preview={qrCodePreview}
+                    icon={ImageIcon}
+                    required={!isEdit}
+                    description="Upload payment QR code"
+                  />
+                  {errors.qrCodeFile && <p className="text-red-500 text-xs">{errors.qrCodeFile}</p>}
                 </div>
-              </div>
+              </section>
 
-              {/* Submit Button */}
-              <div className="flex justify-center pt-6">
+              {/* SUBMIT BUTTON */}
+              <div className="flex justify-center pt-4">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl text-sm sm:text-base hover:opacity-90 transition shadow-md flex items-center gap-2 disabled:opacity-50"
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-full"></div>
                       Processing...
                     </>
                   ) : (
                     <>
-                      <CheckCircleIcon className="w-5 h-5" />
-                      {isEdit ? 'Update Profile' : 'Submit Registration'}
+                      <CheckCircle2 size={18} />
+                      {isEdit ? "Update Profile" : "Submit Registration"}
                     </>
                   )}
                 </button>
               </div>
+
             </form>
           </div>
         </div>
       </div>
 
-      {/* Terms Modal */}
+      {/* TERMS MODAL */}
       {showTerms && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-lg">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-xl">
+
             {/* Header */}
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold text-gray-800">Terms & Conditions</h2>
-                <button
-                  onClick={() => setShowTerms(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
+            <div className="p-4 border-b flex justify-between">
+              <h2 className="text-xl font-semibold">Terms & Conditions</h2>
+              <button onClick={() => setShowTerms(false)}>
+                <X size={20} className="text-gray-500 hover:text-gray-700" />
+              </button>
             </div>
 
-            {/* Scrollable Terms Content */}
-            <div className="p-6 overflow-y-auto flex-1">
-              <pre className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">
-                {TERMS_TEXT}
-              </pre>
+            {/* Content */}
+            <div className="p-4 overflow-y-auto text-sm leading-relaxed text-gray-700">
+              <pre className="whitespace-pre-wrap">{TERMS_TEXT}</pre>
             </div>
 
-            {/* Actions Footer */}
-            <div className="p-6 border-t bg-gray-50">
-              <div className="flex items-center mb-4">
+            {/* Footer */}
+            <div className="p-4 border-t bg-gray-50 space-y-3">
+              <label className="flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={(e) => setTermsAccepted(e.target.checked)}
-                  id="terms"
-                  className="mr-3 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                  className="w-4 h-4 text-purple-600"
                 />
-                <label htmlFor="terms" className="text-sm text-gray-700 font-medium">
-                  I have read and accept the terms and conditions
-                </label>
-              </div>
+                I accept the terms and conditions
+              </label>
 
-              <div className="flex justify-end space-x-3">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowTerms(false)}
-                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-5 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmSubmit}
                   disabled={!termsAccepted || loading}
-                  className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
                 >
                   {loading ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-full"></div>
                       Submitting...
                     </>
                   ) : (
                     <>
-                      <CheckCircleIcon className="w-4 h-4" />
+                      <CheckCircle2 size={18} />
                       Confirm Registration
                     </>
                   )}
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}
-
     </div>
   );
 }

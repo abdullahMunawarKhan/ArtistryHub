@@ -28,6 +28,22 @@
   }
 }
 
+@keyframes toastSlideDown {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.animate-toastSlideDown {
+  animation: toastSlideDown 0.4s ease-out;
+}
+
 @keyframes slideInUp {
   from {
     transform: translateY(20px);

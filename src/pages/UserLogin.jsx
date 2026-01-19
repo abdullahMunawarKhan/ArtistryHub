@@ -233,7 +233,9 @@ function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-3 sm:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 
+                flex items-start justify-center 
+                pt-10 sm:pt-10 px-3 sm:px-6">
       {/* Mobile-optimized container */}
       <div className="w-full max-w-xs sm:max-w-md">
         {/* Main card - enhanced mobile styling */}
@@ -277,8 +279,8 @@ function UserLogin() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorEmail
-                    ? 'border-red-300 bg-red-50 focus:border-red-400'
-                    : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
+                  ? 'border-red-300 bg-red-50 focus:border-red-400'
+                  : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
                   }`}
                 placeholder="you@example.com"
                 autoComplete="email"
@@ -305,8 +307,8 @@ function UserLogin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorPassword
-                      ? 'border-red-300 bg-red-50 focus:border-red-400'
-                      : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
+                    ? 'border-red-300 bg-red-50 focus:border-red-400'
+                    : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
                     }`}
                   placeholder="••••••••"
                   autoComplete="current-password"
@@ -361,23 +363,42 @@ function UserLogin() {
               )}
             </button>
 
-            {/* Footer links */}
-            <div className="flex flex-col space-y-2 sm:flex-row sm:justify-between sm:space-y-0 pt-2 sm:pt-4">
+            {/* Footer Links */}
+            <div className="w-full flex flex-col items-center justify-center gap-3 pt-6">
+
+              {/* Forgot Password */}
               <button
                 type="button"
                 onClick={() => setShowForgotModal(!showForgotModal)}
-                className="text-xs sm:text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors text-center sm:text-left"
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition"
               >
                 Forgot Password?
               </button>
+
               <button
                 type="button"
                 onClick={() => navigate('/signup')}
-                className="text-xs sm:text-sm text-purple-600 hover:text-purple-800 font-medium transition-colors text-center sm:text-right"
+                className="flex flex-col items-center leading-tight transition-all duration-300"
               >
-                Create Account
+                <p className="text-xs sm:text-sm text-gray-600">
+                  New to ScopeBrush?
+                </p>
+
+                <span
+                  className="underline mt-1 text-base tracking-wide font-semibold
+               bg-gradient-to-r from-purple-500 to-pink-500 
+               bg-clip-text text-transparent 
+               hover:from-purple-600 hover:to-pink-600"
+                >
+                  Create Account
+                </span>
               </button>
+
+
+
             </div>
+
+
 
             {/* Forgot password section */}
             {showForgotModal && (

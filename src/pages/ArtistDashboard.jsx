@@ -645,7 +645,7 @@ function ArtistDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">
+    <div className="min-h-screen bg-gray-50 pt-0">
       <div className="flex flex-col md:flex-row">
         {/* LEFT SIDEBAR - 25% width */}
         <div className="w-full md:w-1/4 bg-white shadow-md">

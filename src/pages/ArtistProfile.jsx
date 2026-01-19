@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+import { Pencil, Share2, } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 // import { HashRouter as Router } from "react-router-dom";
 // instead of BrowserRouter
@@ -111,18 +113,20 @@ function ArtistProfileShare({ artistId }) {
     <>
       <button
         onClick={handleShare}
-        className="flex items-center gap-2 px-5 py-2 rounded-full bg-blue-500 hover:bg-blue-600 text-white font-semibold shadow transition text-sm sm:text-base"
+        className="
+    flex items-center gap-1.5 
+    px-4 py-1.5 
+    rounded-full 
+    bg-blue-500 hover:bg-blue-600 
+    text-white 
+    font-medium 
+    shadow-sm 
+    transition 
+    text-xs sm:text-sm
+  "
         aria-label="Share Profile"
       >
-        {/* Heroicon: Arrow turn-up-right (looks like classic Share arrow) */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="currentColor"
-          viewBox="0 0 20 20"
-          className="w-5 h-5"
-        >
-          <path d="M15.707 5.293a1 1 0 0 0-1.414 0L10 9.586V7a1 1 0 1 0-2 0v6a1 1 0 0 0 1 1h6a1 1 0 1 0 0-2h-2.586l4.293-4.293a1 1 0 0 0 0-1.414z" />
-        </svg>
+        <Share2 className="w-3.5 h-3.5" />
         <span>Share</span>
       </button>
 
@@ -484,140 +488,140 @@ export default function ArtistProfile() {
   return (
     <div className="flex flex-col md:flex-row gap-6 w-full p-6">
       {/* ARTIST CARD: Top on mobile, LEFT on desktop (25% width) - MOVED TO FIRST POSITION */}
-      <div className="relative w-full md:w-1/4 bg-white rounded-2xl shadow-md p-5 flex flex-col h-fit mb-4 transition-all duration-300 hover:shadow-xl">
-        {/* Top row: Share + Edit */}
+      {/* ARTIST CARD */}
+      <div
+        className="
+    relative w-full md:w-1/4 
+    bg-white rounded-2xl shadow-md 
+    p-4 md:p-5 
+    flex flex-col 
+    h-fit mb-4 transition-all duration-300 hover:shadow-xl
+  "
+      >
+
+        {/* TOP ROW — Share + Edit (same on all screens) */}
         <div className="flex items-center justify-between mb-3">
           <ArtistProfileShare artistId={artist.id} />
           {isOwner && (
             <button
               onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}
-              className="px-3 py-1 bg-blue-600 hover:bg-blue-700 transition text-white rounded text-xs font-medium"
-              aria-label="Edit Profile"
+              className="
+          flex items-center gap-2
+          px-3 py-1.5 
+          bg-blue-600 hover:bg-blue-700
+          text-white rounded-full text-xs
+          transition-all duration-200 shadow-md
+        "
             >
+              <Pencil className="w-3.5 h-3.5" />
               Edit
             </button>
           )}
         </div>
 
-        {/* Profile image */}
-        <img
-          src={artist.profile_image_url}
-          alt={artist.name}
-          className="w-24 h-24 rounded-full object-cover mx-auto mb-3 border-4 border-blue-500 shadow-md"
-          loading="lazy"
-        />
 
-        {/* Rating */}
-        <div className="text-center mb-3">
-          <StarRating value={averageRating} />
-          <p className="text-xs text-gray-500">
-            {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
-          </p>
+        {/* MOBILE HORIZONTAL ROW: IMAGE LEFT + NAME + RATING */}
+        <div className="flex md:hidden items-center gap-4 mb-1">
+          <img
+            src={artist.profile_image_url}
+            alt={artist.name}
+            className="w-20 h-20 rounded-full object-cover border-4 border-blue-500 shadow-sm"
+          />
+
+          <div className="flex flex-col">
+            <h2 className="text-base font-semibold text-gray-900">{artist.name}</h2>
+
+            {/* Rating (keep with name) */}
+            <div className="mt-1">
+              <StarRating value={averageRating} />
+              <p className="text-xs text-gray-500">
+                {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
+              </p>
+            </div>
+          </div>
         </div>
 
-        {/* Info */}
-        <h2 className="text-lg font-semibold text-center text-gray-900">{artist.name}</h2>
-        <p className="text-xs text-gray-600 text-center mb-3">{artist.location}</p>
+        <div className="md:hidden mb-3 flex items-center gap-1 mt-1">
+          <MapPin className="w-3 h-3 text-indigo-600" />
+          <span className="text-xs text-gray-600 leading-none inline-block">
+            {artist.location}
+          </span>
+        </div>
 
+        {/* DESKTOP — keep your original vertical layout */}
+        <div className="hidden md:flex flex-col items-center">
+          <img
+            src={artist.profile_image_url}
+            alt={artist.name}
+            className="w-24 h-24 rounded-full object-cover border-4 border-blue-500 shadow-md mb-2"
+          />
+
+          <StarRating value={averageRating} />
+          <p className="text-xs text-gray-500 mb-2">
+            {averageRating > 0 ? `${averageRating.toFixed(2)} / 5` : "No ratings yet"}
+          </p>
+
+          <h2 className="text-lg font-semibold text-gray-900">{artist.name}</h2>
+          <div className="md:hidden mb-3 pl-1 flex items-center gap-1">
+            <MapPin className="w-4 h-4 text-indigo-600" />
+            <p className="text-xs text-gray-600">{artist.location}</p>
+          </div>
+        </div>
+
+        {/* CONTACT INFO (same on all screens) */}
         {(isOwner || userRole === "efbv") && (
-          <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm mx-auto w-full mb-3">
-            <div className="flex justify-between text-sm text-gray-800">
-              <span className="font-semibold text-xs text-gray-600">Mobile:</span>
+          <div className="bg-gray-50 rounded-lg p-2 border border-gray-200 shadow-sm mb-3">
+            <div className="flex justify-between text-xs text-gray-800">
+              <span className="font-semibold text-gray-600">Mobile:</span>
               <span className="truncate">{artist.mobile}</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-800 mt-1">
-              <span className="font-semibold text-xs text-gray-600">Email:</span>
+            <div className="flex justify-between text-xs text-gray-800 mt-1">
+              <span className="font-semibold text-gray-600">Email:</span>
               <span className="truncate">{artist.email}</span>
             </div>
           </div>
         )}
 
-        {/* Follow + Followers Row */}
-        <div className="flex justify-between items-center gap-3 mt-auto pt-3 border-t border-gray-100">
-          {/* Follow Button */}
+        {/* FOLLOW + FOLLOWERS */}
+        <div className="flex justify-between items-center gap-3 mt-1 pt-2 border-t border-gray-100">
+
           <button
-            className={`flex-1 px-4 py-2 text-sm font-semibold rounded-lg shadow transition-all duration-200 flex items-center justify-center gap-2 ${followingIds.includes(artist.id)
-                ? 'bg-green-600 text-white hover:bg-red-600 hover:shadow-lg'
-                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-lg'
-              } disabled:opacity-60 disabled:cursor-not-allowed`}
+            className={`flex-1 px-4 py-2 text-xs md:text-sm font-semibold rounded-lg shadow-sm transition-all duration-200 flex items-center justify-center gap-2 ${followingIds.includes(artist.id)
+              ? "bg-green-600 text-white hover:bg-red-600"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
             onClick={(e) => {
-              e.stopPropagation();
-              handleFollowToggle(artist.id);
-            }}
-            onDoubleClick={(e) => {
               e.stopPropagation();
               handleFollowToggle(artist.id);
             }}
             disabled={followLoading[artist.id]}
           >
-            {followLoading[artist.id] ? (
-              <div className="w-4 h-4 border-2 border-transparent border-t-current rounded-full animate-spin"></div>
-            ) : followingIds.includes(artist.id) ? (
-              <>
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span>Following</span>
-              </>
-            ) : (
-              <>
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                <span>Follow</span>
-              </>
-            )}
+            {followingIds.includes(artist.id) ? "Following" : "Follow"}
           </button>
 
-          {/* Followers Count */}
-          <div className="flex-1 px-4 py-2 text-sm font-medium text-center bg-gray-50 border border-gray-300 rounded-lg text-gray-700 shadow-sm">
+          <div className="flex-1 px-4 py-2 text-xs md:text-sm font-medium bg-gray-50 border border-gray-300 rounded-lg text-center">
             {artist.followers || 0} followers
           </div>
         </div>
 
-        {/* Reviews */}
-        <div className="mt-4 border-t border-gray-200 pt-3">
-          <h3 className="font-semibold text-gray-900 mb-2 text-sm">Reviews</h3>
+        {/* REVIEWS */}
+        <div className="mt-3 border-t border-gray-200 pt-2">
+          <h3 className="font-semibold text-gray-900 mb-1 text-sm">Reviews</h3>
           {reviews.length === 0 ? (
             <p className="text-xs text-gray-500 italic">No reviews yet.</p>
           ) : (
             <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
               {reviews.map((rev, i) => (
-                <div
-                  key={i}
-                  className="border rounded-md p-2 text-xs bg-white shadow-sm"
-                >
+                <div key={i} className="border rounded-md p-2 text-xs bg-white shadow-sm">
                   <StarRating value={rev.rating} />
-                  <p className="mt-1 text-gray-700">
-                    {Array.isArray(rev.review)
-                      ? rev.review.join(", ")
-                      : rev.review}
-                  </p>
-                  {isOwner && rev.email && (
-                    <p className="text-[10px] text-gray-400 mt-1 italic">
-                      By: {rev.email}
-                    </p>
-                  )}
+                  <p className="mt-1 text-gray-700">{rev.review}</p>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
 
 
 

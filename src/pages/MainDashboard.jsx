@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
+import { Heart } from "lucide-react";
 
 function StarRating({ value }) {
   const fullStars = Math.floor(value);
@@ -80,7 +81,7 @@ function MainDashboard() {
   const [visibleCount, setVisibleCount] = useState(20);
   const [isFetching, setIsFetching] = useState(false);
   const [showGoTop, setShowGoTop] = useState(false);
-
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
 
   // Function to filter artworks by liked status (true to show liked only, false to show all)
@@ -400,6 +401,9 @@ function MainDashboard() {
   function scrollToTop() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+
+
   if (loadingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -414,8 +418,8 @@ function MainDashboard() {
   return (
     <div className="min-h-[90vh] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 ">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto px-4 py-4">
-        <div className="flex flex-col items-center justify-center py-10 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50">
+      <div className="max-w-7xl mx-auto px-4 py-1">
+        <div className="flex flex-col items-center justify-center py-1 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50">
           <div className="flex items-center gap-4 mb-4 animate-fade-in">
             <img
               src="/images/logo2.jpeg"
@@ -426,6 +430,7 @@ function MainDashboard() {
             <h1 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-4xl md:text-6xl drop-shadow-lg">
               Art Gallery
             </h1>
+            
           </div>
           <p className="text-xl md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
             Discover amazing artworks from talented artists
@@ -565,25 +570,22 @@ function MainDashboard() {
                         justifyContent: 'center'
                       }}
                     >
-                      <svg
-                        width="40"
-                        height="40"
-                        viewBox="0 0 24 24"
-                        fill={isLiked ? 'red' : 'none'}
-                        stroke={isLiked ? 'red' : '#a1a1aa'}
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <Heart
+                        size={40}
+                        fill={isLiked ? "red" : "none"}
+                        stroke={isLiked ? "red" : "#a1a1aa"}
+                        strokeWidth={1.5}
                         style={{
-                          transition: 'fill 0.2s, stroke 0.2s',
-                          background: 'transparent',
-                          border: 'none',
+                          transition: "fill 0.2s, stroke 0.2s",
+                          background: "transparent",
+                          border: "none",
                           borderRadius: 0,
-                          boxShadow: 'none'
+                          boxShadow: "none",
+                          cursor: "pointer",
                         }}
-                      >
-                        <path d="M12 21s-1.45-1.34-6-5.71C2.42 13 2 10.36 4.24 8.61c2.27-1.76 5.23-.62 6.20 1.6.97-2.22 3.93-3.36 6.2-1.6C22 10.36 21.58 13 18 15.29c-4.55 4.37-6 5.71-6 5.71z" />
-                      </svg>
+                        onClick={() => isLiked(!isLiked)}
+                      />
+
                       <span>{artwork.liked_count ?? 0}</span>
                     </button>
                   </div>
@@ -594,7 +596,7 @@ function MainDashboard() {
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        navigate(`/artist-profile?id=${artwork.artist_id}`); 
+                        navigate(`/artist-profile?id=${artwork.artist_id}`);
                       }}
                       className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
                     >
@@ -720,6 +722,60 @@ function MainDashboard() {
             ↑
           </button>
         )}
+        {/* Login Modal */}
+        {showLoginModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+
+            <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 
+                    rounded-2xl p-8 w-[90%] max-w-sm animate-slideUp">
+
+              {/* Close Icon */}
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/main-dashboard');
+                }}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition"
+              >
+                ✖
+              </button>
+
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-gray-800 text-center mb-3">
+                Please Login
+              </h2>
+
+              {/* Subtitle */}
+              <p className="text-gray-600 text-center mb-6">
+                You need to log in to access this feature.
+              </p>
+
+              {/* Action Button */}
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/user-login');
+                }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500
+                   text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02]
+                   transition-all"
+              >
+                Go to Login
+              </button>
+
+              {/* Secondary button */}
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="mt-4 w-full py-3 rounded-xl border border-gray-300 
+                   text-gray-700 font-medium hover:bg-gray-100 transition"
+              >
+                Cancel
+              </button>
+
+            </div>
+          </div>
+        )}
+
       </div>
     </div >
   );
