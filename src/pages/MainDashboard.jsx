@@ -505,7 +505,15 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
 gap-y-4 gap-x-6 md:gap-8">
 
           {filteredArtworks.length === 0 && (
-            <div className="text-center py-8 md:py-16">
+            <div
+              className="
+      w-full
+      flex flex-col items-center justify-center text-center
+      py-8
+      md:py-32
+      md:min-h-[50vh]
+    "
+            >
               <div className="text-5xl md:text-6xl mb-3">🎨</div>
               <h3 className="text-lg md:text-xl font-semibold text-slate-700 mb-1">
                 No artworks found
@@ -513,11 +521,11 @@ gap-y-4 gap-x-6 md:gap-8">
               <p className="text-slate-500 text-sm md:text-base">
                 {selectedTag
                   ? `No artworks in "${selectedTag}" category yet.`
-                  : 'No artworks available at the moment.'
-                }
+                  : 'No artworks available at the moment.'}
               </p>
             </div>
           )}
+
           {visibleArtworks.map(artwork => {
             const firstImage = Array.isArray(artwork.image_urls)
               ? artwork.image_urls[0]
