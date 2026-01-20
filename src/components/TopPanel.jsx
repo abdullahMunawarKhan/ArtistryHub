@@ -232,7 +232,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 About Us
               </button>
               <a
-                href="/app/ScopeBrush-v1.1.1.apk"
+                href="https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.1.apk"
                 download
                 className="nav-link flex items-center gap-2"
               >
@@ -535,7 +535,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 {!Capacitor.isNativePlatform() && (
                   <li>
                     <a
-                      href="/app/ScopeBrush-v1.1.1.apk"
+                      href="https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.1.apk"
                       download
                       className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
                     >
