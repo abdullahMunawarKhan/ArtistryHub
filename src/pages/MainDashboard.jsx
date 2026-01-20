@@ -498,292 +498,283 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
         </div>
 
         <br />
-
-
-        {/* Artworks Grid with Infinite Scroll */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
-gap-y-4 gap-x-6 md:gap-8">
-
-          {filteredArtworks.length === 0 && (
-            <div
-              className="
+        {filteredArtworks.length === 0 ? (
+          // EMPTY STATE (Centered)
+          <div
+            className="
       w-full
       flex flex-col items-center justify-center text-center
-      py-8
-      md:py-32
-      md:min-h-[50vh]
+      py-16 md:py-32
+      min-h-[50vh]
     "
-            >
-              <div className="text-5xl md:text-6xl mb-3">🎨</div>
-              <h3 className="text-lg md:text-xl font-semibold text-slate-700 mb-1">
-                No artworks found
-              </h3>
-              <p className="text-slate-500 text-sm md:text-base">
-                {selectedTag
-                  ? `No artworks in "${selectedTag}" category yet.`
-                  : 'No artworks available at the moment.'}
-              </p>
-            </div>
-          )}
+          >
+            <div className="text-5xl md:text-6xl mb-3">🎨</div>
+            <h3 className="text-lg md:text-xl font-semibold text-slate-700 mb-1">
+              No artworks found
+            </h3>
+            <p className="text-slate-500 text-sm md:text-base">
+              {selectedTag
+                ? `No artworks in "${selectedTag}" category yet.`
+                : "No artworks available at the moment."}
+            </p>
+          </div>
+        ) : (
+          // GRID ONLY WHEN ARTWORKS EXIST
+          <div
+            className="
+      grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 
+      lg:grid-cols-3 xl:grid-cols-4 
+      gap-y-4 gap-x-6 md:gap-8
+    "
+          >
+            {visibleArtworks.map((artwork) => {
+              const firstImage = Array.isArray(artwork.image_urls)
+                ? artwork.image_urls[0]
+                : artwork.image_urls;
 
-          {visibleArtworks.map(artwork => {
-            const firstImage = Array.isArray(artwork.image_urls)
-              ? artwork.image_urls[0]
-              : artwork.image_urls;
-            const isInCart = cartItems && cartItems.includes ? cartItems.includes(artwork.id) : false;
-            const isLiked = likedArtworks && likedArtworks.includes ? likedArtworks.includes(artwork.id) : false;
+              const isInCart =
+                cartItems && cartItems.includes
+                  ? cartItems.includes(artwork.id)
+                  : false;
 
-            return (
-              <div key={artwork.id} className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
-                onClick={() => navigate(`/product?id=${artwork.id}`)}>
+              const isLiked =
+                likedArtworks && likedArtworks.includes
+                  ? likedArtworks.includes(artwork.id)
+                  : false;
 
-                {/* Artwork Image */}
-                <div className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative">
-                  {firstImage ? (
-                    <img
-                      src={firstImage}
-                      alt={artwork.title}
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <span className="text-6xl">🎨</span>
+              return (
+                <div
+                  key={artwork.id}
+                  className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
+                  onClick={() => navigate(`/product?id=${artwork.id}`)}
+                >
+                  {/* Artwork Image */}
+                  <div className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative">
+                    {firstImage ? (
+                      <img
+                        src={firstImage}
+                        alt={artwork.title}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                        <span className="text-6xl">🎨</span>
+                      </div>
+                    )}
+
+                    {/* Category Badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-gray-100 to-indigo-100 shadow-md text-gray-900 font-semibold backdrop-blur">
+                        {artwork.category}
+                      </span>
                     </div>
-                  )}
-
-                  {/* Category Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-gray-100 to-indigo-100 shadow-md text-gray-900 font-semibold backdrop-blur">
-                      {artwork.category}
-                    </span>
-
                   </div>
-                </div>
 
-                {/* Artwork Info */}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-lg text-slate-800 line-clamp-2">
-                      {artwork.title}
-                    </h3>
-                    {/* Like Button with heart */}
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        toggleLike(artwork);
-                      }}
-                      onDoubleClick={e => {
-                        e.stopPropagation();
-                        toggleLike(artwork);
-                      }}
-                      className="flex items-center justify-center transition-all duration-200 p-0 ml-2 hover:bg-transparent active:scale-95"
-                      aria-label="Like button"
-                      title={isLiked ? 'Unlike' : 'Like'}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        outline: 'none',
-                        boxShadow: 'none',
-                        width: 'auto',
-                        height: 'auto',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Heart
-                        size={40}
-                        fill={isLiked ? "red" : "none"}
-                        stroke={isLiked ? "red" : "#a1a1aa"}
-                        strokeWidth={1.5}
+                  {/* Artwork Info */}
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="font-bold text-lg text-slate-800 line-clamp-2">
+                        {artwork.title}
+                      </h3>
+
+                      {/* Like Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleLike(artwork);
+                        }}
+                        className="flex items-center justify-center transition-all duration-200 p-0 ml-2 hover:bg-transparent active:scale-95"
+                        aria-label="Like button"
+                        title={isLiked ? "Unlike" : "Like"}
                         style={{
-                          transition: "fill 0.2s, stroke 0.2s",
                           background: "transparent",
                           border: "none",
-                          borderRadius: 0,
+                          outline: "none",
                           boxShadow: "none",
-                          cursor: "pointer",
                         }}
-                        onClick={() => isLiked(!isLiked)}
-                      />
+                      >
+                        <Heart
+                          size={40}
+                          fill={isLiked ? "red" : "none"}
+                          stroke={isLiked ? "red" : "#a1a1aa"}
+                          strokeWidth={1.5}
+                          className="cursor-pointer"
+                        />
+                        <span>{artwork.liked_count ?? 0}</span>
+                      </button>
+                    </div>
 
-                      <span>{artwork.liked_count ?? 0}</span>
-                    </button>
-                  </div>
+                    {/* Artist Info */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm text-slate-500">by</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/artist-profile?id=${artwork.artist_id}`);
+                        }}
+                        className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
+                      >
+                        {artwork.artists?.name || "Unknown Artist"}
+                      </button>
+                    </div>
 
-                  {/* Artist Info */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm text-slate-500">by</span>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        navigate(`/artist-profile?id=${artwork.artist_id}`);
-                      }}
-                      className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
-                    >
-                      {artwork.artists?.name || 'Unknown Artist'}
-                    </button>
-                  </div>
+                    {/* Rating */}
+                    <div className="mb-4">
+                      <StarRating value={artwork.artists?.avg_rating ?? 0} />
+                    </div>
 
-                  {/* Star Rating */}
-                  <div className="mb-4">
-                    <StarRating value={artwork.artists?.avg_rating ?? 0} />
+                    {/* Price */}
+                    <div className="mb-4">
+                      <PriceDisplay cost={artwork.cost} />
+                    </div>
 
-                  </div>
+                    {/* Description */}
+                    {artwork.description && (
+                      <p className="text-sm text-slate-600 mb-4 line-clamp-3">
+                        {artwork.description}
+                      </p>
+                    )}
 
-                  {/* Price */}
-                  <div className="mb-4">
-                    {/* <span className="text-2xl font-bold text-gradient-primary">
-                      <span className="text-gray-500 text-base font-normal">M.R.P</span> - ₹{artwork.cost?.toLocaleString()}
-                    </span> */}
-                    <PriceDisplay cost={artwork.cost} />
-                  </div>
+                    {/* Buttons */}
+                    <div className="flex gap-2 items-center flex-wrap w-full py-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToCart(artwork);
+                        }}
+                        className={`flex-1 min-w-[110px] py-2 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart
+                            ? "bg-green-100 text-green-700 border border-green-200"
+                            : "btn-outline text-sm hover:bg-purple-50 hover:text-black hover:border-purple-200"
+                          }`}
+                        style={{ flexBasis: "40%" }}
+                      >
+                        {isInCart ? "✓ In Cart" : "🛒 Add to Cart"}
+                      </button>
 
-                  {/* Description */}
-                  {artwork.description && (
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-3">
-                      {artwork.description}
-                    </p>
-                  )}
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 items-center flex-wrap w-full py-2">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleAddToCart(artwork);
-                      }}
-                      className={`flex-1 min-w-[110px] py-2 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart
-                        ? 'bg-green-100 text-green-700 border border-green-200'
-                        : 'btn-outline text-sm hover:bg-purple-50 hover:text-black hover:border-purple-200'
-                        }`}
-                      style={{ flexBasis: '40%' }}
-                    >
-                      {isInCart ? '✓ In Cart' : '🛒 Add to Cart'}
-                    </button>
-
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleBuy(artwork);
-                      }}
-                      className="flex-1 min-w-[110px] btn-primary text-sm transition-all duration-200 hover:scale-105"
-                      style={{ flexBasis: '40%' }}
-                    >
-                      Buy Now
-                    </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleBuy(artwork);
+                        }}
+                        className="flex-1 min-w-[110px] btn-primary text-sm transition-all duration-200 hover:scale-105"
+                        style={{ flexBasis: "40%" }}
+                      >
+                        Buy Now
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-
-
-
-        </div>
-        <div className="flex justify-center items-center mt-12 mb-8">
-          {/* Loading indicator */}
-          {isFetching && visibleArtworks.length < filteredArtworks.length && (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-              <p className="mt-2 text-sm text-gray-600">Loading more artworks...</p>
-            </div>
-          )}
-
-          {!isFetching && visibleArtworks.length >= filteredArtworks.length && filteredArtworks.length > 0 && (
-            <div className="text-center py-4 text-gray-400 font-medium">
-              No more artworks.
-            </div>
-          )}
-        </div>
-
-
-
-
-        {/* Not available modal */}
-        {showModal && (
-          <div
-            className="fixed top-0 left-0 w-screen h-screen bg-slate-900/30 backdrop-blur flex items-center justify-center z-50"
-            onClick={() => setShowModal(false)}
-          >
-            <div
-              className="bg-white rounded-xl shadow-xl px-8 py-6 min-w-[300px] text-center"
-              onClick={e => e.stopPropagation()}
-            >
-              <p className="text-lg font-medium mb-4">Currently not available</p>
-              <button
-                className="btn-primary px-4 py-2 rounded"
-                onClick={() => setShowModal(false)}
-              >
-                Close
-              </button>
-            </div>
+              );
+            })}
           </div>
         )}
-        {showGoTop && (
-          <button
-            onClick={scrollToTop}
-            className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
-            aria-label="Scroll to top"
-          >
-            ↑
-          </button>
-        )}
-        {/* Login Modal */}
-        {showLoginModal && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
 
-            <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 
+
+
+      
+      <div className="flex justify-center items-center mt-12 mb-8">
+        {/* Loading indicator */}
+        {isFetching && visibleArtworks.length < filteredArtworks.length && (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+            <p className="mt-2 text-sm text-gray-600">Loading more artworks...</p>
+          </div>
+        )}
+
+        {!isFetching && visibleArtworks.length >= filteredArtworks.length && filteredArtworks.length > 0 && (
+          <div className="text-center py-4 text-gray-400 font-medium">
+            No more artworks.
+          </div>
+        )}
+      </div>
+
+
+
+
+      {/* Not available modal */}
+      {showModal && (
+        <div
+          className="fixed top-0 left-0 w-screen h-screen bg-slate-900/30 backdrop-blur flex items-center justify-center z-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl shadow-xl px-8 py-6 min-w-[300px] text-center"
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-lg font-medium mb-4">Currently not available</p>
+            <button
+              className="btn-primary px-4 py-2 rounded"
+              onClick={() => setShowModal(false)}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+      {showGoTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
+          aria-label="Scroll to top"
+        >
+          ↑
+        </button>
+      )}
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+
+          <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 
                     rounded-2xl p-8 w-[90%] max-w-sm animate-slideUp">
 
-              {/* Close Icon */}
-              <button
-                onClick={() => {
-                  setShowLoginModal(false);
-                  navigate('/main-dashboard');
-                }}
-                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition"
-              >
-                ✖
-              </button>
+            {/* Close Icon */}
+            <button
+              onClick={() => {
+                setShowLoginModal(false);
+                navigate('/main-dashboard');
+              }}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition"
+            >
+              ✖
+            </button>
 
-              {/* Title */}
-              <h2 className="text-2xl font-bold text-gray-800 text-center mb-3">
-                Please Login
-              </h2>
+            {/* Title */}
+            <h2 className="text-2xl font-bold text-gray-800 text-center mb-3">
+              Please Login
+            </h2>
 
-              {/* Subtitle */}
-              <p className="text-gray-600 text-center mb-6">
-                You need to log in to access this feature.
-              </p>
+            {/* Subtitle */}
+            <p className="text-gray-600 text-center mb-6">
+              You need to log in to access this feature.
+            </p>
 
-              {/* Action Button */}
-              <button
-                onClick={() => {
-                  setShowLoginModal(false);
-                  navigate('/user-login');
-                }}
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500
+            {/* Action Button */}
+            <button
+              onClick={() => {
+                setShowLoginModal(false);
+                navigate('/user-login');
+              }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500
                    text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02]
                    transition-all"
-              >
-                Go to Login
-              </button>
+            >
+              Go to Login
+            </button>
 
-              {/* Secondary button */}
-              <button
-                onClick={() => setShowLoginModal(false)}
-                className="mt-4 w-full py-3 rounded-xl border border-gray-300 
+            {/* Secondary button */}
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="mt-4 w-full py-3 rounded-xl border border-gray-300 
                    text-gray-700 font-medium hover:bg-gray-100 transition"
-              >
-                Cancel
-              </button>
+            >
+              Cancel
+            </button>
 
-            </div>
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
+    </div>
     </div >
   );
 }
