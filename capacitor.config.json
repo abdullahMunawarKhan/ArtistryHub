@@ -1,5 +1,6 @@
 {
   "appId": "com.scopebrush.app",
   "appName": "ScopeBrush",
-  "webDir": "dist"
+  "webDir": "dist",
+  "version": "2.0.0"
 }

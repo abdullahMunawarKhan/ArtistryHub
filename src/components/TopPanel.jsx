@@ -180,8 +180,8 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-10 pr-10">
-      <nav className="flex items-center justify-between px-2 md:px-8 py-2 w-full">
+    <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-2 pr-2">
+      <nav className="flex items-center justify-between px-2 md:px-4 py-2 w-full">
         {/* Left: Logo and Name, flush to left */}
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center space-x-2">
@@ -232,7 +232,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 About Us
               </button>
               <a
-                href="/app/ScopeBrush-v1.0.0.apk"
+                href="/app/ScopeBrush-v1.1.0.apk"
                 download
                 className="nav-link flex items-center gap-2"
               >
@@ -260,16 +260,16 @@ function TopPanel({ footerOpen, setFooterOpen }) {
         {/* Right: User icon and text, flush to right */}
         <div className="flex items-center flex-shrink-0 justify-end">
           {/* Cart + Orders → only on Laptop/Desktop */}
-          <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center gap-3 pr-3">
             <button onClick={() => navOrLogin('/cart')} className="nav-link flex items-center gap-2">
               <ShoppingCart size={24} />
             </button>
 
-            <button onClick={() => navOrLogin('/orders')} className="nav-link flex items-center gap-2">
+            <button onClick={() => navOrLogin('/orders')} className="nav-link flex items-center gap-4">
               <PackageCheck size={24} />
             </button>
           </div>
-          <div className="flex items-center gap-4 md:gap-6 pl-4">
+          <div className="flex items-center gap-2 md:gap-4 pr-1">
 
             {user ? (
               <div className="relative" ref={profileMenuRef}>
@@ -535,7 +535,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 {!Capacitor.isNativePlatform() && (
                   <li>
                     <a
-                      href="/app/ScopeBrush-v1.0.0.apk"
+                      href="/app/ScopeBrush-v1.1.0.apk"
                       download
                       className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
                     >

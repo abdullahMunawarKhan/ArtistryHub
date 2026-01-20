@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { Paintbrush, Presentation, Sparkles } from "lucide-react";
 
 function Signup() {
   const [email, setEmail] = useState('');
@@ -12,10 +13,12 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const navigate = useNavigate();
-
+  const [animate, setAnimate] = useState(false);
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSignup = async () => {
+    if (loading || animate) return; // Prevent multiple clicks
+
     setMessage({ text: '', type: '' });
 
     // Validation
@@ -32,74 +35,73 @@ function Signup() {
       return setMessage({ text: 'Passwords do not match.', type: 'error' });
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin + '/user-login'
-        }
-      });
+    setAnimate(true);
 
-      if (error) {
-        console.error('Signup error:', error);
-        if (
-          error.message.toLowerCase().includes('already registered') ||
-          error.message.toLowerCase().includes('user already exists')
-        ) {
-          setMessage({
-            text: 'An account with this email already exists. Please login instead.',
-            type: 'error',
-          });
-        } else {
-          setMessage({ text: error.message, type: 'error' });
-        }
-        setLoading(false);
-        return;
-      }
+    setTimeout(async () => {
+      setAnimate(false);
+      setLoading(true);
 
-      if (data.user) {
-        try {
-          const { error: profileError } = await supabase
-            .from('user')
-            .upsert([{
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin + '/user-login'
+          }
+        });
+
+        if (error) {
+          setAnimate(false);
+
+          if (
+            error.message.toLowerCase().includes('already registered') ||
+            error.message.toLowerCase().includes('user already exists')
+          ) {
+            return setMessage({
+              text: 'An account with this email already exists. Please login instead.',
+              type: 'error',
+            });
+          }
+
+          return setMessage({ text: error.message, type: 'error' });
+        }
+
+        if (data.user) {
+          await supabase.from('user').upsert(
+            [{
               id: data.user.id,
               email: email.trim().toLowerCase(),
               role: 'user',
-            }], {
-              onConflict: 'id'
-            });
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            console.log('Profile will be created on first login');
-          }
-        } catch (profileErr) {
-          console.error('Profile creation failed:', profileErr);
+            }],
+            { onConflict: 'id' }
+          );
         }
-      }
 
-      if (data.user?.identities?.length === 0) {
+        if (data.user?.identities?.length === 0) {
+          return setMessage({
+            text: 'An account with this email already exists. Please login instead.',
+            type: 'error',
+          });
+        }
+
         setMessage({
-          text: 'An account with this email already exists. Please login instead.',
-          type: 'error',
+          text: '✅ Account created! Check your email to confirm, then log in.',
+          type: 'success',
         });
+
+        setTimeout(() => navigate('/user-login'), 3000);
+
+      } catch (err) {
+        console.error(err);
+        setMessage({ text: 'An unexpected error occurred.', type: 'error' });
+      } finally {
+        setAnimate(false);
         setLoading(false);
-        return;
       }
 
-      setMessage({
-        text: '✅ Account created! Check your email to confirm, then log in.',
-        type: 'success',
-      });
-      setTimeout(() => navigate('/user-login'), 3000);
-    } catch (err) {
-      console.error('Unexpected error during signup:', err);
-      setMessage({ text: 'An unexpected error occurred. Please try again.', type: 'error' });
-    }
-    setLoading(false);
+    }, 100);
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 
@@ -280,6 +282,7 @@ function Signup() {
               ) : (
                 'Sign Up'
               )}
+
             </button>
 
             {/* Footer link */}
@@ -305,8 +308,84 @@ function Signup() {
           </p>
         </div>
       </div>
+      {/* <SignupAnimation show={animate} /> */}
     </div>
   );
 }
+
+function ShineParticles() {
+  const spots = [
+    "-20 -30",   // Top-left of center
+    "40 -25",    // Top-right
+    "-35 10",    // Left side
+    "45 15",     // Right side
+    "-10 35",    // Bottom-left
+    "20 38"      // Bottom-right
+  ];
+
+  return (
+    <>
+      {spots.map(([x, y], index) => (
+        <Sparkles
+          key={index}
+          size={20}
+          className={`
+            absolute text-yellow-300 opacity-80 animate-shine
+          `}
+          style={{
+            transform: `translate(${x}px, ${y}px)`
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+function SignupAnimation({ show }) {
+  return (
+    <div
+      className={`
+        fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]
+        flex items-center justify-center
+        transition-opacity duration-500
+        ${show ? "opacity-100" : "opacity-0 pointer-events-none"}
+      `}
+    >
+
+      {/* ✨ Magical Shine Particles (around center) */}
+      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+        <ShineParticles />
+      </div>
+
+      {/* 🖼 Board (middle layer) */}
+      <Presentation
+        size={180}
+        className={`
+          absolute text-amber-400 drop-shadow-lg
+          transition-all duration-[2000ms] ease-out
+          z-20
+          ${show
+            ? "translate-x-0 opacity-100"
+            : "-translate-x-full opacity-0"}
+        `}
+      />
+
+      {/* 🎨 Brush (top layer) */}
+      <Paintbrush
+        size={180}
+        className={`
+          absolute text-pink-500 drop-shadow-xl
+          transition-all duration-[2000ms] ease-out
+          z-30
+          ${show
+            ? "translate-x-0 opacity-100"
+            : "translate-x-full opacity-0"}
+        `}
+      />
+    </div>
+  );
+}
+
+
 
 export default Signup;

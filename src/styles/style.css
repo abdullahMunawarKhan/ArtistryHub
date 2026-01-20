@@ -1041,6 +1041,84 @@ p {
   }
 }
 
+@keyframes brushMove {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateX(-10%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes boardMove {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+
+  50% {
+    transform: translateX(10%);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes starsFade {
+
+  0%,
+  100% {
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-brush {
+  animation: brushMove 2.2s ease-out forwards;
+}
+
+.animate-board {
+  animation: boardMove 2.2s ease-out forwards;
+}
+
+.animate-stars {
+  background-image: url('/images/stars.png');
+  background-size: cover;
+  animation: starsFade 3s infinite ease-in-out;
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    opacity: .5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
 /* Base tag button */
 .btn-chip {
   @apply text-xs md:text-sm px-3 py-1 md:px-4 md:py-2 border rounded-full;
@@ -1217,6 +1295,50 @@ p {
   .artwork-scroll-area {
     max-height: calc(var(--artwork-row-height) * 3);
   }
+}
+
+@keyframes starFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.6);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
+
+  70% {
+    opacity: .8;
+    transform: translateY(15px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.8);
+  }
+}
+
+.animate-starFloat {
+  animation: starFloat 2.4s ease-in-out infinite;
+}
+
+@keyframes shine {
+
+  0%,
+  100% {
+    opacity: .4;
+    transform: scale(0.8);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+.animate-shine {
+  animation: shine 1.7s ease-in-out infinite;
 }
 
 :root {
