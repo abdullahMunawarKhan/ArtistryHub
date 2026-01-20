@@ -424,19 +424,23 @@ function MainDashboard() {
             <img
               src="/images/logo2.jpeg"
               alt="ScopeBrush Logo"
-              className="h-16 w-16 rounded-full shadow-lg border-2 border-purple-300"
-              style={{ marginRight: 0, verticalAlign: "middle" }}
+              className="h-12 w-12 md:h-16 md:w-16 rounded-full shadow-lg border-2 border-purple-300"
             />
-            <h1 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 text-4xl md:text-6xl drop-shadow-lg">
+
+            <h1 className="font-extrabold text-transparent bg-clip-text bg-gradient-to-r 
+from-purple-500 via-pink-500 to-blue-500 
+text-3xl md:text-6xl drop-shadow-lg">
               Art Gallery
             </h1>
-            
+
           </div>
-          <p className="text-xl md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
+          <p className="text-base md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
             Discover amazing artworks from talented artists
           </p>
           {/* 🔹 Sticky Filter + Search Section */}
-          <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-slate-100 mx-auto max-w-6xl px-4 py-4">
+          <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md 
+rounded-xl shadow-lg border border-slate-100 
+mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
             {/* Category Filter Tags */}
 
             <div className="flex flex-wrap gap-3 justify-center mb-4">
@@ -486,25 +490,34 @@ function MainDashboard() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="🔍 Search artworks by title,material,category...."
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 focus:outline-none shadow-sm"
+                className="w-full px-3 py-2 md:px-4 md:py-3 text-sm md:text-base 
+  rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-400 shadow-sm"
               />
             </div>
           </div>
         </div>
 
-
-
-
-
-
-
-
         <br />
 
-        {/* NEW - Use this instead */}
-        {/* Artworks Grid with Infinite Scroll */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 
+        {/* Artworks Grid with Infinite Scroll */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 
+gap-y-4 gap-x-6 md:gap-8">
+
+          {filteredArtworks.length === 0 && (
+            <div className="text-center py-8 md:py-16">
+              <div className="text-5xl md:text-6xl mb-3">🎨</div>
+              <h3 className="text-lg md:text-xl font-semibold text-slate-700 mb-1">
+                No artworks found
+              </h3>
+              <p className="text-slate-500 text-sm md:text-base">
+                {selectedTag
+                  ? `No artworks in "${selectedTag}" category yet.`
+                  : 'No artworks available at the moment.'
+                }
+              </p>
+            </div>
+          )}
           {visibleArtworks.map(artwork => {
             const firstImage = Array.isArray(artwork.image_urls)
               ? artwork.image_urls[0]
@@ -677,21 +690,7 @@ function MainDashboard() {
         </div>
 
 
-        {/* Empty State */}
-        {filteredArtworks.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">🎨</div>
-            <h3 className="text-xl font-semibold text-slate-700 mb-2">
-              No artworks found
-            </h3>
-            <p className="text-slate-500">
-              {selectedTag
-                ? `No artworks in "${selectedTag}" category yet.`
-                : 'No artworks available at the moment.'
-              }
-            </p>
-          </div>
-        )}
+
 
         {/* Not available modal */}
         {showModal && (

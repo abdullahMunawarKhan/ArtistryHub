@@ -1043,8 +1043,11 @@ p {
 
 /* Base tag button */
 .btn-chip {
-  @apply px-4 py-1.5 rounded-full text-sm font-medium text-canvas-700 bg-white border border-gallery-300 cursor-pointer transition-all duration-300 select-none font-sans;
-  letter-spacing: 0.025em;
+  @apply text-xs md:text-sm px-3 py-1 md:px-4 md:py-2 border rounded-full;
+}
+
+.btn-chip.active {
+  @apply bg-blue-500 text-white;
 }
 
 /* Hover effect for all tags */

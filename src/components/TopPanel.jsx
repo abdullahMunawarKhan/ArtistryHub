@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { Capacitor } from "@capacitor/core";
+
 import { supabase } from '../utils/supabase';
 import {
   Home,
@@ -7,6 +9,7 @@ import {
   ShoppingCart,
   PackageCheck,
   User,
+  UserPlus,
   Sparkles,
   LayoutDashboard,
   Package,
@@ -26,7 +29,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-
+  const isNative = Capacitor.isNativePlatform();
 
   const navigate = useNavigate();
   const adminMenuRef = useRef();
@@ -228,7 +231,13 @@ function TopPanel({ footerOpen, setFooterOpen }) {
               >
                 About Us
               </button>
-
+              <a
+                href="/app/ScopeBrush-v1.0.0.apk"
+                download
+                className="nav-link flex items-center gap-2"
+              >
+                Download App
+              </a>
             </>
           )}
 
@@ -280,8 +289,8 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 {/* Dropdown Menu */}
                 {profileMenuOpen && (
                   <div
-                    className="absolute right-0 mt-3 w-60 bg-white/80 backdrop-blur-2xl
-             rounded-2xl shadow-2xl border border-white/40 
+                    className="absolute right-0 mt-3 w-60 bg-white backdrop-blur-2xl
+             rounded-2xl shadow-2xl border border-white
              z-50 overflow-hidden animate-fadeIn"
                   >
                     {/* Header Section */}
@@ -383,7 +392,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                           navigate('/signup');
                         }}
                       >
-                        <Sparkles size={18} />
+                        <UserPlus className="w-4 h-4" />
                         Sign Up
                       </button>
                     </li>
@@ -480,7 +489,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                     ) : (
                       <li>
                         <button
-                          className="menu-item flex items-center justify-center gap-2 w-full text-center"
+                          className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
                           onClick={() => {
                             setMenuOpen(false);
                             navOrLogin('/register');
@@ -511,7 +520,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 )}
 
                 {/* About */}
-                <li className="full-width">
+                <li>
                   <button
                     className="menu-item flex items-center justify-center gap-2 w-full text-center"
                     onClick={() => {
@@ -521,7 +530,20 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                   >
                     About Us
                   </button>
+
                 </li>
+                {!Capacitor.isNativePlatform() && (
+                  <li>
+                    <a
+                      href="/app/ScopeBrush-v1.0.0.apk"
+                      download
+                      className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
+                    >
+                      Download App
+                    </a>
+                  </li>
+                )}
+
 
               </ul>
             </nav>
@@ -564,4 +586,3 @@ function TopPanel({ footerOpen, setFooterOpen }) {
 }
 
 export default TopPanel;
-
