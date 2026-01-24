@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-
+import { Share } from '@capacitor/share';
+import { useRef } from "react";
 import {
   Heart,
   Share2,
@@ -9,8 +10,16 @@ import {
   Plus,
   Minus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RotateCcw
 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX
+} from "lucide-react";
+import ImageViewer from "../components/ImageViewer";
 
 function StarRating({ value }) {
   const full = Math.floor(value || 0);
@@ -48,14 +57,30 @@ function StarRating({ value }) {
 
 function ArtworkShareButton({ artworkId }) {
   const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}/#/product?id=${artworkId}`;
+  const url = `https://scopebrush.vercel.app/#/product?id=${artworkId}`;
 
   const handleShare = async () => {
+    // Capacitor native share (Android / iOS)
+    if (window.Capacitor?.isNativePlatform()) {
+      await Share.share({
+        title: 'Check out this artwork',
+        text: 'Have a look at this artwork on ScopeBrush',
+        url,
+        dialogTitle: 'Share Artwork',
+      });
+      return;
+    }
+
+    // Web Share API
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Check out this artwork", url });
+        await navigator.share({ title: 'Check out this artwork', url });
       } catch { }
-    } else {
+      return;
+    }
+
+    // Clipboard fallback
+    if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(url);
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
@@ -70,10 +95,11 @@ function ArtworkShareButton({ artworkId }) {
       `}
     >
       <Share2 size={18} />
-      {copied ? "Copied!" : "Share"}
+      {copied ? 'Copied!' : 'Share'}
     </button>
   );
 }
+
 
 function PriceDisplay({ cost }) {
   const original = Math.round(cost * 1.15);
@@ -106,10 +132,11 @@ export default function ProductDetails() {
   const [isLiked, setIsLiked] = useState(false);
   const [inCart, setInCart] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
-  const [zoom, setZoom] = useState(1);
   const [showVideo, setShowVideo] = useState(false);
   const [artistArtworks, setArtistArtworks] = useState([]);
   const [relatedArtworks, setRelatedArtworks] = useState([]);
+  const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(0.8);
 
   /* ===========================================================
        FETCH ARTWORK
@@ -411,11 +438,8 @@ export default function ProductDetails() {
           images={images}
           idx={idx}
           setIdx={setIdx}
-          zoom={zoom}
-          setZoom={setZoom}
-          current={current}
           setViewerOpen={setViewerOpen}
-          artwork={artwork}
+          watermarkText={`@ScopeBrush • ${artwork.artists?.name}`}
         />
       )}
 
@@ -469,104 +493,164 @@ function Section({ title, items, navigate }) {
 }
 
 /* ===========================================================
-   IMAGE VIEWER MODAL
-=========================================================== */
-
-function ImageViewer({ images, idx, setIdx, zoom, setZoom, current, setViewerOpen, artwork }) {
-  return (
-    <div
-      className="fixed inset-0 bg-black/90 z-[2000] flex items-center justify-center p-4"
-      onClick={() => setViewerOpen(false)}
-    >
-      <div className="relative max-w-[90vw] max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
-
-        {/* Close */}
-        <button
-          className="absolute top-3 right-3 text-white"
-          onClick={() => setViewerOpen(false)}
-        >
-          <X size={28} />
-        </button>
-
-        {/* Left arrow */}
-        <button
-          className="absolute top-1/2 left-2 -translate-y-1/2 text-white"
-          onClick={() => { setIdx(idx === 0 ? images.length - 1 : idx - 1); setZoom(1); }}
-        >
-          <ChevronLeft size={36} />
-        </button>
-
-        {/* Right arrow */}
-        <button
-          className="absolute top-1/2 right-2 -translate-y-1/2 text-white"
-          onClick={() => { setIdx((idx + 1) % images.length); setZoom(1); }}
-        >
-          <ChevronRight size={36} />
-        </button>
-
-        {/* Image */}
-        <img
-          src={current}
-          className="max-w-[80vw] max-h-[80vh] object-contain rounded"
-          style={{
-            transform: `scale(${zoom})`,
-            transition: 'transform .2s'
-          }}
-        />
-
-        {/* Watermark */}
-        <div className="absolute top-5 left-5 bg-white/60 px-3 py-1 rounded-lg text-sm font-semibold">
-          @ScopeBrush • @{artwork.artists?.name}
-        </div>
-
-        {/* Zoom Controls */}
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 bg-white/90 px-4 py-2 rounded-xl flex items-center gap-4">
-          <button
-            disabled={zoom <= 1}
-            onClick={() => setZoom((z) => Math.max(1, z - 0.25))}
-            className="p-1 rounded bg-slate-200 disabled:opacity-50"
-          >
-            <Minus size={18} />
-          </button>
-          <span className="font-medium">{Math.round(zoom * 100)}%</span>
-          <button
-            disabled={zoom >= 3}
-            onClick={() => setZoom((z) => Math.min(3, z + 0.25))}
-            className="p-1 rounded bg-slate-200 disabled:opacity-50"
-          >
-            <Plus size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ===========================================================
    VIDEO MODAL
 =========================================================== */
 
 function VideoModal({ url, artist, close }) {
+  const videoRef = useRef(null);
+
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [muted, setMuted] = useState(false); // ✅ needed
+
+  /* ================= HELPERS ================= */
+  const format = (t = 0) =>
+    `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, "0")}`;
+
+  /* ================= EFFECTS ================= */
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    // ✅ FIXED VOLUME (runs once when modal opens)
+    v.volume = 0.8;
+
+    const onTime = () => setCurrent(v.currentTime);
+    const onMeta = () => setDuration(v.duration || 0);
+
+    v.addEventListener("timeupdate", onTime);
+    v.addEventListener("loadedmetadata", onMeta);
+
+    return () => {
+      v.removeEventListener("timeupdate", onTime);
+      v.removeEventListener("loadedmetadata", onMeta);
+    };
+  }, []);
+
+  /* ================= ACTIONS ================= */
+  const togglePlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    if (v.paused) {
+      v.play();
+      setPlaying(true);
+    } else {
+      v.pause();
+      setPlaying(false);
+    }
+  };
+
   return (
     <div
-      className="fixed inset-0 bg-black/80 z-[3000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[3000] bg-black/70 flex items-center justify-center p-4"
       onClick={close}
     >
       <div
-        className="bg-white rounded-xl p-4 max-w-xl w-full relative"
         onClick={(e) => e.stopPropagation()}
+        className="relative bg-black rounded-xl overflow-hidden max-w-[90vw]"
       >
-        <button className="absolute top-3 right-3" onClick={close}>
-          <X size={28} className="text-blue-600" />
+        {/* VIDEO */}
+        <video
+          ref={videoRef}
+          src={url}
+          playsInline
+          webkit-playsinline="true"
+          disablePictureInPicture
+          className="max-h-[80vh] w-auto bg-black rounded-lg"
+        />
+
+        {/* WATERMARK */}
+        <div
+          className="
+    pointer-events-none
+    absolute left-2 top-1/2 -translate-y-1/2
+    rotate-[-90deg]
+    bg-white/60 backdrop-blur
+    px-2.5 py-0.5
+    rounded-full
+    text-[9px] sm:text-[10px] md:text-[11px]
+    font-semibold tracking-wide
+    text-black
+    select-none
+    whitespace-nowrap
+  "
+        >
+          @ScopeBrush • @{artist}
+        </div>
+
+        {/* CLOSE */}
+        <button
+          onClick={close}
+          className="absolute top-3 right-3 bg-black/60 text-white p-2 rounded-full"
+        >
+          ✕
         </button>
 
-        <video src={url} controls autoPlay className="w-full rounded-xl" />
+        {/* CONTROLS */}
+        <div
+          className="
+    absolute bottom-3 left-1/2 -translate-x-1/2
+    w-[92%]
+    bg-black/55 backdrop-blur-md
+    rounded-xl
+    px-3 py-2
+    shadow-lg
+  "
+        >
+          {/* TOP ROW (always fits) */}
+          <div className="flex items-center justify-between gap-3">
+            {/* Play / Pause */}
+            <button
+              onClick={togglePlay}
+              className="text-white p-1.5 rounded-md hover:bg-white/10 active:scale-95 transition"
+            >
+              {playing ? <Pause size={18} /> : <Play size={18} />}
+            </button>
 
-        {/* Watermark */}
-        <div className="absolute top-5 left-6 bg-white/70 px-3 py-1 rounded-lg text-sm font-semibold">
-          @ScopeBrush • @{artist}
+            {/* Time */}
+            <span className="text-[11px] text-white/90 tabular-nums whitespace-nowrap">
+              {format(current)} / {format(duration)}
+            </span>
+
+            {/* Mute */}
+            <button
+              onClick={() => {
+                const v = videoRef.current;
+                v.muted = !v.muted;
+                setMuted(v.muted);
+              }}
+              className="text-white p-1.5 rounded-md hover:bg-white/10 active:scale-95 transition"
+            >
+              {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </button>
+          </div>
+
+          {/* PROGRESS BAR (own row on mobile) */}
+          <input
+            type="range"
+            min="0"
+            max={duration || 0}
+            value={current}
+            onChange={(e) => {
+              const t = Number(e.target.value);
+              videoRef.current.currentTime = t;
+              setCurrent(t);
+            }}
+            className="
+      mt-2
+      w-full
+      h-1
+      accent-white
+      cursor-pointer
+    "
+          />
         </div>
       </div>
     </div>
   );
 }
+
+
+

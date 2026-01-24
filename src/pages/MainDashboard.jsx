@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 
 function StarRating({ value }) {
   const fullStars = Math.floor(value);
@@ -83,6 +85,11 @@ function MainDashboard() {
   const [showGoTop, setShowGoTop] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
+  // Pull-to-refresh state
+  const [pullY, setPullY] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const startY = useRef(0);
+  const scrollRef = useRef(null);
 
   // Function to filter artworks by liked status (true to show liked only, false to show all)
   function filterArtworksByLiked(artworks, likedArtworks, showLikedOnly) {
@@ -203,26 +210,59 @@ function MainDashboard() {
   }
 
   // Fetch artworks
-  useEffect(() => {
-    async function fetchArtworks() {
-      try {
-        const { data, error } = await supabase
-          .from('artworks')
-          .select('id, title, category, cost, image_urls, artist_id, artists (id, name, avg_rating), description, material, video_url, availability, likes, liked_count');
+  async function fetchArtworks() {
+    setIsFetching(true);
+    try {
+      const { data, error } = await supabase
+        .from('artworks')
+        .select('id, title, category, cost, image_urls, artist_id, artists (id, name, avg_rating), description, material, video_url, availability, likes, liked_count');
 
-        if (!error && data) {
-          setArtworks(data);
-        } else {
-          setArtworks([]);
-          console.error('Failed to fetch artworks', error);
-        }
-      } catch (error) {
-        console.error('Error fetching artworks:', error);
+      if (!error && data) {
+        setArtworks(data);
+      } else {
         setArtworks([]);
+        console.error('Failed to fetch artworks', error);
       }
+    } catch (error) {
+      console.error('Error fetching artworks:', error);
+      setArtworks([]);
+    } finally {
+      setIsFetching(false);
     }
+  }
+
+  useEffect(() => {
     fetchArtworks();
   }, []);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e) => {
+    if (window.scrollY === 0) {
+      startY.current = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (window.scrollY === 0 && startY.current > 0) {
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - startY.current;
+      if (diff > 0) {
+        // Logarithmic resistance
+        setPullY(Math.min(diff * 0.4, 150));
+      }
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullY > 80) { // Threshold to trigger refresh
+      setIsRefreshing(true);
+      setPullY(100); // Keep visual indicator visible
+      await fetchArtworks();
+      setIsRefreshing(false);
+    }
+    setPullY(0);
+    startY.current = 0;
+  };
 
   function openModal(artwork) {
     navigate(`/product?id=${artwork.id}`);
@@ -406,19 +446,77 @@ function MainDashboard() {
 
   if (loadingProfile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-700">Loading profile...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-pink-50">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative"
+        >
+          {/* Glow Ring */}
+          <div className="absolute inset-0 rounded-full blur-2xl bg-gradient-to-r from-purple-400 to-pink-400 opacity-30 animate-pulse" />
+
+          {/* Glass Card */}
+          <div className="relative bg-white/80 backdrop-blur-xl border border-purple-100 shadow-2xl rounded-2xl px-10 py-8 flex flex-col items-center">
+
+            {/* Spinner */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
+              className="mb-4"
+            >
+              <Loader2 className="h-12 w-12 text-purple-600" />
+            </motion.div>
+
+            {/* Text */}
+            <p className="text-lg font-semibold text-purple-700">
+              Loading your profile
+            </p>
+            <p className="text-sm text-slate-500 mt-1">
+              Preparing your art space 🎨
+            </p>
+          </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[90vh] bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 ">
-      {/* Header Section */}
-      <div className="max-w-7xl mx-auto px-4 py-1">
+    <div
+      className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 text-gray-800 pb-20 relative"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to Refresh Indicator */}
+      <AnimatePresence>
+        {(pullY > 0 || isRefreshing) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{
+              opacity: 1,
+              height: pullY,
+              y: pullY > 0 ? 0 : -50
+            }}
+            exit={{ opacity: 0, height: 0 }}
+            className="fixed top-20 left-0 w-full flex items-center justify-center z-40 pointer-events-none overflow-hidden"
+          >
+            <div className="bg-white/90 backdrop-blur-md rounded-full px-4 py-2 shadow-lg flex items-center gap-2 border border-purple-100">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              >
+                <Loader2 className="w-5 h-5 text-purple-600" />
+              </motion.div>
+              <span className="text-sm font-medium text-purple-900">
+                {isRefreshing ? "Refreshing..." : "Pull to refresh"}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex flex-col items-center justify-center py-1 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50">
           <div className="flex items-center gap-4 mb-4 animate-fade-in">
             <img
@@ -522,10 +620,10 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
           // GRID ONLY WHEN ARTWORKS EXIST
           <div
             className="
-      grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 
-      lg:grid-cols-3 xl:grid-cols-4 
-      gap-y-4 gap-x-6 md:gap-8
-    "
+    grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2
+    lg:grid-cols-3 xl:grid-cols-4
+    gap-y-3 gap-x-3 sm:gap-4 md:gap-8
+  "
           >
             {visibleArtworks.map((artwork) => {
               const firstImage = Array.isArray(artwork.image_urls)
@@ -545,110 +643,134 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
               return (
                 <div
                   key={artwork.id}
-                  className="ScopeBrush-card group hover:scale-105 transition-all duration-300"
+                  className="
+          ScopeBrush-card group
+          transition-all duration-300
+          sm:hover:scale-105
+        "
                   onClick={() => navigate(`/product?id=${artwork.id}`)}
                 >
                   {/* Artwork Image */}
-                  <div className="aspect-square overflow-hidden rounded-t-xl cursor-pointer relative">
+                  <div className="aspect-square overflow-hidden rounded-t-lg sm:rounded-t-xl relative">
                     {firstImage ? (
                       <img
                         src={firstImage}
                         alt={artwork.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover sm:group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                        <span className="text-6xl">🎨</span>
+                        <span className="text-4xl sm:text-6xl">🎨</span>
                       </div>
                     )}
 
                     {/* Category Badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-gray-100 to-indigo-100 shadow-md text-gray-900 font-semibold backdrop-blur">
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
+                      <span className="
+              px-2 py-0.5 sm:px-3 sm:py-1
+              rounded-lg sm:rounded-xl
+              bg-gradient-to-r from-gray-100 to-indigo-100
+              shadow
+              text-xs sm:text-sm
+              font-semibold
+            ">
                         {artwork.category}
                       </span>
                     </div>
                   </div>
 
                   {/* Artwork Info */}
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-lg text-slate-800 line-clamp-2">
+                  <div className="p-3 sm:p-4 md:p-6">
+                    {/* Title & Like */}
+                    <div className="flex items-start justify-between mb-1 sm:mb-2">
+                      <h3 className="
+              font-semibold sm:font-bold
+              text-sm sm:text-base md:text-lg
+              text-slate-800
+              line-clamp-2
+            ">
                         {artwork.title}
                       </h3>
 
-                      {/* Like Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleLike(artwork);
                         }}
-                        className="flex items-center justify-center transition-all duration-200 p-0 ml-2 hover:bg-transparent active:scale-95"
+                        className="flex items-center gap-1 ml-1 sm:ml-2 active:scale-95"
                         aria-label="Like button"
-                        title={isLiked ? "Unlike" : "Like"}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          outline: "none",
-                          boxShadow: "none",
-                        }}
                       >
                         <Heart
-                          size={40}
+                          size={22}
+                          className="sm:hidden"
                           fill={isLiked ? "red" : "none"}
                           stroke={isLiked ? "red" : "#a1a1aa"}
                           strokeWidth={1.5}
-                          className="cursor-pointer"
                         />
-                        <span>{artwork.liked_count ?? 0}</span>
+                        <Heart
+                          size={32}
+                          className="hidden sm:block"
+                          fill={isLiked ? "red" : "none"}
+                          stroke={isLiked ? "red" : "#a1a1aa"}
+                          strokeWidth={1.5}
+                        />
+                        <span className="text-xs sm:text-sm">
+                          {artwork.liked_count ?? 0}
+                        </span>
                       </button>
                     </div>
 
-                    {/* Artist Info */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm text-slate-500">by</span>
+                    {/* Artist */}
+                    <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
+                      <span className="text-xs sm:text-sm text-slate-500">by</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/artist-profile?id=${artwork.artist_id}`);
                         }}
-                        className="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors"
+                        className="text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-800"
                       >
                         {artwork.artists?.name || "Unknown Artist"}
                       </button>
                     </div>
 
                     {/* Rating */}
-                    <div className="mb-4">
+                    <div className="mb-2 sm:mb-4">
                       <StarRating value={artwork.artists?.avg_rating ?? 0} />
                     </div>
 
                     {/* Price */}
-                    <div className="mb-4">
+                    <div className="mb-2 sm:mb-4">
                       <PriceDisplay cost={artwork.cost} />
                     </div>
 
                     {/* Description */}
                     {artwork.description && (
-                      <p className="text-sm text-slate-600 mb-4 line-clamp-3">
+                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-4 line-clamp-3">
                         {artwork.description}
                       </p>
                     )}
 
                     {/* Buttons */}
-                    <div className="flex gap-2 items-center flex-wrap w-full py-2">
+                    <div className="flex gap-2 flex-wrap w-full py-1 sm:py-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddToCart(artwork);
                         }}
-                        className={`flex-1 min-w-[110px] py-2 px-4 rounded-lg font-medium transition-all duration-200 ${isInCart
+                        className={`
+                flex-1 min-w-[90px] sm:min-w-[110px]
+                py-1.5 sm:py-2 px-3 sm:px-4
+                rounded-md sm:rounded-lg
+                text-xs sm:text-sm font-medium
+                transition-all
+                ${isInCart
                             ? "bg-green-100 text-green-700 border border-green-200"
-                            : "btn-outline text-sm hover:bg-purple-50 hover:text-black hover:border-purple-200"
-                          }`}
-                        style={{ flexBasis: "40%" }}
+                            : "btn-outline hover:bg-purple-50 hover:text-black"
+                          }
+              `}
                       >
-                        {isInCart ? "✓ In Cart" : "🛒 Add to Cart"}
+                        {isInCart ? "✓ In Cart" : "🛒 Add"}
                       </button>
 
                       <button
@@ -656,10 +778,17 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
                           e.stopPropagation();
                           handleBuy(artwork);
                         }}
-                        className="flex-1 min-w-[110px] btn-primary text-sm transition-all duration-200 hover:scale-105"
-                        style={{ flexBasis: "40%" }}
+                        className="
+                flex-1 min-w-[90px] sm:min-w-[110px]
+                py-1.5 sm:py-2 px-3 sm:px-4
+                rounded-md sm:rounded-lg
+                btn-primary
+                text-xs sm:text-sm
+                transition-all
+                sm:hover:scale-105
+              "
                       >
-                        Buy Now
+                        Buy
                       </button>
                     </div>
                   </div>
@@ -667,114 +796,115 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
               );
             })}
           </div>
+
         )}
 
 
 
-      
-      <div className="flex justify-center items-center mt-12 mb-8">
-        {/* Loading indicator */}
-        {isFetching && visibleArtworks.length < filteredArtworks.length && (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-2 text-sm text-gray-600">Loading more artworks...</p>
-          </div>
-        )}
 
-        {!isFetching && visibleArtworks.length >= filteredArtworks.length && filteredArtworks.length > 0 && (
-          <div className="text-center py-4 text-gray-400 font-medium">
-            No more artworks.
-          </div>
-        )}
-      </div>
+        <div className="flex justify-center items-center mt-12 mb-8">
+          {/* Loading indicator */}
+          {isFetching && visibleArtworks.length < filteredArtworks.length && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-600">Loading more artworks...</p>
+            </div>
+          )}
 
-
-
-
-      {/* Not available modal */}
-      {showModal && (
-        <div
-          className="fixed top-0 left-0 w-screen h-screen bg-slate-900/30 backdrop-blur flex items-center justify-center z-50"
-          onClick={() => setShowModal(false)}
-        >
-          <div
-            className="bg-white rounded-xl shadow-xl px-8 py-6 min-w-[300px] text-center"
-            onClick={e => e.stopPropagation()}
-          >
-            <p className="text-lg font-medium mb-4">Currently not available</p>
-            <button
-              className="btn-primary px-4 py-2 rounded"
-              onClick={() => setShowModal(false)}
-            >
-              Close
-            </button>
-          </div>
+          {!isFetching && visibleArtworks.length >= filteredArtworks.length && filteredArtworks.length > 0 && (
+            <div className="text-center py-4 text-gray-400 font-medium">
+              No more artworks.
+            </div>
+          )}
         </div>
-      )}
-      {showGoTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
-          aria-label="Scroll to top"
-        >
-          ↑
-        </button>
-      )}
-      {/* Login Modal */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
 
-          <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 
+
+
+
+        {/* Not available modal */}
+        {showModal && (
+          <div
+            className="fixed top-0 left-0 w-screen h-screen bg-slate-900/30 backdrop-blur flex items-center justify-center z-50"
+            onClick={() => setShowModal(false)}
+          >
+            <div
+              className="bg-white rounded-xl shadow-xl px-8 py-6 min-w-[300px] text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <p className="text-lg font-medium mb-4">Currently not available</p>
+              <button
+                className="btn-primary px-4 py-2 rounded"
+                onClick={() => setShowModal(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+        {showGoTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
+            aria-label="Scroll to top"
+          >
+            ↑
+          </button>
+        )}
+        {/* Login Modal */}
+        {showLoginModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-fadeIn">
+
+            <div className="relative bg-white/80 backdrop-blur-xl shadow-2xl border border-white/40 
                     rounded-2xl p-8 w-[90%] max-w-sm animate-slideUp">
 
-            {/* Close Icon */}
-            <button
-              onClick={() => {
-                setShowLoginModal(false);
-                navigate('/main-dashboard');
-              }}
-              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition"
-            >
-              ✖
-            </button>
+              {/* Close Icon */}
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/main-dashboard');
+                }}
+                className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 transition"
+              >
+                ✖
+              </button>
 
-            {/* Title */}
-            <h2 className="text-2xl font-bold text-gray-800 text-center mb-3">
-              Please Login
-            </h2>
+              {/* Title */}
+              <h2 className="text-2xl font-bold text-gray-800 text-center mb-3">
+                Please Login
+              </h2>
 
-            {/* Subtitle */}
-            <p className="text-gray-600 text-center mb-6">
-              You need to log in to access this feature.
-            </p>
+              {/* Subtitle */}
+              <p className="text-gray-600 text-center mb-6">
+                You need to log in to access this feature.
+              </p>
 
-            {/* Action Button */}
-            <button
-              onClick={() => {
-                setShowLoginModal(false);
-                navigate('/user-login');
-              }}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500
+              {/* Action Button */}
+              <button
+                onClick={() => {
+                  setShowLoginModal(false);
+                  navigate('/user-login');
+                }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500
                    text-white font-semibold shadow-md hover:shadow-lg hover:scale-[1.02]
                    transition-all"
-            >
-              Go to Login
-            </button>
+              >
+                Go to Login
+              </button>
 
-            {/* Secondary button */}
-            <button
-              onClick={() => setShowLoginModal(false)}
-              className="mt-4 w-full py-3 rounded-xl border border-gray-300 
+              {/* Secondary button */}
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="mt-4 w-full py-3 rounded-xl border border-gray-300 
                    text-gray-700 font-medium hover:bg-gray-100 transition"
-            >
-              Cancel
-            </button>
+              >
+                Cancel
+              </button>
 
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-    </div>
+      </div>
     </div >
   );
 }

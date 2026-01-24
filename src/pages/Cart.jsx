@@ -7,30 +7,12 @@ function PriceDisplay({ cost }) {
   const discountPercent = 15;
 
   return (
-    <div>
-      <div style={{ fontSize: "12px", color: "#555" }}>M.R.P - </div>
-      <span
-        style={{
-          textDecoration: "line-through",
-          color: "#888",
-          marginRight: 8,
-        }}
-      >
-        ₹{originalPrice}
-      </span>
-      <span
-        style={{
-          color: "green",
-          fontWeight: 500,
-          marginRight: 8,
-        }}
-      >
-        ({discountPercent}% off)
-      </span>
-      <span style={{ fontWeight: "bold" }}>₹{cost}</span>
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-gray-400 line-through text-xs">₹{originalPrice}</span>
+      <span className="text-green-600 font-medium text-xs">-{discountPercent}%</span>
+      <span className="font-bold text-gray-900">₹{cost}</span>
     </div>
   );
-
 }
 
 function Cart() {
@@ -129,110 +111,78 @@ function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
-      {/* Compact Header Section - Single Line */}
-      <div className="bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-700 text-white py-4 shadow-lg">
-        <div className="max-w-4xl mx-auto px-6">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 text-gray-800">
+      {/* Compact Header Section */}
+      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-purple-100 shadow-sm">
+        <div className="max-w-3xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* Left Side - Icon and Title */}
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-full backdrop-blur-sm">
-                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-purple-100 rounded-lg text-purple-600">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold">Your Cart</h1>
+              <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
             </div>
-
-            {/* Right Side - Item Count */}
-            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-              <span className="text-sm font-medium">
+            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
+              <span className="text-xs font-medium text-purple-700">
                 {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
               </span>
-              <div className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
             </div>
           </div>
         </div>
       </div>
 
-
       {/* Main Cart Content */}
-      <div className="max-w-4xl mx-auto py-8 px-6">
-        <div className="grid lg:grid-cols-3 gap-8">
+      <div className="max-w-3xl mx-auto py-6 px-4">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="space-y-6">
-              {cartItems.map((item, index) => {
-                const isAvailable = item.artworks?.availability;
+          <div className="md:col-span-2 space-y-4">
+            {cartItems.map((item, index) => {
+              const isAvailable = item.artworks?.availability;
 
-                return (
-                  <div
-                    key={item.id}
-                    className={`group relative bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden ${!isAvailable ? 'opacity-75' : ''
-                      }`}
-                    style={{
-                      animationDelay: `${index * 100}ms`,
-                      animation: 'fadeInUp 0.6s ease-out forwards'
-                    }}
-                    onClick={() => navigate(`/product?id=${item.artwork_id}`)}
-                  >
-                    {/* Availability Banner */}
-                    {!isAvailable && (
-                      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-red-500 to-pink-500 text-white text-center py-2 text-sm font-medium z-10">
-                        ⚠️ Currently Unavailable
-                      </div>
-                    )}
+              return (
+                <div
+                  key={item.id}
+                  className={`group relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden ${!isAvailable ? 'opacity-75' : ''}`}
+                >
+                  {/* Availability Banner */}
+                  {!isAvailable && (
+                    <div className="bg-red-50 text-red-600 text-center py-1 text-xs font-medium border-b border-red-100">
+                      Currently Unavailable
+                    </div>
+                  )}
 
-                    <div className={`p-6 ${!isAvailable ? 'pt-16' : ''}`}>
-                      <div className="flex flex-col md:flex-row gap-6">
-                        {/* Enhanced Image */}
-                        <div className="relative group/image">
-                          <div className="w-full md:w-32 h-48 md:h-32 rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 cursor-pointer transition-transform duration-300 group-hover/image:scale-105">
-                            <img
-                              src={item.artworks?.image_urls?.[0] || '/default-image.png'}
-                              alt={item.artworks?.title || 'Untitled'}
-                              className="w-full h-full object-cover"
+                  <div className="p-4 flex gap-4">
+                    {/* Image */}
+                    <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
+                      <img
+                        src={item.artworks?.image_urls?.[0] || '/default-image.png'}
+                        alt={item.artworks?.title || 'Untitled'}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
 
-                            />
-
-                          </div>
-
-                        </div>
-
-                        {/* Enhanced Details */}
-                        <div className="flex-1 space-y-3">
-                          <div
-                            className="cursor-pointer group/title"
-
-                          >
-                            <h3 className="text-xl font-bold text-gray-900 group-hover/title:text-purple-600 transition-colors duration-300 line-clamp-2">
-                              {item.artworks?.title || 'Untitled Artwork'}
-                            </h3>
-                          </div>
-
-                          {/* Price with Enhanced Styling */}
-                          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4">
-                            <PriceDisplay cost={item.artworks?.cost} />
-                          </div>
-
-                          {/* Additional Info */}
-                          <div className="flex flex-wrap gap-2 text-sm text-gray-600">
-                            <span className="bg-gray-100 px-3 py-1 rounded-full">
-                              🎨 Artwork
-                            </span>
-                            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full">
-                              ✨ Premium Quality
-                            </span>
-                          </div>
+                    {/* Details */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <h3 
+                          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-purple-600 transition-colors"
+                          onClick={() => navigate(`/product?id=${item.artwork_id}`)}
+                        >
+                          {item.artworks?.title || 'Untitled Artwork'}
+                        </h3>
+                        <div className="mt-1">
+                           <PriceDisplay cost={item.artworks?.cost} />
                         </div>
                       </div>
 
-                      {/* Enhanced Action Buttons */}
-                      <div className="mt-6 flex gap-3">
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2 mt-2">
                         <button
-                          className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] ${isAvailable
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 hover:shadow-green-500/25'
-                            : 'bg-gradient-to-r from-gray-400 to-gray-500 cursor-not-allowed'
+                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium text-white shadow-sm transition-all ${isAvailable
+                            ? 'bg-gray-900 hover:bg-gray-800'
+                            : 'bg-gray-400 cursor-not-allowed'
                             }`}
                           onClick={(event) => {
                             event.stopPropagation();
@@ -240,56 +190,44 @@ function Cart() {
                           }}
                           disabled={!isAvailable}
                         >
-                          <div className="flex items-center justify-center gap-2">
-                            {isAvailable ? (
-                              <>
-
-                                Order Now
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636" />
-                                </svg>
-                                Not Available
-                              </>
-                            )}
-                          </div>
+                          {isAvailable ? 'Buy Now' : 'Sold Out'}
                         </button>
 
                         <button
-                          className="flex-1 py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 shadow-lg hover:shadow-red-500/25 transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+                          className="py-1.5 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleRemove(item.id);
                           }}
                         >
-                          <div className="flex items-center justify-center gap-2">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                            Remove
-                          </div>
+                          Remove
                         </button>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
 
           {/* Cart Summary Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-8 space-y-6">
-
-
-              {/* Continue Shopping */}
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-200 rounded-2xl p-6 text-center">
-                <h3 className="font-semibold text-gray-900 mb-2">Keep Exploring</h3>
-                <p className="text-gray-600 text-sm mb-4">Discover more amazing artworks from talented artists</p>
+          <div className="md:col-span-1">
+            <div className="sticky top-20">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <h3 className="font-semibold text-gray-900 text-sm mb-2">Summary</h3>
+                <div className="space-y-2 text-xs text-gray-600 mb-4">
+                  <div className="flex justify-between">
+                    <span>Items</span>
+                    <span>{cartItems.length}</span>
+                  </div>
+                  <div className="flex justify-between font-medium text-gray-900 pt-2 border-t border-gray-100">
+                    <span>Total Estimated</span>
+                    <span>₹{cartItems.reduce((acc, item) => acc + (item.artworks?.cost || 0), 0)}</span>
+                  </div>
+                </div>
+                
                 <button
-                  className="bg-white hover:bg-gray-50 text-gray-900 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors duration-300"
+                  className="w-full py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded-lg border border-purple-200 transition-colors"
                   onClick={() => navigate('/main-dashboard')}
                 >
                   Continue Shopping
@@ -299,27 +237,6 @@ function Cart() {
           </div>
         </div>
       </div>
-
-      {/* Add this CSS for animations */}
-      <style jsx>{`
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(30px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
-      }
-      
-      .line-clamp-2 {
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-    `}</style>
     </div>
   );
 

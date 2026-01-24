@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 import { Pencil, Share2, } from "lucide-react";
 import { MapPin } from "lucide-react";
+import { Share } from '@capacitor/share';
+import { Capacitor } from '@capacitor/core';
 
 // import { HashRouter as Router } from "react-router-dom";
 // instead of BrowserRouter
@@ -77,61 +79,66 @@ function ConfirmationModal({ visible, onConfirm, onCancel, message }) {
   );
 }
 
-
-
-
 function ArtistProfileShare({ artistId }) {
   const [copied, setCopied] = useState(false);
-  const profileUrl = `${window.location.origin}/#/artist-profile?id=${artistId}`;
+  const profileUrl = `https://scopebrush.vercel.app/#/artist-profile?id=${artistId}`;
 
   const handleShare = async () => {
-    // Native share on supported devices
+    // 1️⃣ Native Capacitor share (Android / iOS)
+    if (Capacitor.isNativePlatform()) {
+      await Share.share({
+        title: 'Check out this artist',
+        text: 'Take a look at this artist’s profile!',
+        url: profileUrl,
+        dialogTitle: 'Share Artist Profile',
+      });
+      return;
+    }
+
+    // 2️⃣ Web Share API
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Check out this artist",
-          text: "Take a look at this artist’s profile!",
+          title: 'Check out this artist',
+          text: 'Take a look at this artist’s profile!',
           url: profileUrl,
         });
       } catch (err) {
-        console.error("Share canceled or failed", err);
+        console.log('Share cancelled');
       }
-    } else {
-      // Fallback: copy to clipboard
-      try {
-        await navigator.clipboard.writeText(profileUrl);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (err) {
-        console.error("Copy failed", err);
-        alert("Could not copy link. Please copy manually: " + profileUrl);
-      }
+      return;
+    }
+
+    // 3️⃣ Clipboard fallback
+    try {
+      await navigator.clipboard.writeText(profileUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      alert('Copy failed. Please copy manually:\n' + profileUrl);
     }
   };
 
   return (
-    <>
-      <button
-        onClick={handleShare}
-        className="
-    flex items-center gap-1.5 
-    px-4 py-1.5 
-    rounded-full 
-    bg-blue-500 hover:bg-blue-600 
-    text-white 
-    font-medium 
-    shadow-sm 
-    transition 
-    text-xs sm:text-sm
-  "
-        aria-label="Share Profile"
-      >
-        <Share2 className="w-3.5 h-3.5" />
-        <span>Share</span>
-      </button>
-
-    </>
-
+    <button
+      onClick={handleShare}
+      aria-label="Share Profile"
+      title="Share Profile"
+      className="
+        flex items-center gap-1.5
+        px-4 py-1.5
+        rounded-full
+        bg-blue-500 hover:bg-blue-600
+        text-white
+        font-medium
+        shadow-sm
+        transition
+        text-xs sm:text-sm
+      "
+    >
+      <Share2 className="w-3.5 h-3.5" />
+      <span>{copied ? 'Copied!' : 'Share'}</span>
+    </button>
   );
 }
 

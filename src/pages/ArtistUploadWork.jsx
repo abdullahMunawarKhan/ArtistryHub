@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 import Autocomplete from "react-google-autocomplete";
 import { useRef } from 'react';
+import ImageViewer from "../components/ImageViewer";
+
 // import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
 function roundToNearest9(num) {
@@ -991,124 +993,16 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
       </form>
 
-      {/* Image Viewer Modal */}
       {imageViewerOpen && previewUrls.length > 0 && (
-        <div
-          onClick={() => setImageViewerOpen(false)}
-          className="fixed inset-0 w-screen h-screen bg-black bg-opacity-90 flex justify-center items-center z-50 select-none p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative w-full h-full flex flex-col items-center justify-center"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setImageViewerOpen(false)}
-              className="fixed top-6 right-6 z-20 w-10 h-10 bg-black bg-opacity-50 hover:bg-opacity-70 rounded-full flex items-center justify-center text-white text-2xl font-bold cursor-pointer transition-all duration-200 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-white"
-              aria-label="Close image viewer"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-
-            {/* Fixed Zoom Controls - Bottom Right */}
-            <div className="fixed bottom-6 right-6 z-20 flex flex-col gap-2 bg-black bg-opacity-40 p-2 rounded-lg backdrop-blur-sm">
-              <button
-                onClick={zoomIn}
-                disabled={zoom >= maxZoom}
-                className={`w-10 h-10 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center ${zoom >= maxZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
-                  }`}
-                aria-label="Zoom in"
-              >
-                +
-              </button>
-
-              <span className="text-white font-semibold text-xs bg-black bg-opacity-30 px-2 py-1 rounded text-center">
-                {(zoom * 100).toFixed(0)}%
-              </span>
-
-              <button
-                onClick={zoomOut}
-                disabled={zoom <= minZoom}
-                className={`w-10 h-10 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center ${zoom <= minZoom ? 'cursor-not-allowed opacity-50 hover:scale-100' : 'cursor-pointer'
-                  }`}
-                aria-label="Zoom out"
-              >
-                −
-              </button>
-
-              {/* Reset View Button */}
-              {(zoom > 1 || position.x !== 0 || position.y !== 0) && (
-                <button
-                  onClick={resetImageView}
-                  className="w-10 h-10 text-xs bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white flex items-center justify-center cursor-pointer"
-                  aria-label="Reset view"
-                  title="Reset view"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-              )}
-            </div>
-
-            {/* Image Container with Pan Support */}
-            <div
-              className="relative flex items-center justify-center max-w-[90vw] max-h-[90vh] overflow-hidden"
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              <img
-                src={previewUrls[currentImageIndex]}
-                alt={`artwork-viewer-${currentImageIndex}`}
-                className="max-w-full max-h-[80vh] rounded-lg shadow-2xl select-none transition-transform duration-200 ease-out"
-                style={{
-                  transform: `scale(${zoom}) translate(${position.x / zoom}px, ${position.y / zoom}px)`,
-                  cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-                  boxShadow: '0 0 30px rgba(255,255,255,0.3)',
-                }}
-                draggable="false"
-              />
-            </div>
-
-            {/* Navigation Controls - Bottom Center */}
-            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex gap-3 items-center bg-black bg-opacity-40 px-4 py-2 rounded-lg backdrop-blur-sm">
-              <button
-                onClick={goToPrevImage}
-                className="px-4 py-2 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white"
-                aria-label="Previous image"
-              >
-                ‹
-              </button>
-
-              <span className="text-white text-sm bg-black bg-opacity-30 px-3 py-1 rounded-lg">
-                {currentImageIndex + 1} / {previewUrls.length}
-              </span>
-
-              <button
-                onClick={goToNextImage}
-                className="px-4 py-2 text-xl bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-lg cursor-pointer transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-white"
-                aria-label="Next image"
-              >
-                ›
-              </button>
-            </div>
-
-            {/* Pan Hint - Shows when zoomed in */}
-            {zoom > 1 && !isDragging && (
-              <div className="fixed top-6 left-1/2 transform -translate-x-1/2 z-20 text-white text-sm bg-black bg-opacity-40 px-4 py-2 rounded-lg backdrop-blur-sm animate-fade-in">
-                Click and drag to pan
-              </div>
-            )}
-          </div>
-        </div>
+        <ImageViewer
+          images={previewUrls}
+          idx={currentImageIndex}
+          setIdx={setCurrentImageIndex}
+          setViewerOpen={setImageViewerOpen}
+          watermarkText="@ScopeBrush • Preview"
+        />
       )}
+
 
 
       {showRemoveModal && (

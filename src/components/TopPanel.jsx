@@ -19,7 +19,6 @@ import {
 import { UserRound, ChevronDown, Menu, X } from "lucide-react";
 import { KeyRound, LogOut, Mail } from "lucide-react";
 
-
 function TopPanel({ footerOpen, setFooterOpen }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -111,16 +110,19 @@ function TopPanel({ footerOpen, setFooterOpen }) {
       if (loginDropdownRef.current && !loginDropdownRef.current.contains(event.target)) {
         setLoginDropdownOpen(false);
       }
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setProfileMenuOpen(false);
+      }
     }
 
-    if (adminMenuOpen || loginDropdownOpen) {
+    if (adminMenuOpen || loginDropdownOpen || profileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [adminMenuOpen, loginDropdownOpen]);
+  }, [adminMenuOpen, loginDropdownOpen, profileMenuOpen]);
 
   let clickTimeout = null;
 
@@ -180,7 +182,10 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   };
 
   return (
-    <header className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-2 pr-2">
+    <header 
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-2 pr-2"
+    >
       <nav className="flex items-center justify-between px-2 md:px-4 py-2 w-full">
         {/* Left: Logo and Name, flush to left */}
         <div className="flex items-center flex-shrink-0">

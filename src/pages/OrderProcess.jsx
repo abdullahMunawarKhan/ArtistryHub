@@ -140,6 +140,11 @@ export default function OrderProcess() {
 
   // Payment
   async function handlePayment() {
+    if (!form.fullName?.trim() || !form.mobile?.trim() || !form.shippingAddress?.trim()) {
+      alert("Please fill all required fields");
+      return;
+    }
+
     if (!policiesChecked) {
       setShowPolicies(true);
       return;
@@ -197,6 +202,11 @@ export default function OrderProcess() {
         name: form.fullName,
         contact: form.mobile
       },
+      modal: {
+        ondismiss: function () {
+          setProcessing(false);
+        }
+      },
       theme: { color: "#F59E0B" }
     };
 
@@ -208,7 +218,7 @@ export default function OrderProcess() {
       <div className="h-screen flex items-center justify-center">
         <p className="text-sm md:text-base animate-pulse">Loading...</p>
       </div>
-    );
+    ); 
 
   if (!artwork)
     return (
@@ -278,6 +288,7 @@ export default function OrderProcess() {
               icon={<User size={16} />}
               label="Full Name"
               name="fullName"
+              required
               value={form.fullName}
               onChange={handleChange}
               placeholder="Your full name"
@@ -289,6 +300,7 @@ export default function OrderProcess() {
               label="Mobile Number"
               name="mobile"
               type="tel"
+              required
               value={form.mobile}
               onChange={handleChange}
               placeholder="10-digit mobile number"
@@ -310,6 +322,7 @@ export default function OrderProcess() {
               icon={<MapPin size={16} />}
               label="Shipping Address*"
               name="shippingAddress"
+              required
               value={form.shippingAddress}
               onChange={handleChange}
               placeholder="Enter address with PIN code"
