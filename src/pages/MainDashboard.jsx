@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { Heart, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2 } from "lucide-react";
+
 
 function StarRating({ value }) {
   const fullStars = Math.floor(value);
