@@ -1,6 +1,6 @@
 {
   "name": "scopebrush",
-  "version": "5.0.0",
+  "version": "6.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
     "@capacitor/app": "^7.1.1",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
+    "@capacitor/push-notifications": "^7.0.4",
     "@capacitor/share": "^7.0.3",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.10.0",

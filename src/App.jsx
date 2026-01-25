@@ -32,6 +32,11 @@ import TermsConditions from './pages/TermsCondition';
 import ComingSoon from './pages/ComingSoon';
 import Demo from './pages/Demo';
 import { X } from "lucide-react";
+import AppUpdateChecker from "./components/AppUpdateChecker";
+import { registerForPushNotifications } from "./utils/pushNotifications";
+import { PushNotifications } from "@capacitor/push-notifications";
+
+
 
 
 function App() {
@@ -85,11 +90,55 @@ function App() {
     }
   }
 
+  useEffect(() => {
+    registerForPushNotifications();
+  }, []);
 
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    PushNotifications.addListener(
+      "pushNotificationActionPerformed",
+      (notification) => {
+        console.log(
+          "Notification tapped, app opened",
+          notification
+        );
+
+        // ❌ DO NOTHING ELSE
+        // AppUpdateChecker will run automatically
+      }
+    );
+  }, []);
+  useEffect(() => {
+    const listener = CapacitorApp.addListener(
+      'appUrlOpen',
+      async ({ url }) => {
+        console.log('Deep link opened:', url);
+
+        if (url.includes('auth/callback')) {
+          // Let Supabase read session from URL
+          const { data, error } = await supabase.auth.getSession();
+
+          if (!error && data?.session) {
+            console.log('Session restored');
+            navigate('/main-dashboard');
+          } else {
+            console.error('No session found', error);
+          }
+        }
+      }
+    );
+
+    return () => {
+      listener.remove();
+    };
+  }, [navigate]);
 
   return (
 
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
+      <AppUpdateChecker />
       {!(isWelcomePage || isComingSoonPage) && (
         <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />
       )}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "446364150308",
+    "project_id": "scopebrush",
+    "storage_bucket": "scopebrush.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:446364150308:android:bfda005552efe050fc06b1",
+        "android_client_info": {
+          "package_name": "com.scopebrush.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxxuTe1mVoC_q2cKDwKkzZ5WALrlee1J4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

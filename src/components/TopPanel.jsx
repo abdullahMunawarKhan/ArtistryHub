@@ -19,6 +19,9 @@ import {
 import { UserRound, ChevronDown, Menu, X } from "lucide-react";
 import { KeyRound, LogOut, Mail } from "lucide-react";
 
+const FALLBACK_APK_URL =
+  "https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.3.apk";
+
 function TopPanel({ footerOpen, setFooterOpen }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
@@ -29,6 +32,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
 
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const isNative = Capacitor.isNativePlatform();
+  const [apkDownloadUrl, setApkDownloadUrl] = useState(FALLBACK_APK_URL);
 
   const navigate = useNavigate();
   const adminMenuRef = useRef();
@@ -99,7 +103,29 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   }, []);
 
 
+  useEffect(() => {
+    async function fetchLatestApk() {
+      try {
+        const { data, error } = await supabase
+          .from('appversions')
+          .select('version_url')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
+        if (!error && data?.version_url) {
+          setApkDownloadUrl(data.version_url);
+        } else {
+          setApkDownloadUrl(FALLBACK_APK_URL);
+        }
+      } catch (err) {
+        console.error('Failed to fetch APK URL', err);
+        setApkDownloadUrl(FALLBACK_APK_URL);
+      }
+    }
+
+    fetchLatestApk();
+  }, []);
 
 
   useEffect(() => {
@@ -182,7 +208,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
   };
 
   return (
-    <header 
+    <header
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
       className="bg-white/90 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/20 shadow-ScopeBrush pl-2 pr-2"
     >
@@ -540,7 +566,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 {!Capacitor.isNativePlatform() && (
                   <li>
                     <a
-                      href="https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.3.apk"
+                      href={apkDownloadUrl}
                       download
                       className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
                     >

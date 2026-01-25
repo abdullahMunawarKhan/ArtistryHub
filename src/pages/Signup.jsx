@@ -3,6 +3,7 @@ import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Paintbrush, Presentation, Sparkles } from "lucide-react";
+import { Capacitor } from '@capacitor/core';
 
 function Signup() {
   const [email, setEmail] = useState('');
@@ -42,13 +43,18 @@ function Signup() {
       setLoading(true);
 
       try {
+        const redirectTo = Capacitor.isNativePlatform()
+          ? 'scopebrush://auth/callback'
+          : window.location.origin + '/user-login';
+
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + '/user-login'
-          }
+            emailRedirectTo: redirectTo,
+          },
         });
+
 
         if (error) {
           setAnimate(false);

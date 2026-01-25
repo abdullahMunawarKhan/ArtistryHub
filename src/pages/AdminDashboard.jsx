@@ -115,6 +115,13 @@ function AdminDashboard() {
   const [artistUtr, setArtistUtr] = useState(null);
   const [fetchingUtr, setFetchingUtr] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = React.useState(false);
+  const [versions, setVersions] = useState([]);
+  const [newVersionModal, setNewVersionModal] = useState(false);
+
+  const [versionNo, setVersionNo] = useState('');
+  const [apkFile, setApkFile] = useState(null);
+  const [uploadingVersion, setUploadingVersion] = useState(false);
+  const [forceUpdate, setForceUpdate] = useState(false);
 
 
   async function showUtrModal(artworkId) {
@@ -145,7 +152,18 @@ function AdminDashboard() {
     setCurrentArtworkId(null);
   };
 
+  async function fetchAppVersions() {
+    const { data, error } = await supabase
+      .from('appversions')
+      .select('*')
+      .order('created_at', { ascending: false });
 
+    if (!error) {
+      setVersions(data || []);
+    } else {
+      console.error('Failed to fetch app versions', error);
+    }
+  }
 
 
   // for pin setup for each section
@@ -309,6 +327,11 @@ function AdminDashboard() {
     fetchArtworkPayments();
   }, []);
 
+  useEffect(() => {
+    if (selectedSection === 'appversion') {
+      fetchAppVersions();
+    }
+  }, [selectedSection]);
 
   useEffect(() => {
     async function fetchArtists() {
@@ -336,6 +359,75 @@ function AdminDashboard() {
     setRefundUTR(order.refund_utr || '');
     setShowRefundModal(true);
   }
+
+  async function handleUploadNewVersion() {
+    if (!versionNo || !apkFile) {
+      alert('Version number and APK file are required');
+      return;
+    }
+
+    setUploadingVersion(true);
+
+    try {
+      const fileName = `ScopeBrush_v${versionNo}_${Date.now()}.apk`;
+
+      // 1️⃣ Upload APK
+      const { error: uploadError } = await supabase.storage
+        .from('apk')
+        .upload(fileName, apkFile, {
+          contentType: 'application/vnd.android.package-archive'
+        });
+
+      if (uploadError) throw uploadError;
+
+      // 2️⃣ Get public URL
+      const { data } = supabase.storage
+        .from('apk')
+        .getPublicUrl(fileName);
+
+      // 3️⃣ Insert into DB
+      const { error: insertError } = await supabase
+        .from('appversions')
+        .insert({
+          version_no: versionNo,
+          version_url: data.publicUrl,
+          force_update: forceUpdate
+        });
+
+      if (insertError) throw insertError;
+
+      // 4️⃣ Reset + refresh
+      setVersionNo('');
+      setApkFile(null);
+      setNewVersionModal(false);
+      fetchAppVersions();
+      setForceUpdate(false);
+      
+    } catch (err) {
+      console.error(err);
+      alert('APK upload failed');
+    } finally {
+      setUploadingVersion(false);
+    }
+  }
+
+  async function handleDeleteVersion(id) {
+    if (!window.confirm('Delete this version?')) return;
+
+    const { error } = await supabase
+      .from('appversions')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setVersions(v => v.filter(item => item.id !== id));
+    } else {
+      alert('Failed to delete version');
+    }
+  }
+
+
+
   async function updatePaintingsSoldIfConfirmed(artworkId, Shipment_status) {
     if (Shipment_status === "confirm") {
       try {
@@ -803,7 +895,14 @@ function AdminDashboard() {
                 label: 'Total Earnings',
                 icon: '💰',
                 activeColor: 'blue'
+              },
+              {
+                key: 'appversion',
+                label: 'App Version Control',
+                icon: '⬆️',
+                activeColor: 'blue'
               }
+
             ].map((btn, i) => (
               <button
                 key={i}
@@ -1393,6 +1492,112 @@ function AdminDashboard() {
         </Modal>
       )}
 
+      {selectedSection === 'appversion' && (
+        <div className="animate-fadeIn">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800">
+              App Version Control
+            </h3>
+
+            <button
+              onClick={() => setNewVersionModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            >
+              Upload New Version
+            </button>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg shadow bg-white">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="p-3">Sr No</th>
+                  <th className="p-3">Version No</th>
+                  <th className="p-3">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {versions.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" className="p-4 text-center text-gray-500">
+                      No versions uploaded
+                    </td>
+                  </tr>
+                ) : (
+                  versions.map((v, i) => (
+                    <tr key={v.id} className="border-b">
+                      <td className="p-3">{i + 1}</td>
+                      <td className="p-3 font-mono">{v.version_no}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => handleDeleteVersion(v.id)}
+                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {newVersionModal && (
+        <Modal onClose={() => setNewVersionModal(false)}>
+          <h3 className="text-lg font-bold mb-4">Upload New App Version</h3>
+
+          <label className="block text-sm font-medium mb-1">
+            Version Number
+          </label>
+          <input
+            type="text"
+            value={versionNo}
+            onChange={(e) => setVersionNo(e.target.value)}
+            placeholder="e.g. 1.1.4"
+            className="w-full border rounded px-3 py-2 mb-4"
+          />
+          {/* 👇 FORCE UPDATE CHECKBOX (ADD HERE) */}
+          <label className="flex items-center gap-2 mb-4">
+            <input
+              type="checkbox"
+              checked={forceUpdate}
+              onChange={(e) => setForceUpdate(e.target.checked)}
+            />
+            <span className="text-sm font-medium">
+              Force update (block older versions)
+            </span>
+          </label>
+
+          <label className="block text-sm font-medium mb-1">
+            APK File
+          </label>
+          <input
+            type="file"
+            accept=".apk"
+            onChange={(e) => setApkFile(e.target.files[0])}
+            className="w-full mb-4"
+          />
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setNewVersionModal(false)}
+              className="px-4 py-2 bg-gray-300 rounded"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={handleUploadNewVersion}
+              disabled={uploadingVersion}
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+            >
+              {uploadingVersion ? 'Uploading…' : 'Upload'}
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* Modal for id_view */}
       {selectedArtwork && (
