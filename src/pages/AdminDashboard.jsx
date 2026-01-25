@@ -402,7 +402,7 @@ function AdminDashboard() {
       setNewVersionModal(false);
       fetchAppVersions();
       setForceUpdate(false);
-      
+
     } catch (err) {
       console.error(err);
       alert('APK upload failed');
@@ -1478,6 +1478,59 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+        {selectedSection === 'appversion' && (
+          <div className="animate-fadeIn">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-gray-800">
+                App Version Control
+              </h3>
+
+              <button
+                onClick={() => setNewVersionModal(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+              >
+                Upload New Version
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-lg shadow bg-white">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="p-3">Sr No</th>
+                    <th className="p-3">Version No</th>
+                    <th className="p-3">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {versions.length === 0 ? (
+                    <tr>
+                      <td colSpan="3" className="p-4 text-center text-gray-500">
+                        No versions uploaded
+                      </td>
+                    </tr>
+                  ) : (
+                    versions.map((v, i) => (
+                      <tr key={v.id} className="border-b">
+                        <td className="p-3">{i + 1}</td>
+                        <td className="p-3 font-mono">{v.version_no}</td>
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleDeleteVersion(v.id)}
+                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
       </div>
 
 
@@ -1544,6 +1597,7 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+
       {newVersionModal && (
         <Modal onClose={() => setNewVersionModal(false)}>
           <h3 className="text-lg font-bold mb-4">Upload New App Version</h3>
