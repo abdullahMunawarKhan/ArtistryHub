@@ -263,7 +263,7 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                 About Us
               </button>
               <a
-                href="https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.3.apk"
+                href={apkDownloadUrl}
                 download
                 className="nav-link flex items-center gap-2"
               >

@@ -680,15 +680,17 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
                   </div>
 
                   {/* Artwork Info */}
-                  <div className="p-3 sm:p-4 md:p-6">
+                  <div className="p-4 sm:p-4 md:p-6">
                     {/* Title & Like */}
-                    <div className="flex items-start justify-between mb-1 sm:mb-2">
-                      <h3 className="
-              font-semibold sm:font-bold
-              text-sm sm:text-base md:text-lg
-              text-slate-800
-              line-clamp-2
-            ">
+                    <div className="flex items-start justify-between mb-2 sm:mb-2">
+                      <h3
+                        className="
+        font-semibold sm:font-bold
+        text-base sm:text-base md:text-lg
+        text-slate-800
+        line-clamp-2
+      "
+                      >
                         {artwork.title}
                       </h3>
 
@@ -697,15 +699,15 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
                           e.stopPropagation();
                           toggleLike(artwork);
                         }}
-                        className="flex items-center gap-1 ml-1 sm:ml-2 active:scale-95"
+                        className="flex items-center gap-1.5 ml-2 active:scale-95"
                         aria-label="Like button"
                       >
                         <Heart
-                          size={22}
+                          size={26}                // ⬅️ bigger on mobile
                           className="sm:hidden"
                           fill={isLiked ? "red" : "none"}
                           stroke={isLiked ? "red" : "#a1a1aa"}
-                          strokeWidth={1.5}
+                          strokeWidth={1.8}
                         />
                         <Heart
                           size={32}
@@ -714,61 +716,61 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
                           stroke={isLiked ? "red" : "#a1a1aa"}
                           strokeWidth={1.5}
                         />
-                        <span className="text-xs sm:text-sm">
+                        <span className="text-sm sm:text-sm">
                           {artwork.liked_count ?? 0}
                         </span>
                       </button>
                     </div>
 
                     {/* Artist */}
-                    <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
-                      <span className="text-xs sm:text-sm text-slate-500">by</span>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm text-slate-500">by</span>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           navigate(`/artist-profile?id=${artwork.artist_id}`);
                         }}
-                        className="text-xs sm:text-sm font-medium text-purple-600 hover:text-purple-800"
+                        className="text-sm font-medium text-purple-600 hover:text-purple-800"
                       >
                         {artwork.artists?.name || "Unknown Artist"}
                       </button>
                     </div>
 
                     {/* Rating */}
-                    <div className="mb-2 sm:mb-4">
+                    <div className="mb-3 sm:mb-4">
                       <StarRating value={artwork.artists?.avg_rating ?? 0} />
                     </div>
 
                     {/* Price */}
-                    <div className="mb-2 sm:mb-4">
+                    <div className="mb-3 sm:mb-4">
                       <PriceDisplay cost={artwork.cost} />
                     </div>
 
                     {/* Description */}
                     {artwork.description && (
-                      <p className="text-xs sm:text-sm text-slate-600 mb-2 sm:mb-4 line-clamp-3">
+                      <p className="text-sm text-slate-600 mb-3 sm:mb-4 line-clamp-3">
                         {artwork.description}
                       </p>
                     )}
 
                     {/* Buttons */}
-                    <div className="flex gap-2 flex-wrap w-full py-1 sm:py-2">
+                    <div className="flex gap-3 flex-wrap w-full py-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleAddToCart(artwork);
                         }}
                         className={`
-                flex-1 min-w-[90px] sm:min-w-[110px]
-                py-1.5 sm:py-2 px-3 sm:px-4
-                rounded-md sm:rounded-lg
-                text-xs sm:text-sm font-medium
-                transition-all
-                ${isInCart
+        flex-1 min-w-[120px]
+        py-2 px-4
+        rounded-lg
+        text-sm font-medium
+        transition-all
+        ${isInCart
                             ? "bg-green-100 text-green-700 border border-green-200"
                             : "btn-outline hover:bg-purple-50 hover:text-black"
                           }
-              `}
+      `}
                       >
                         {isInCart ? "✓ In Cart" : "🛒 Add"}
                       </button>
@@ -779,19 +781,21 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
                           handleBuy(artwork);
                         }}
                         className="
-                flex-1 min-w-[90px] sm:min-w-[110px]
-                py-1.5 sm:py-2 px-3 sm:px-4
-                rounded-md sm:rounded-lg
-                btn-primary
-                text-xs sm:text-sm
-                transition-all
-                sm:hover:scale-105
-              "
+        flex-1 min-w-[120px]
+        py-2 px-4
+        rounded-lg
+        btn-primary
+        text-sm
+        transition-all
+        active:scale-95
+        sm:hover:scale-105
+      "
                       >
                         Buy
                       </button>
                     </div>
                   </div>
+
                 </div>
               );
             })}

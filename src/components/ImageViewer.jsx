@@ -19,7 +19,9 @@ export default function ImageViewer({
     const frameRef = useRef(null);
     const imgRef = useRef(null);
     const start = useRef({ x: 0, y: 0 });
-
+    const pointers = useRef(new Map());
+    const pinchStartDist = useRef(0);
+    const pinchStartZoom = useRef(1);
     const current = images[idx];
 
     useEffect(() => {
@@ -28,16 +30,48 @@ export default function ImageViewer({
     }, [idx]);
 
     const onPointerDown = (e) => {
-        if (zoom <= 1) return;
-        setDragging(true);
-        start.current = {
-            x: e.clientX - offset.x,
-            y: e.clientY - offset.y
-        };
+        e.currentTarget.setPointerCapture(e.pointerId);
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (pointers.current.size === 2) {
+            const pts = [...pointers.current.values()];
+            pinchStartDist.current = Math.hypot(
+                pts[0].x - pts[1].x,
+                pts[0].y - pts[1].y
+            );
+            pinchStartZoom.current = zoom;
+        } else if (zoom > 1) {
+            setDragging(true);
+            start.current = {
+                x: e.clientX - offset.x,
+                y: e.clientY - offset.y
+            };
+        }
     };
 
+
     const onPointerMove = (e) => {
-        if (!dragging || !frameRef.current || !imgRef.current) return;
+        if (!frameRef.current || !imgRef.current) return;
+        if (!pointers.current.has(e.pointerId)) return;
+
+        pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        // 🔍 Pinch zoom
+        if (pointers.current.size === 2) {
+            const pts = [...pointers.current.values()];
+            const dist = Math.hypot(
+                pts[0].x - pts[1].x,
+                pts[0].y - pts[1].y
+            );
+
+            const scale = dist / pinchStartDist.current;
+            const newZoom = clamp(pinchStartZoom.current * scale, 1, 3);
+            setZoom(newZoom);
+            return;
+        }
+
+        // ✋ Drag (single pointer)
+        if (!dragging) return;
 
         const frame = frameRef.current.getBoundingClientRect();
         const img = imgRef.current.getBoundingClientRect();
@@ -51,7 +85,15 @@ export default function ImageViewer({
         });
     };
 
-    const stopDragging = () => setDragging(false);
+
+    const stopDragging = (e) => {
+        pointers.current.delete(e.pointerId);
+        if (pointers.current.size < 2) {
+            pinchStartDist.current = 0;
+        }
+        setDragging(false);
+    };
+
     const onWheel = (e) => {
         if (!frameRef.current || !imgRef.current) return;
 
@@ -112,17 +154,20 @@ export default function ImageViewer({
                     {/* IMAGE */}
                     <div
                         ref={imgRef}
-                        className={`relative select-none touch-none ${zoom > 1 ? "cursor-grab" : "cursor-zoom-in"
+                        className={`relative select-none touch-pan-x touch-pan-y ${zoom > 1 ? "cursor-grab" : "cursor-zoom-in"
                             }`}
                         onPointerDown={onPointerDown}
                         onPointerMove={onPointerMove}
                         onPointerUp={stopDragging}
                         onPointerLeave={stopDragging}
+                        onPointerCancel={stopDragging}
+                        
                         style={{
                             transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
                             transition: dragging ? "none" : "transform .15s ease-out"
                         }}
                     >
+                        
                         <img
                             src={current}
                             draggable={false}

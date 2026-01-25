@@ -5,7 +5,15 @@ import { fetchTimeSeries } from '../utils/analytics';
 import TimeSeriesChart from '../components/TimeSeriesChart';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
+import {
+  Home,
+  Palette,
+  Image,
+  ShoppingCart,
+  CreditCard,
+  DollarSign,
+  Upload
+} from "lucide-react";
 
 
 // Fix the OrderTimer component
@@ -863,66 +871,75 @@ function AdminDashboard() {
               {
                 key: null,
                 label: 'Home',
-                icon: '🏠',
+                icon: Home,
                 activeColor: 'green'
               },
               {
                 key: 'artist',
                 label: 'Artist Management',
-                icon: '🎨',
+                icon: Palette,
                 activeColor: 'blue'
               },
               {
                 key: 'artwork',
                 label: 'Artwork Management',
-                icon: '🖼️',
+                icon: Image,
                 activeColor: 'blue'
               },
               {
                 key: 'order',
                 label: 'Order Management',
-                icon: '🛒',
+                icon: ShoppingCart,
                 activeColor: 'blue'
               },
               {
                 key: 'payment',
                 label: 'Artist Payments',
-                icon: '💳',
+                icon: CreditCard,
                 activeColor: 'blue'
               },
               {
                 key: 'earnings',
                 label: 'Total Earnings',
-                icon: '💰',
+                icon: DollarSign,
                 activeColor: 'blue'
               },
               {
                 key: 'appversion',
                 label: 'App Version Control',
-                icon: '⬆️',
+                icon: Upload,
                 activeColor: 'blue'
               }
+            ].map((btn, i) => {
+              const Icon = btn.icon;
 
-            ].map((btn, i) => (
-              <button
-                key={i}
-                onClick={() => {
-                  setSelectedSection(btn.key);
-                  // Auto close dropdown on mobile when not "Home"
-                  if (btn.key !== null) {
-                    setShowMobileMenu(false);
-                  }
-                }}
-                className={`w-full py-2 sm:py-3 px-3 sm:px-4 rounded-lg text-left text-sm sm:text-base font-semibold transition-all duration-200 flex items-center gap-2 ${selectedSection === btn.key
-                  ? `bg-${btn.activeColor}-600 text-white shadow-md`
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
-                  }`}
-              >
-                {btn.icon && <span className="text-lg sm:text-xl">{btn.icon}</span>}
-                <span className="truncate">{btn.label}</span>
-              </button>
-            ))}
+              return (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setSelectedSection(btn.key);
+                    if (btn.key !== null) {
+                      setShowMobileMenu(false);
+                    }
+                  }}
+                  className={`w-full py-2 sm:py-3 px-3 sm:px-4 rounded-lg 
+          text-left text-sm sm:text-base font-semibold 
+          transition-all duration-200 flex items-center gap-3
+          ${selectedSection === btn.key
+                      ? `bg-${btn.activeColor}-600 text-white shadow-md`
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                >
+                  <Icon
+                    size={20}
+                    className={`${selectedSection === btn.key ? 'text-white' : 'text-gray-500'}`}
+                  />
+                  <span className="truncate">{btn.label}</span>
+                </button>
+              );
+            })}
           </div>
+
         </div>
       </div>
 
@@ -1478,6 +1495,7 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+
         {selectedSection === 'appversion' && (
           <div className="animate-fadeIn">
             <div className="flex justify-between items-center mb-4">
@@ -1494,30 +1512,46 @@ function AdminDashboard() {
             </div>
 
             <div className="overflow-x-auto rounded-lg shadow bg-white">
-              <table className="min-w-full text-sm">
+              <table className="min-w-full text-sm text-gray-700">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="p-3">Sr No</th>
-                    <th className="p-3">Version No</th>
-                    <th className="p-3">Action</th>
+                    <th className="p-3 text-center font-semibold">Sr No</th>
+                    <th className="p-3 text-center font-semibold">Version No</th>
+                    <th className="p-3 text-center font-semibold">Action</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {versions.length === 0 ? (
                     <tr>
-                      <td colSpan="3" className="p-4 text-center text-gray-500">
+                      <td
+                        colSpan="3"
+                        className="p-4 text-center text-gray-500"
+                      >
                         No versions uploaded
                       </td>
                     </tr>
                   ) : (
                     versions.map((v, i) => (
-                      <tr key={v.id} className="border-b">
-                        <td className="p-3">{i + 1}</td>
-                        <td className="p-3 font-mono">{v.version_no}</td>
-                        <td className="p-3">
+                      <tr
+                        key={v.id}
+                        className="border-b hover:bg-gray-50 transition"
+                      >
+                        {/* Sr No */}
+                        <td className="p-3 text-center align-middle">
+                          {i + 1}
+                        </td>
+
+                        {/* Version No */}
+                        <td className="p-3 text-center font-mono align-middle">
+                          {v.version_no}
+                        </td>
+
+                        {/* Action */}
+                        <td className="p-3 text-center align-middle">
                           <button
                             onClick={() => handleDeleteVersion(v.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-md text-xs font-semibold"
                           >
                             Delete
                           </button>
@@ -1528,9 +1562,10 @@ function AdminDashboard() {
                 </tbody>
               </table>
             </div>
+
           </div>
         )}
-        
+
       </div>
 
 
@@ -1543,59 +1578,6 @@ function AdminDashboard() {
             className="max-w-full max-h-screen rounded"
           />
         </Modal>
-      )}
-
-      {selectedSection === 'appversion' && (
-        <div className="animate-fadeIn">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">
-              App Version Control
-            </h3>
-
-            <button
-              onClick={() => setNewVersionModal(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-            >
-              Upload New Version
-            </button>
-          </div>
-
-          <div className="overflow-x-auto rounded-lg shadow bg-white">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-3">Sr No</th>
-                  <th className="p-3">Version No</th>
-                  <th className="p-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {versions.length === 0 ? (
-                  <tr>
-                    <td colSpan="3" className="p-4 text-center text-gray-500">
-                      No versions uploaded
-                    </td>
-                  </tr>
-                ) : (
-                  versions.map((v, i) => (
-                    <tr key={v.id} className="border-b">
-                      <td className="p-3">{i + 1}</td>
-                      <td className="p-3 font-mono">{v.version_no}</td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => handleDeleteVersion(v.id)}
-                          className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       )}
 
       {newVersionModal && (
