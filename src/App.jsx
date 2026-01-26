@@ -91,49 +91,57 @@ function App() {
   }
 
   useEffect(() => {
+    let listener;
+
+    const setupListener = async () => {
+      listener = await CapacitorApp.addListener(
+        'appUrlOpen',
+        async ({ url }) => {
+          console.log('Deep link opened:', url);
+
+          if (url.includes('auth/callback')) {
+            const { data, error } = await supabase.auth.getSession();
+            if (!error && data?.session) {
+              navigate('/main-dashboard');
+            }
+          }
+        }
+      );
+    };
+
+    setupListener();
+
+    return () => {
+      listener?.remove(); // ✅ SAFE
+    };
+  }, [navigate]);
+
+  useEffect(() => {
     registerForPushNotifications();
   }, []);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
 
-    PushNotifications.addListener(
-      "pushNotificationActionPerformed",
-      (notification) => {
-        console.log(
-          "Notification tapped, app opened",
-          notification
-        );
+    let subscription;
 
-        // ❌ DO NOTHING ELSE
-        // AppUpdateChecker will run automatically
-      }
-    );
-  }, []);
-  useEffect(() => {
-    const listener = CapacitorApp.addListener(
-      'appUrlOpen',
-      async ({ url }) => {
-        console.log('Deep link opened:', url);
-
-        if (url.includes('auth/callback')) {
-          // Let Supabase read session from URL
-          const { data, error } = await supabase.auth.getSession();
-
-          if (!error && data?.session) {
-            console.log('Session restored');
-            navigate('/main-dashboard');
-          } else {
-            console.error('No session found', error);
-          }
+    const setup = async () => {
+      subscription = await PushNotifications.addListener(
+        "pushNotificationActionPerformed",
+        (notification) => {
+          console.log("Notification tapped, app opened", notification);
         }
-      }
-    );
+      );
+    };
+
+    setup();
 
     return () => {
-      listener.remove();
+      subscription?.remove(); // ✅ safe cleanup
     };
-  }, [navigate]);
+  }, []);
+
+
 
   return (
 

@@ -670,15 +670,18 @@ function ArtistDashboard() {
                 <button
                   key={section.id}
                   onClick={() => handleSectionClick(section.id)}
-                  className={`w-full text-left px-2 sm:px-3 md:px-4 py-2 sm:py-3 rounded-lg transition-colors duration-200 flex items-center space-x-2 sm:space-x-3 text-xs sm:text-sm md:text-base ${activeSection === section.id
-                    ? "bg-blue-100 text-blue-700 border border-blue-200"
-                    : "hover:bg-gray-100 text-gray-700"
+                  className={`w-full text-left px-2 sm:px-3 md:px-4 py-2 sm:py-3 rounded-lg
+      transition-colors duration-200 flex items-center space-x-2 sm:space-x-3
+      text-xs sm:text-sm md:text-base ${activeSection === section.id
+                      ? "bg-blue-100 text-blue-700 border border-blue-200"
+                      : "hover:bg-gray-100 text-gray-700"
                     }`}
                 >
-                  <span className="text-base sm:text-lg">{section.icon}</span>
+                  <section.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="font-medium truncate">{section.label}</span>
                 </button>
               ))}
+
             </nav>
           </div>
         </div>

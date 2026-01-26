@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate } from 'react-router-dom';
+import { Trash2, ShoppingBag } from 'lucide-react'
 
-function PriceDisplay({ cost }) {
-  const originalPrice = Math.round(cost * 1.15); // 15% increase
+function PriceDisplay({ cost, size = 'xs' }) {
+  const originalPrice = Math.round(cost * 1.15);
   const discountPercent = 15;
 
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-gray-400 line-through text-xs">₹{originalPrice}</span>
-      <span className="text-green-600 font-medium text-xs">-{discountPercent}%</span>
-      <span className="font-bold text-gray-900">₹{cost}</span>
+    <div className="flex items-center gap-1.5 text-xs">
+      <span className="text-gray-400 line-through font-medium">₹{originalPrice}</span>
+      <span className="text-emerald-500 font-bold">-{discountPercent}%</span>
+      <span className="font-black text-slate-900 text-sm">₹{cost}</span>
     </div>
   );
 }
@@ -97,121 +98,147 @@ function Cart() {
 
   if (!cartItems.length) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
-        <p className="mb-6">Add artworks to your cart to see them here.</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-4">
+        <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mb-6">
+          <svg className="w-12 h-12 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-black text-slate-950 mb-2">Your cart is empty</h2>
+        <p className="text-slate-500 mb-8 text-center max-w-xs">Look around the gallery and add some artistic masterpieces to your collection.</p>
         <button
-          className="px-6 py-2 bg-yellow-400 rounded font-semibold text-white"
+          className="px-8 py-3.5 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10"
           onClick={() => navigate('/main-dashboard')}
         >
-          Browse Artworks
+          Explore Gallery
         </button>
       </div>
     );
   }
 
+  const totalAmount = cartItems.reduce((acc, item) => acc + (item.artworks?.cost || 0), 0);
+
   return (
-    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-purple-50 via-white to-pink-50 text-gray-800">
-      {/* Compact Header Section */}
-      <div className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-purple-100 shadow-sm">
-        <div className="max-w-3xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-purple-100 rounded-lg text-purple-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
+    <div className="min-h-screen bg-[#FDFCFD] pb-20">
+      {/* Premium Header Section */}
+      <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+
+          <div className="relative flex items-center">
+
+            {/* LEFT : Back button */}
+            <button className="p-2">
+              {/* Back icon */}
+            </button>
+
+            {/* CENTER : Title (true center) */}
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-900/10">
+                <ShoppingBag className="w-4 h-4" />
               </div>
-              <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
+              <h1 className="text-xl font-black text-slate-950 tracking-tight">
+                Shopping Cart
+              </h1>
             </div>
 
-            <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
-              <span className="text-xs font-medium text-purple-700">
-                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
+            {/* RIGHT : Cart count */}
+            <div className="ml-auto flex items-center gap-3">
+              <span className="hidden sm:inline text-sm font-bold text-slate-400 uppercase tracking-widest">
+                {cartItems.length} {cartItems.length === 1 ? 'Masterpiece' : 'Masterpieces'}
               </span>
             </div>
+
           </div>
+
         </div>
       </div>
 
+
       {/* Main Cart Content */}
-      <div className="max-w-3xl mx-auto py-6 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Cart Items */}
-          <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item) => {
-              const isAvailable = item.artworks?.availability;
+      <div className="max-w-7xl mx-auto pt-6 sm:pt-10 px-3 sm:px-6">
+        <div className="flex flex-col lg:flex-row gap-8 sm:gap-12">
+          {/* Cart Items List */}
+          <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {cartItems.map((item) => {
+                const isAvailable = item.artworks?.availability;
 
-              return (
-                <div
-                  key={item.id}
-                  className={`bg-white rounded-xl shadow-sm border border-gray-100 transition-all duration-300 overflow-hidden ${!isAvailable ? 'opacity-75' : ''
-                    }`}
-                >
-                  {/* Availability Banner */}
-                  {!isAvailable && (
-                    <div className="bg-red-50 text-red-600 text-center py-1 text-xs font-medium border-b border-red-100">
-                      Currently Unavailable
-                    </div>
-                  )}
+                return (
+                  <div
+                    key={item.id}
+                    className={`group bg-white rounded-xl p-2.5 sm:p-4 border border-slate-100 shadow-sm hover:shadow-md transition-all ${!isAvailable ? 'grayscale opacity-60' : ''
+                      }`}
+                  >
+                    <div className="flex gap-3 sm:gap-4">
 
-                  <div className="p-4 flex gap-4 flex-wrap sm:flex-nowrap">
-                    {/* Image */}
-                    <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                      <img
-                        src={item.artworks?.image_urls?.[0] || '/default-image.png'}
-                        alt={item.artworks?.title || 'Untitled'}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex-1 min-w-0 flex flex-col justify-between">
-                      <div>
-                        <h3
-                          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-purple-600 transition-colors"
-                          onClick={() => navigate(`/product?id=${item.artwork_id}`)}
-                        >
-                          {item.artworks?.title || 'Untitled Artwork'}
-                        </h3>
-
-                        <div className="mt-1">
-                          <PriceDisplay cost={item.artworks?.cost} />
-                        </div>
+                      {/* Image */}
+                      <div className="w-20 sm:w-28 h-20 sm:h-28 rounded-lg overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0">
+                        <img
+                          src={item.artworks?.image_urls?.[0] || '/default-image.png'}
+                          alt={item.artworks?.title}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex flex-col sm:flex-row gap-2 mt-3">
-                        <button
-                          className={`w-full sm:flex-1 py-2 px-3 rounded-lg text-xs font-medium text-white shadow-sm transition-all ${isAvailable
-                              ? 'bg-gray-900 hover:bg-gray-800'
-                              : 'bg-gray-400 cursor-not-allowed'
-                            }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOrderNow(item.artwork_id);
-                          }}
-                          disabled={!isAvailable}
-                        >
-                          {isAvailable ? 'Buy Now' : 'Sold Out'}
-                        </button>
+                      {/* Content */}
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <div
+                          onClick={() => navigate(`/product?id=${item.artwork_id}`)}>
+                          <h3
+                            className="text-[11px] sm:text-sm font-bold uppercase text-slate-900 cursor-pointer hover:text-blue-600 truncate"
+                            onClick={() => navigate(`/product?id=${item.artwork_id}`)}
+                          >
+                            {item.artworks?.title}
+                          </h3>
 
-                        <button
-                          className="w-full sm:w-auto py-2 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemove(item.id);
-                          }}
-                        >
-                          Remove
-                        </button>
+                          <p className="text-[8px] sm:text-[10px] text-slate-400 mt-0.5">
+                            ID: #{item.artwork_id.slice(0, 6)}
+                          </p>
+
+                          <div className="mt-1 sm:mt-2">
+                            <PriceDisplay cost={item.artworks?.cost} />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-200">
+                          <div className="flex items-center gap-3">
+
+                            {/* Remove Button */}
+                            <button
+                              onClick={() => handleRemove(item.id)}
+                              className="w-8 h-8 flex items-center justify-center rounded-md border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 transition"
+                              title="Remove"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Order Button */}
+                            <button
+                              className={`h-8 px-4 flex items-center justify-center gap-2 text-xs font-semibold rounded-md transition
+        ${isAvailable
+                                  ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                                }`}
+                              onClick={() => handleOrderNow(item.artwork_id)}
+                              disabled={!isAvailable}
+                            >
+                              <ShoppingBag className="w-4 h-4" />
+                              {isAvailable ? 'Order Now' : 'Out of Stock'}
+                            </button>
+
+                          </div>
+                        </div>
+
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
+
+
+
         </div>
       </div>
     </div>

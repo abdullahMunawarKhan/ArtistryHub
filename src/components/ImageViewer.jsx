@@ -13,7 +13,8 @@ export default function ImageViewer({
     watermarkText
 }) {
     const [zoom, setZoom] = useState(1);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const offset = useRef({ x: 0, y: 0 });
+    const raf = useRef(null);
     const [dragging, setDragging] = useState(false);
 
     const frameRef = useRef(null);
@@ -79,10 +80,19 @@ export default function ImageViewer({
         const maxX = Math.max(0, (img.width - frame.width) / 2);
         const maxY = Math.max(0, (img.height - frame.height) / 2);
 
-        setOffset({
-            x: clamp(e.clientX - start.current.x, -maxX, maxX),
-            y: clamp(e.clientY - start.current.y, -maxY, maxY)
-        });
+        const nextX = clamp(e.clientX - start.current.x, -maxX, maxX);
+        const nextY = clamp(e.clientY - start.current.y, -maxY, maxY);
+
+        offset.current = { x: nextX, y: nextY };
+
+        if (!raf.current) {
+            raf.current = requestAnimationFrame(() => {
+                imgRef.current.style.transform =
+                    `translate(${offset.current.x}px, ${offset.current.y}px) scale(${zoom})`;
+                raf.current = null;
+            });
+        }
+
     };
 
 
@@ -154,20 +164,20 @@ export default function ImageViewer({
                     {/* IMAGE */}
                     <div
                         ref={imgRef}
-                        className={`relative select-none touch-pan-x touch-pan-y ${zoom > 1 ? "cursor-grab" : "cursor-zoom-in"
+                        className={`relative select-none touch-none ${zoom > 1 ? "cursor-grab" : "cursor-zoom-in"
                             }`}
                         onPointerDown={onPointerDown}
                         onPointerMove={onPointerMove}
                         onPointerUp={stopDragging}
                         onPointerLeave={stopDragging}
                         onPointerCancel={stopDragging}
-                        
+
                         style={{
                             transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-                            transition: dragging ? "none" : "transform .15s ease-out"
+                            transition: "none"
                         }}
                     >
-                        
+
                         <img
                             src={current}
                             draggable={false}
