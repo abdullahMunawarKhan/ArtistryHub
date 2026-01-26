@@ -210,31 +210,6 @@ function Cart() {
             })}
           </div>
 
-          {/* Cart Summary Sidebar */}
-          <div className="md:col-span-1">
-            <div className="sticky top-20">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                <h3 className="font-semibold text-gray-900 text-sm mb-2">Summary</h3>
-                <div className="space-y-2 text-xs text-gray-600 mb-4">
-                  <div className="flex justify-between">
-                    <span>Items</span>
-                    <span>{cartItems.length}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-gray-900 pt-2 border-t border-gray-100">
-                    <span>Total Estimated</span>
-                    <span>₹{cartItems.reduce((acc, item) => acc + (item.artworks?.cost || 0), 0)}</span>
-                  </div>
-                </div>
-                
-                <button
-                  className="w-full py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-medium rounded-lg border border-purple-200 transition-colors"
-                  onClick={() => navigate('/main-dashboard')}
-                >
-                  Continue Shopping
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
