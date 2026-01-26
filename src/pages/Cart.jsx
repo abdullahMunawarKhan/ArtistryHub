@@ -186,7 +186,7 @@ function Cart() {
                           onClick={() => navigate(`/product?id=${item.artwork_id}`)}>
                           <h3
                             className="text-[11px] sm:text-sm font-bold uppercase text-slate-900 cursor-pointer hover:text-blue-600 truncate"
-                            onClick={() => navigate(`/product?id=${item.artwork_id}`)}
+
                           >
                             {item.artworks?.title}
                           </h3>

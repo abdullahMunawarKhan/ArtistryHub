@@ -467,6 +467,55 @@ function UserLogin() {
                   )}
                 </motion.button>
               </form>
+              {showForgotModal && (
+                <div
+                  className="
+      mt-2
+      max-w-sm
+      mx-auto
+      px-3 py-2.5
+      rounded-md
+      bg-gray-50
+      border border-gray-200
+      space-y-2
+      text-left
+    "
+                >
+                  <p className="text-[11px] sm:text-xs text-gray-600 leading-snug">
+                    Enter your registered email to receive a reset link.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={handleResetPassword}
+                    disabled={isSending}
+                    className="
+        w-full
+        py-1.5
+        text-[11px] sm:text-xs
+        font-medium
+        text-blue-600
+        bg-white
+        border border-blue-300
+        rounded-md
+        hover:bg-blue-50
+        focus:outline-none
+        focus:ring-1 focus:ring-blue-400/40
+        disabled:opacity-50
+        transition
+      "
+                  >
+                    {isSending ? (
+                      <div className="flex items-center justify-center gap-1.5">
+                        <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                        <span>Sending…</span>
+                      </div>
+                    ) : (
+                      'Send reset email'
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Footer */}
               <div className="mt-5 px-4 py-3 rounded-xl bg-slate-900/30 lg:bg-gray-50 border border-white/20 lg:border-gray-200 text-center">

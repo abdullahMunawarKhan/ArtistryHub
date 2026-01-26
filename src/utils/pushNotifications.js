@@ -9,10 +9,15 @@ export async function registerForPushNotifications() {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
-    // 1️⃣ Ask permission
-    const permission = await PushNotifications.requestPermissions();
-    if (permission.receive !== "granted") {
-      console.log("Push permission not granted");
+    // 1️⃣ Check/Request permission
+    let permissionStatus = await PushNotifications.checkPermissions();
+
+    if (permissionStatus.receive === 'prompt') {
+      permissionStatus = await PushNotifications.requestPermissions();
+    }
+
+    if (permissionStatus.receive !== "granted") {
+      console.log("Push notification permission dismissed/denied");
       return;
     }
 
@@ -21,18 +26,29 @@ export async function registerForPushNotifications() {
 
     // 3️⃣ On successful registration
     PushNotifications.addListener("registration", async (token) => {
-      console.log("FCM token:", token.value);
+      console.log("FCM token successfully registered:", token.value);
 
       // Save token to Supabase
-      await supabase.from("push_tokens").upsert({
+      const { data: { user } } = await supabase.auth.getUser();
+
+      const { error } = await supabase.from("push_tokens").upsert({
         token: token.value,
-        platform: "android"
-      });
+        platform: Capacitor.getPlatform(),
+        user_id: user?.id || null, // Associate with user if logged in
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'token' });
+
+      if (error) console.error("Error saving token to Supabase:", error);
     });
 
     // 4️⃣ Handle errors
     PushNotifications.addListener("registrationError", (err) => {
       console.error("Push registration error:", err);
+    });
+
+    // 5️⃣ Listen to incoming notifications while app is open
+    PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      console.log("Push received:", notification);
     });
 
   } catch (err) {
