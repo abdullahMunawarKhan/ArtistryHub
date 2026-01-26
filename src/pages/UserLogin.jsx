@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
-import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { useNavigate, Link } from 'react-router-dom';
+import { Users, Eye, EyeOff, Mail, Lock, ChevronRight, AlertCircle, CheckCircle2, Loader2, AppWindow } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function UserLogin() {
   const [email, setEmail] = useState('');
@@ -233,199 +234,356 @@ function UserLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 
-                flex items-start justify-center 
-                pt-10 sm:pt-10 px-3 sm:px-6">
-      {/* Mobile-optimized container */}
-      <div className="w-full max-w-xs sm:max-w-md">
-        {/* Main card - enhanced mobile styling */}
-        <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-xl sm:rounded-2xl p-5 sm:p-8">
+    <div className="relative min-h-screen w-full flex items-start lg:items-center justify-center overflow-hidden">
+      {/* Overlay for better overall depth */}
 
-          {/* Header - Mobile optimized */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-1">
-              Sign in to
-            </h1>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              ScopeBrush
-            </h2>
-            <div className="w-12 h-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full mx-auto mt-3"></div>
+
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-8 lg:pt-6 pb-4 sm:pb-10 flex justify-center">
+        {/* Main Card Container */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full grid grid-cols-1 lg:grid-cols-2 bg-slate-900/20 backdrop-blur-3xl rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/10"
+        >
+          {/* Left Side: Login Form */}
+          <div
+            className="
+    p-5 sm:p-12 lg:p-16
+    flex flex-col justify-center relative
+    text-white lg:text-gray-900
+    lg:bg-white
+  "
+          >
+            {/* Background Image with Dark Overlay (ONLY mobile & tablet) */}
+            <div className="absolute inset-0 -z-10 lg:hidden">
+              <img
+                src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1200&auto=format&fit=crop"
+                alt="Artistic background"
+                className="w-full h-full object-cover scale-110 opacity-65"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/40 to-slate-900/55" />
+
+            </div>
+
+            {/* Header for Mobile */}
+            <div className="lg:hidden flex flex-col items-center mb-4">
+              <div className="mb-6 text-center z-10 flex flex-row items-center justify-center">
+                <motion.img
+                  src="/images/logo2.jpeg"
+                  alt="ScopeBrush Logo"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-20 w-20 sm:h-24 sm:w-24 rounded-full shadow-xl border-4 border-purple-400 mr-6"
+                />
+                <div className="flex flex-col items-start">
+                  <motion.div
+                    className="text-3xl sm:text-5xl font-extrabold text-white drop-shadow-2xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
+                  >
+                    ScopeBrush
+                  </motion.div>
+                  <motion.div
+                    className="h-1 w-24 sm:w-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-md mt-2"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
+                    style={{ transformOrigin: "left" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative max-w-md mx-auto w-full px-4">
+              {/* Header */}
+              <div className="mb-5 px-5 py-4 rounded-2xl shadow-sm text-center">
+                <h2 className="text-2xl font-bold text-white lg:text-gray-900">
+                  Welcome Back
+                </h2>
+                <p className="text-xs text-white/70 lg:text-gray-500 mt-1">
+                  Sign in to your artistic portal
+                </p>
+              </div>
+
+              {/* Status Messages */}
+              <AnimatePresence mode="wait">
+                {resetStatus && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="mb-4 px-4 py-3 rounded-xl bg-blue-500/20 lg:bg-blue-50 border border-blue-400/30 lg:border-blue-200 text-blue-200 lg:text-blue-700 text-sm"
+                  >
+                    <CheckCircle2 className="inline w-4 h-4 mr-2" />
+                    {resetStatus}
+                  </motion.div>
+                )}
+
+                {loginError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="mb-4 px-4 py-3 rounded-xl bg-red-500/20 lg:bg-red-50 border border-red-400/30 lg:border-red-200 text-red-200 lg:text-red-700 text-sm"
+                  >
+                    <AlertCircle className="inline w-4 h-4 mr-2" />
+                    {loginError}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleLogin();
+                }}
+                className="space-y-4"
+              >
+                {/* Email */}
+                <label className="
+  text-sm font-semibold
+  flex items-center gap-2 mb-1
+  text-white/95
+  lg:text-gray-700
+">
+                  <Mail className="w-4 h-4 text-white lg:text-gray-500" />
+                  Email Address
+                </label>
+
+
+                <div
+                  className="
+    px-4 py-3
+    rounded-xl
+    bg-slate-900/30 backdrop-blur-md
+    border border-white/20
+    lg:bg-white lg:border-gray-300 lg:backdrop-blur-0
+    focus-within:lg:border-purple-500
+    transition-colors duration-200
+  "
+                >
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="alex@example.com"
+                    className="
+      w-full bg-transparent text-sm
+      text-white placeholder:text-white/50
+      lg:text-gray-900 lg:placeholder:text-gray-400
+
+      outline-none focus:outline-none
+      focus:ring-0 focus:shadow-none
+    "
+                  />
+                </div>
+
+                {/* Password */}
+                <label className="
+  text-sm font-semibold
+  flex items-center gap-2 mb-1
+  text-white/95
+  lg:text-gray-700
+">
+                  <Lock className="w-4 h-4 text-white lg:text-gray-500" />
+                  Password
+                </label>
+
+                <div
+                  className="
+    px-4 py-3 relative
+    rounded-xl
+    bg-slate-900/30 backdrop-blur-md
+    border border-white/20
+    lg:bg-white lg:border-gray-300 lg:backdrop-blur-0
+    focus-within:lg:border-purple-500
+    transition-colors duration-200
+  "
+                >
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="
+      w-full bg-transparent text-sm pr-10
+      text-white placeholder:text-white/50
+      lg:text-gray-900 lg:placeholder:text-gray-400
+
+      outline-none focus:outline-none
+      focus:ring-0 focus:shadow-none
+    "
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="
+      absolute right-4 top-1/2 -translate-y-1/2
+      text-white/60 hover:text-white
+      lg:text-gray-500 lg:hover:text-gray-700
+    "
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Forgot Password */}
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => setShowForgotModal(!showForgotModal)}
+                    className="text-xs font-semibold text-blue-400 lg:text-purple-600 hover:underline"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+
+                {/* Sign In Button */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="submit"
+                  disabled={isLoggingIn}
+                  className="
+          w-full h-12 rounded-2xl
+          bg-slate-900/90 text-white
+          lg:bg-slate-900 lg:text-white
+          font-bold flex items-center justify-center gap-2 shadow-lg
+        "
+                >
+                  {isLoggingIn ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Sign In <ChevronRight className="w-4 h-4" />
+                    </>
+                  )}
+                </motion.button>
+              </form>
+
+              {/* Footer */}
+              <div className="mt-5 px-4 py-3 rounded-xl bg-slate-900/30 lg:bg-gray-50 border border-white/20 lg:border-gray-200 text-center">
+                <p className="text-xs text-white/70 lg:text-gray-600">
+                  Don&apos;t have an account yet?{" "}
+                  <Link to="/signup" className="font-bold text-white lg:text-purple-600 hover:underline">
+                    Create Account
+                  </Link>
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Status messages */}
-          {resetStatus && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs sm:text-sm text-blue-700 text-center">
-              {resetStatus}
-            </div>
-          )}
 
-          {debugInfo && process.env.NODE_ENV === 'development' && (
-            <div className="mb-4 text-center text-xs text-gray-500 bg-gray-100 p-2 rounded">
-              Debug: {debugInfo}
-            </div>
-          )}
 
-          {/* Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }} className="space-y-4 sm:space-y-5">
-
-            {/* Email field */}
-            <div>
-              <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorEmail
-                  ? 'border-red-300 bg-red-50 focus:border-red-400'
-                  : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
-                  }`}
-                placeholder="you@example.com"
-                autoComplete="email"
+          {/* Right Side: Artistic/Promotional Content (Moved to right for desktop) */}
+          <div className="hidden lg:flex relative bg-slate-900 overflow-hidden">
+            <div className="absolute inset-0">
+              <img
+                src="https://images.unsplash.com/photo-1513364776144-60967b0f800f?q=80&w=1200&auto=format&fit=crop"
+                alt="Artistic background"
+                className="w-full h-full object-cover opacity-60 scale-110 lg:animate-subtle-zoom"
               />
-              {errorEmail && (
-                <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errorEmail}
-                </p>
-              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
             </div>
 
-            {/* Password field */}
-            <div>
-              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 ${errorPassword
-                    ? 'border-red-300 bg-red-50 focus:border-red-400'
-                    : 'border-gray-200 bg-gray-50/50 focus:border-blue-400 focus:bg-white'
-                    }`}
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
-                </button>
-              </div>
-              {errorPassword && (
-                <p className="text-xs sm:text-sm text-red-600 mt-1 flex items-center">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {errorPassword}
-                </p>
-              )}
-            </div>
+            <div className="relative z-10 p-12 flex flex-col justify-start gap-8 text-white">
 
-            {/* Login error */}
-            {loginError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-xs sm:text-sm text-red-700 text-center flex items-start justify-center">
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  {loginError}
-                </p>
-              </div>
-            )}
-
-            {/* Sign in button */}
-            <button
-              type="submit"
-              disabled={isLoggingIn}
-              className="w-full py-2.5 sm:py-3 px-4 sm:px-6 text-white text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              {isLoggingIn ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Signing In...</span>
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                {/* Logo and Brand */}
+                <div className="mb-6 text-center z-10 flex flex-row items-center justify-center">
+                  <motion.img
+                    src="/images/logo2.jpeg"
+                    alt="ScopeBrush Logo"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-full shadow-xl border-4 border-purple-400 mr-6"
+                  />
+                  <div className="flex flex-col items-start">
+                    <motion.div
+                      className="text-3xl sm:text-5xl font-extrabold text-white drop-shadow-2xl"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
+                    >
+                      ScopeBrush
+                    </motion.div>
+                    <motion.div
+                      className="h-1 w-24 sm:w-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-md mt-2"
+                      initial={{ opacity: 0, scaleX: 0 }}
+                      animate={{ opacity: 1, scaleX: 1 }}
+                      transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
+                      style={{ transformOrigin: "left" }}
+                    />
+                  </div>
                 </div>
-              ) : (
-                'Sign In'
-              )}
-            </button>
+              </motion.div>
 
-            {/* Footer Links */}
-            <div className="w-full flex flex-col items-center justify-center gap-3 pt-6">
-
-              {/* Forgot Password */}
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(!showForgotModal)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium transition"
-              >
-                Forgot Password?
-              </button>
-
-              <button
-                type="button"
-                onClick={() => navigate('/signup')}
-                className="flex flex-col items-center leading-tight transition-all duration-300"
-              >
-                <p className="text-xs sm:text-sm text-gray-600">
-                  New to ScopeBrush?
-                </p>
-
-                <span
-                  className="underline mt-1 text-base tracking-wide font-semibold
-               bg-gradient-to-r from-purple-500 to-pink-500 
-               bg-clip-text text-transparent 
-               hover:from-purple-600 hover:to-pink-600"
+              <div className="space-y-6 max-w-xl">
+                <motion.h2
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.7, ease: "easeOut" }}
+                  className="text-5xl md:text-6xl font-display font-extrabold leading-tight tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.75)]"
                 >
-                  Create Account
-                </span>
-              </button>
+                  Elevate Your <br />
+                  <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent italic drop-shadow-[0_6px_20px_rgba(168,85,247,0.9)]">
+                    Creative Journey
+                  </span>
+                </motion.h2>
 
-
-
-            </div>
-
-
-
-            {/* Forgot password section */}
-            {showForgotModal && (
-              <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
-                <p className="text-xs sm:text-sm text-gray-700">
-                  Enter your registered email to receive a reset link.
-                </p>
-                <button
-                  type="button"
-                  onClick={handleResetPassword}
-                  disabled={isSending}
-                  className="w-full py-2 sm:py-2.5 px-4 text-xs sm:text-sm font-medium text-blue-600 bg-white border border-blue-300 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50 transition-all duration-200"
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.6, ease: "easeOut" }}
+                  className="text-slate-200 text-lg md:text-xl max-w-md leading-relaxed drop-shadow-[0_4px_14px_rgba(0,0,0,0.6)]"
                 >
-                  {isSending ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-3 h-3 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin"></div>
-                      <span>Sending...</span>
-                    </div>
-                  ) : (
-                    'Send Reset Email'
-                  )}
-                </button>
+                  Join the most exclusive gallery for digital and physical masterpieces.
+                  Connect with world-class artists today.
+                </motion.p>
               </div>
-            )}
-          </form>
-        </div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 1 }}
+                className="flex items-center gap-3 text-sm font-medium text-slate-400"
+              >
+                <Users className="w-4 h-4 text-purple-400" />
+                <span>
+                  Join the founding community of independent artists
+                </span>
+              </motion.div>
+            </div>
+          </div>
+        </motion.div>
       </div>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes subtle-zoom {
+          0% { transform: scale(1.1); }
+          50% { transform: scale(1.15); }
+          100% { transform: scale(1.1); }
+        }
+        .animate-subtle-zoom {
+          animation: subtle-zoom 20s ease-in-out infinite;
+        }
+        .font-display {
+          font-family: 'Playfair Display', serif;
+        }
+      `}} />
     </div>
   );
 }

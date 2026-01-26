@@ -111,7 +111,7 @@ function Cart() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 text-gray-800">
+    <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-purple-50 via-white to-pink-50 text-gray-800">
       {/* Compact Header Section */}
       <div className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-purple-100 shadow-sm">
         <div className="max-w-3xl mx-auto px-4 py-3">
@@ -124,6 +124,7 @@ function Cart() {
               </div>
               <h1 className="text-lg font-bold text-gray-800">Your Cart</h1>
             </div>
+
             <div className="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-full border border-purple-100">
               <span className="text-xs font-medium text-purple-700">
                 {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'}
@@ -135,16 +136,17 @@ function Cart() {
 
       {/* Main Cart Content */}
       <div className="max-w-3xl mx-auto py-6 px-4">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Cart Items */}
           <div className="md:col-span-2 space-y-4">
-            {cartItems.map((item, index) => {
+            {cartItems.map((item) => {
               const isAvailable = item.artworks?.availability;
 
               return (
                 <div
                   key={item.id}
-                  className={`group relative bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden ${!isAvailable ? 'opacity-75' : ''}`}
+                  className={`bg-white rounded-xl shadow-sm border border-gray-100 transition-all duration-300 overflow-hidden ${!isAvailable ? 'opacity-75' : ''
+                    }`}
                 >
                   {/* Availability Banner */}
                   {!isAvailable && (
@@ -153,7 +155,7 @@ function Cart() {
                     </div>
                   )}
 
-                  <div className="p-4 flex gap-4">
+                  <div className="p-4 flex gap-4 flex-wrap sm:flex-nowrap">
                     {/* Image */}
                     <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                       <img
@@ -166,26 +168,27 @@ function Cart() {
                     {/* Details */}
                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                       <div>
-                        <h3 
+                        <h3
                           className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-purple-600 transition-colors"
                           onClick={() => navigate(`/product?id=${item.artwork_id}`)}
                         >
                           {item.artworks?.title || 'Untitled Artwork'}
                         </h3>
+
                         <div className="mt-1">
-                           <PriceDisplay cost={item.artworks?.cost} />
+                          <PriceDisplay cost={item.artworks?.cost} />
                         </div>
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-2 mt-2">
+                      <div className="flex flex-col sm:flex-row gap-2 mt-3">
                         <button
-                          className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-medium text-white shadow-sm transition-all ${isAvailable
-                            ? 'bg-gray-900 hover:bg-gray-800'
-                            : 'bg-gray-400 cursor-not-allowed'
+                          className={`w-full sm:flex-1 py-2 px-3 rounded-lg text-xs font-medium text-white shadow-sm transition-all ${isAvailable
+                              ? 'bg-gray-900 hover:bg-gray-800'
+                              : 'bg-gray-400 cursor-not-allowed'
                             }`}
-                          onClick={(event) => {
-                            event.stopPropagation();
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleOrderNow(item.artwork_id);
                           }}
                           disabled={!isAvailable}
@@ -194,9 +197,9 @@ function Cart() {
                         </button>
 
                         <button
-                          className="py-1.5 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
-                          onClick={(event) => {
-                            event.stopPropagation();
+                          className="w-full sm:w-auto py-2 px-3 rounded-lg text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-100 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             handleRemove(item.id);
                           }}
                         >
@@ -209,11 +212,11 @@ function Cart() {
               );
             })}
           </div>
-
         </div>
       </div>
     </div>
   );
+
 
 
 }

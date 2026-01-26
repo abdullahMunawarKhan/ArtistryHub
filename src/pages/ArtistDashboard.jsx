@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../utils/supabase";
+import { Home, Package, Wallet } from "lucide-react";
+
 
 function ArtistDashboard() {
   const navigate = useNavigate();
@@ -29,10 +31,11 @@ function ArtistDashboard() {
 
   // Dashboard sections menu
   const dashboardSections = [
-    { id: 'home', label: 'Home', icon: '🏠' },
-    { id: 'orders', label: 'Order Management', icon: '📦' },
-    { id: 'payments', label: 'Payment Analysis', icon: '💰' }
+    { id: "home", label: "Home", icon: Home },
+    { id: "orders", label: "Order Management", icon: Package },
+    { id: "payments", label: "Payment Analysis", icon: Wallet },
   ];
+
 
   const sectionRef = useRef(null);
   const handleSectionClick = (sectionId) => {
@@ -464,7 +467,7 @@ function ArtistDashboard() {
                   </span>
                 </td>
                 <td className="py-1.5 px-1 sm:py-2 sm:px-2 text-center align-middle">
-                  {(order.pickup_date != null && order.pickup_time != null &&  order.pickup_date && order.pickup_time ? (
+                  {(order.pickup_date != null && order.pickup_time != null && order.pickup_date && order.pickup_time ? (
                     <div className="text-[10px] sm:text-xs">
                       <div className="font-medium text-green-700">
                         {new Date(order.pickup_date).toLocaleDateString('en-US', {
@@ -650,10 +653,15 @@ function ArtistDashboard() {
         {/* LEFT SIDEBAR - 25% width */}
         <div className="w-full md:w-1/4 bg-white shadow-md">
           {/* Header */}
-          <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200">
-            <h1 className="text-lg sm:text-xl font-bold text-gray-900">Artist Dashboard</h1>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">Dashboard Sections</p>
+          <div className="p-3 sm:p-4 md:p-6 border-b border-gray-200 text-center sm:text-left">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">
+              Artist Dashboard
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              Dashboard Sections
+            </p>
           </div>
+
 
           {/* Menu Items */}
           <div className="p-2 sm:p-3 md:p-4">

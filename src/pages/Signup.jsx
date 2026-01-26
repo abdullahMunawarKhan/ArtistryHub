@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { supabase } from '../utils/supabase';
-import { useNavigate } from 'react-router-dom';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import { Paintbrush, Presentation, Sparkles } from "lucide-react";
+import { useNavigate, Link } from 'react-router-dom';
+import { Users, Eye, EyeOff, Mail, Lock, ChevronRight, AlertCircle, CheckCircle2, Loader2, Sparkles, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Capacitor } from '@capacitor/core';
 
 function Signup() {
@@ -14,15 +14,14 @@ function Signup() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const navigate = useNavigate();
-  const [animate, setAnimate] = useState(false);
+
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSignup = async () => {
-    if (loading || animate) return; // Prevent multiple clicks
+    if (loading) return;
 
     setMessage({ text: '', type: '' });
 
-    // Validation
     if (!email || !password || !confirmPassword) {
       return setMessage({ text: 'All fields are required.', type: 'error' });
     }
@@ -36,362 +35,392 @@ function Signup() {
       return setMessage({ text: 'Passwords do not match.', type: 'error' });
     }
 
-    setAnimate(true);
+    setLoading(true);
 
-    setTimeout(async () => {
-      setAnimate(false);
-      setLoading(true);
+    try {
+      const redirectTo = Capacitor.isNativePlatform()
+        ? 'scopebrush://auth/callback'
+        : window.location.origin + '/user-login';
 
-      try {
-        const redirectTo = Capacitor.isNativePlatform()
-          ? 'scopebrush://auth/callback'
-          : window.location.origin + '/user-login';
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectTo,
+        },
+      });
 
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectTo,
-          },
-        });
-
-
-        if (error) {
-          setAnimate(false);
-
-          if (
-            error.message.toLowerCase().includes('already registered') ||
-            error.message.toLowerCase().includes('user already exists')
-          ) {
-            return setMessage({
-              text: 'An account with this email already exists. Please login instead.',
-              type: 'error',
-            });
-          }
-
-          return setMessage({ text: error.message, type: 'error' });
-        }
-
-        if (data.user) {
-          await supabase.from('user').upsert(
-            [{
-              id: data.user.id,
-              email: email.trim().toLowerCase(),
-              role: 'user',
-            }],
-            { onConflict: 'id' }
-          );
-        }
-
-        if (data.user?.identities?.length === 0) {
+      if (error) {
+        if (
+          error.message.toLowerCase().includes('already registered') ||
+          error.message.toLowerCase().includes('user already exists')
+        ) {
           return setMessage({
             text: 'An account with this email already exists. Please login instead.',
             type: 'error',
           });
         }
-
-        setMessage({
-          text: '✅ Account created! Check your email to confirm, then log in.',
-          type: 'success',
-        });
-
-        setTimeout(() => navigate('/user-login'), 3000);
-
-      } catch (err) {
-        console.error(err);
-        setMessage({ text: 'An unexpected error occurred.', type: 'error' });
-      } finally {
-        setAnimate(false);
-        setLoading(false);
+        return setMessage({ text: error.message, type: 'error' });
       }
 
-    }, 100);
+      if (data.user) {
+        await supabase.from('user').upsert(
+          [{
+            id: data.user.id,
+            email: email.trim().toLowerCase(),
+            role: 'user',
+          }],
+          { onConflict: 'id' }
+        );
+      }
+
+      if (data.user?.identities?.length === 0) {
+        return setMessage({
+          text: 'An account with this email already exists. Please login instead.',
+          type: 'error',
+        });
+      }
+
+      setMessage({
+        text: 'Account created! Please check your email to confirm your account.',
+        type: 'success',
+      });
+
+      setTimeout(() => navigate('/user-login'), 4000);
+
+    } catch (err) {
+      console.error(err);
+      setMessage({ text: 'An unexpected error occurred.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
 
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 
-                flex items-start justify-center 
-                pt-10 sm:pt-10 px-3 sm:px-6">
-      {/* Mobile-optimized container */}
-      <div className="w-full max-w-xs sm:max-w-md">
-        {/* Main card - enhanced mobile styling */}
-        <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-xl sm:rounded-2xl p-5 sm:p-8">
+    <div className="relative min-h-screen w-full flex items-center justify-center overflow-hidden">
+      {/* Overlay for depth */}
 
-          {/* Header - Mobile optimized */}
-          <div className="text-center mb-6 sm:mb-8">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-1">
-              Create Your
-            </h1>
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-              Account
-            </h2>
-            <div className="w-12 h-0.5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mx-auto mt-3"></div>
+
+      <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 pt-1 sm:pt-4 lg:pt-6 pb-4 sm:pb-10 flex justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-full grid grid-cols-1 lg:grid-cols-2 bg-slate-900/20 backdrop-blur-3xl rounded-[32px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border border-white/10"
+        >
+          {/* Left Side: Artistic Content */}
+          <div className="hidden lg:flex relative bg-slate-900 overflow-hidden">
+            <div className="absolute inset-0">
+              <img
+                src="/images/login.png"
+                alt="Artistic inspiration"
+                className="w-full h-full object-cover opacity-60 scale-110 lg:animate-subtle-zoom"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
+            </div>
+
+            <div className="relative z-10 p-12 flex flex-col justify-start gap-8 text-white">
+
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                {/* Logo and Brand */}
+                <div className="mb-6 text-center z-10 flex flex-row items-center justify-center">
+                  <motion.img
+                    src="/images/logo2.jpeg"
+                    alt="ScopeBrush Logo"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-full shadow-xl border-4 border-purple-400 mr-6"
+                  />
+                  <div className="flex flex-col items-start">
+                    <motion.div
+                      className="text-3xl sm:text-5xl font-extrabold text-white drop-shadow-2xl"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3, duration: 0.6, ease: 'easeOut' }}
+                    >
+                      ScopeBrush
+                    </motion.div>
+                    <motion.div
+                      className="h-1 w-24 sm:w-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full shadow-md mt-2"
+                      initial={{ opacity: 0, scaleX: 0 }}
+                      animate={{ opacity: 1, scaleX: 1 }}
+                      transition={{ delay: 0.6, duration: 0.6, ease: "easeOut" }}
+                      style={{ transformOrigin: "left" }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              <div className="space-y-6 max-w-xl">
+                <motion.h2
+                  initial={{ opacity: 0, y: 24 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.7, ease: "easeOut" }}
+                  className="text-5xl md:text-6xl font-display font-extrabold leading-tight tracking-tight text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.75)]"
+                >
+                  Start Your <br />
+                  <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400 bg-clip-text text-transparent italic drop-shadow-[0_6px_20px_rgba(245,158,11,0.6)]">
+                    Masterpiece
+                  </span>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7, duration: 0.6, ease: "easeOut" }}
+                  className="text-slate-200 text-lg md:text-xl max-w-md leading-relaxed drop-shadow-[0_4px_14px_rgba(0,0,0,0.6)]"
+                >
+                  Create an account to begin your journey in the world's most vibrant art marketplace. Collect, sell, and dream.
+                </motion.p>
+              </div>
+
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 1 }}
+                className="flex items-center gap-3 text-sm font-medium text-slate-400"
+              >
+                <Users className="w-4 h-4 text-purple-400" />
+                <span>
+                  Join the founding community of independent artists
+                </span>
+              </motion.div>
+            </div>
           </div>
 
-          {/* Status message */}
-          {message.text && (
-            <div className={`mb-4 p-3 border rounded-lg text-xs sm:text-sm text-center ${message.type === 'error'
-              ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-green-50 border-green-200 text-green-700'
-              }`}>
-              <div className="flex items-center justify-center">
-                {message.type === 'error' ? (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg className="w-3 h-3 sm:w-4 sm:h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {message.text}
-              </div>
-            </div>
-          )}
-
-          {/* Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleSignup(); }} className="space-y-4 sm:space-y-5">
-
-            {/* Email field */}
-            <div>
-              <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 sm:px-4 sm:py-3 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 bg-gray-50/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 focus:bg-white"
-                placeholder="you@example.com"
-                autoComplete="email"
+          {/* Right Side: Signup Form */}
+          <div
+            className="
+    p-5 sm:p-12 lg:p-16
+    flex flex-col justify-center relative
+    text-white lg:text-gray-900
+    lg:bg-white
+  "
+          >
+            {/* Background Image (ONLY mobile & tablet) */}
+            <div className="absolute inset-0 -z-10 lg:hidden">
+              <img
+                src="/images/login.png"
+                alt="Artistic background"
+                className="w-full h-full object-cover scale-110 opacity-65"
               />
+              <div className="absolute inset-0 bg-gradient-to-b from-slate-900/45 via-slate-900/40 to-slate-900/55" />
             </div>
 
-            {/* Password field */}
-            <div>
-              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 bg-gray-50/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 focus:bg-white"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
+            {/* Mobile Header */}
+            <div className="lg:hidden flex flex-col items-center mb-4">
+              <div className="mb-6 text-center z-10 flex flex-row items-center justify-center">
+                <motion.img
+                  src="/images/logo2.jpeg"
+                  alt="ScopeBrush Logo"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-20 w-20 sm:h-24 sm:w-24 rounded-full shadow-xl border-4 border-purple-400 mr-6"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">Must be at least 6 characters</p>
-            </div>
-
-            {/* Confirm Password field */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full px-3 py-2.5 sm:px-4 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base rounded-lg sm:rounded-xl border-2 border-gray-200 bg-gray-50/50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 focus:bg-white"
-                  placeholder="••••••••"
-                  autoComplete="new-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 sm:pr-4 text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  {showConfirmPassword ? (
-                    <EyeSlashIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
-                    <EyeIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  )}
-                </button>
+                <div className="flex flex-col items-start">
+                  <motion.div
+                    className="text-3xl sm:text-5xl font-extrabold text-white drop-shadow-2xl"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.6 }}
+                  >
+                    ScopeBrush
+                  </motion.div>
+                  <motion.div
+                    className="h-1 w-24 sm:w-32 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full mt-2"
+                    initial={{ opacity: 0, scaleX: 0 }}
+                    animate={{ opacity: 1, scaleX: 1 }}
+                    transition={{ delay: 0.6, duration: 0.6 }}
+                    style={{ transformOrigin: "left" }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Password strength indicator */}
-            {password && (
-              <div className="space-y-1">
-                <div className="flex space-x-1">
-                  <div className={`flex-1 h-1 rounded-full ${password.length >= 6 ? 'bg-green-400' : 'bg-gray-200'
-                    }`}></div>
-                  <div className={`flex-1 h-1 rounded-full ${password.length >= 8 && /[A-Z]/.test(password) ? 'bg-green-400' : 'bg-gray-200'
-                    }`}></div>
-                  <div className={`flex-1 h-1 rounded-full ${password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password) ? 'bg-green-400' : 'bg-gray-200'
-                    }`}></div>
-                </div>
-                <div className="flex items-center space-x-4 text-xs text-gray-600">
-                  <span className={password.length >= 6 ? 'text-green-600' : ''}>
-                    ✓ 6+ chars
-                  </span>
-                  <span className={/[A-Z]/.test(password) ? 'text-green-600' : ''}>
-                    ✓ Uppercase
-                  </span>
-                  <span className={/[0-9]/.test(password) ? 'text-green-600' : ''}>
-                    ✓ Number
-                  </span>
-                </div>
+            <div className="relative max-w-md mx-auto w-full px-4">
+              {/* Header */}
+              <div className="mb-5 px-5 py-4 rounded-2xl text-center">
+                <h2 className="text-2xl font-bold text-white lg:text-gray-900">
+                  Create Account
+                </h2>
+                <p className="text-xs text-white/70 lg:text-gray-500 mt-1">
+                  Sign up to explore original art
+                </p>
               </div>
-            )}
 
-            {/* Password match indicator */}
-            {confirmPassword && (
-              <div className="flex items-center space-x-2 text-xs">
-                {password === confirmPassword ? (
-                  <>
-                    <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-green-600">Passwords match</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-red-500">Passwords don't match</span>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Sign up button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 sm:py-3 px-4 sm:px-6 text-white text-sm sm:text-base font-semibold rounded-lg sm:rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              {loading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  <span>Creating Account...</span>
-                </div>
-              ) : (
-                'Sign Up'
-              )}
-
-            </button>
-
-            {/* Footer link */}
-            <div className="text-center pt-2 sm:pt-4">
-              <p className="text-xs sm:text-sm text-gray-600">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigate('/user-login')}
-                  className="text-amber-600 hover:text-amber-800 font-medium transition-colors hover:underline"
-                >
-                  Sign In
-                </button>
-              </p>
-            </div>
-          </form>
-        </div>
-
-        {/* Additional info for mobile */}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            By signing up, you agree to our Terms of Service and Privacy Policy
-          </p>
-        </div>
-      </div>
-      {/* <SignupAnimation show={animate} /> */}
-    </div>
-  );
-}
-
-function ShineParticles() {
-  const spots = [
-    "-20 -30",   // Top-left of center
-    "40 -25",    // Top-right
-    "-35 10",    // Left side
-    "45 15",     // Right side
-    "-10 35",    // Bottom-left
-    "20 38"      // Bottom-right
-  ];
-
-  return (
-    <>
-      {spots.map(([x, y], index) => (
-        <Sparkles
-          key={index}
-          size={20}
-          className={`
-            absolute text-yellow-300 opacity-80 animate-shine
+              {/* Status Messages */}
+              <AnimatePresence mode="wait">
+                {message.text && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className={`
+            mb-4 px-4 py-3 rounded-xl text-sm border
+            ${message.type === "error"
+                        ? "bg-red-500/20 lg:bg-red-50 border-red-400/30 lg:border-red-200 text-red-200 lg:text-red-700"
+                        : "bg-green-500/20 lg:bg-green-50 border-green-400/30 lg:border-green-200 text-green-200 lg:text-green-700"
+                      }
           `}
-          style={{
-            transform: `translate(${x}px, ${y}px)`
-          }}
-        />
-      ))}
-    </>
-  );
-}
+                  >
+                    {message.type === "error"
+                      ? <AlertCircle className="inline w-4 h-4 mr-2" />
+                      : <CheckCircle2 className="inline w-4 h-4 mr-2" />
+                    }
+                    {message.text}
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-function SignupAnimation({ show }) {
-  return (
-    <div
-      className={`
-        fixed inset-0 bg-black/40 backdrop-blur-sm z-[9999]
-        flex items-center justify-center
-        transition-opacity duration-500
-        ${show ? "opacity-100" : "opacity-0 pointer-events-none"}
-      `}
-    >
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSignup();
+                }}
+                className="space-y-4"
+              >
+                {/* Email */}
+                <label className="
+  text-sm font-semibold
+  flex items-center gap-2 mb-1
+  text-white/95
+  lg:text-gray-700
+">
+                  <Mail className="w-4 h-4 text-white lg:text-gray-500" />
+                  Email Address
+                </label>
 
-      {/* ✨ Magical Shine Particles (around center) */}
-      <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-        <ShineParticles />
+                <div className="px-4 py-3 rounded-xl bg-slate-900/30 border border-white/20 lg:bg-white lg:border-gray-300 focus-within:lg:border-purple-500 transition-colors">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    className="
+            w-full bg-transparent text-sm
+            text-white placeholder:text-white/50
+            lg:text-gray-900 lg:placeholder:text-gray-400
+            outline-none focus:outline-none focus:ring-0 focus:shadow-none
+          "
+                  />
+                </div>
+
+                {/* Password */}
+                <label className="
+  text-sm font-semibold
+  flex items-center gap-2 mb-1
+  text-white/95
+  lg:text-gray-700
+">
+                  <Lock className="w-4 h-4 text-white lg:text-gray-500" />
+                  Password
+                </label>
+
+                <div className="px-4 py-3 rounded-xl relative bg-slate-900/30 border border-white/20 lg:bg-white lg:border-gray-300 focus-within:lg:border-purple-500 transition-colors">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className="
+            w-full bg-transparent text-sm pr-10
+            text-white placeholder:text-white/50
+            lg:text-gray-900 lg:placeholder:text-gray-400
+            outline-none focus:outline-none focus:ring-0 focus:shadow-none
+          "
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 lg:text-gray-500 hover:opacity-80"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Confirm Password */}
+                <label className="
+  text-sm font-semibold
+  flex items-center gap-2 mb-1
+  text-white/95
+  lg:text-gray-700
+">
+                  <UserPlus className="w-4 h-4 text-white lg:text-gray-500" />
+                  Confirm Password
+                </label>
+
+                <div className="px-4 py-3 rounded-xl relative bg-slate-900/30 border border-white/20 lg:bg-white lg:border-gray-300 focus-within:lg:border-purple-500 transition-colors">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    autoComplete="new-password"
+                    className="
+            w-full bg-transparent text-sm pr-10
+            text-white placeholder:text-white/50
+            lg:text-gray-900 lg:placeholder:text-gray-400
+            outline-none focus:outline-none focus:ring-0 focus:shadow-none
+          "
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/60 lg:text-gray-500 hover:opacity-80"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Submit */}
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 rounded-2xl bg-amber-600 text-white font-bold shadow-lg"
+                >
+                  {loading ? "Creating Account..." : "Create Account"}
+                </motion.button>
+              </form>
+
+              {/* Footer */}
+              <div className="mt-5 px-4 py-3 rounded-xl bg-slate-900/30 lg:bg-gray-50 border border-white/20 lg:border-gray-200 text-center">
+                <p className="text-xs text-white/70 lg:text-gray-600">
+                  Already a member?{" "}
+                  <Link to="/user-login" className="font-bold text-white lg:text-purple-600 hover:underline">
+                    Sign In
+                  </Link>
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </motion.div>
       </div>
 
-      {/* 🖼 Board (middle layer) */}
-      <Presentation
-        size={180}
-        className={`
-          absolute text-amber-400 drop-shadow-lg
-          transition-all duration-[2000ms] ease-out
-          z-20
-          ${show
-            ? "translate-x-0 opacity-100"
-            : "-translate-x-full opacity-0"}
-        `}
-      />
-
-      {/* 🎨 Brush (top layer) */}
-      <Paintbrush
-        size={180}
-        className={`
-          absolute text-pink-500 drop-shadow-xl
-          transition-all duration-[2000ms] ease-out
-          z-30
-          ${show
-            ? "translate-x-0 opacity-100"
-            : "translate-x-full opacity-0"}
-        `}
-      />
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes subtle-zoom {
+          0% { transform: scale(1.1); }
+          50% { transform: scale(1.15); }
+          100% { transform: scale(1.1); }
+        }
+        .animate-subtle-zoom {
+          animation: subtle-zoom 20s ease-in-out infinite;
+        }
+        .font-display {
+          font-family: 'Playfair Display', serif;
+        }
+      `}} />
     </div>
   );
 }
-
-
 
 export default Signup;
