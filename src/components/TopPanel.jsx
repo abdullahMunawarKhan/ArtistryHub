@@ -262,13 +262,23 @@ function TopPanel({ footerOpen, setFooterOpen }) {
               >
                 About Us
               </button>
-              <a
-                href={apkDownloadUrl}
-                download
-                className="nav-link flex items-center gap-2"
-              >
-                Download App
-              </a>
+              {Capacitor.isNativePlatform() ? (
+                <button
+                  onClick={() => navigate('/version')}
+                  className="nav-link flex items-center gap-2"
+                >
+                  <Info size={18} />
+                  App Version
+                </button>
+              ) : (
+                <a
+                  href={apkDownloadUrl}
+                  download
+                  className="nav-link flex items-center gap-2"
+                >
+                  Download App
+                </a>
+              )}
             </>
           )}
 
@@ -563,7 +573,20 @@ function TopPanel({ footerOpen, setFooterOpen }) {
                   </button>
 
                 </li>
-                {!Capacitor.isNativePlatform() && (
+                {Capacitor.isNativePlatform() ? (
+                  <li>
+                    <button
+                      className="menu-item flex items-center justify-center gap-2 w-full text-center whitespace-nowrap"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        navigate('/version');
+                      }}
+                    >
+                      <Info size={18} />
+                      App Version
+                    </button>
+                  </li>
+                ) : (
                   <li>
                     <a
                       href={apkDownloadUrl}

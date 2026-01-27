@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { App } from "@capacitor/app";
-import { fetchLatestAppVersion } from "../utils/appVersion";
+import { fetchLatestAppVersion, isVersionLower } from "../utils/appVersion";
 
 export default function AppUpdateChecker() {
   const [show, setShow] = useState(false);
@@ -63,18 +63,4 @@ export default function AppUpdateChecker() {
       </div>
     </div>
   );
-}
-
-/* semantic version compare */
-function isVersionLower(v1, v2) {
-  const a = v1.split(".").map(Number);
-  const b = v2.split(".").map(Number);
-
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const x = a[i] || 0;
-    const y = b[i] || 0;
-    if (x < y) return true;
-    if (x > y) return false;
-  }
-  return false;
 }

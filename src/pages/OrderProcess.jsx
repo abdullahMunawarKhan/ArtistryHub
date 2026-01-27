@@ -95,14 +95,25 @@ export default function OrderProcess() {
 
   const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
+
   const [form, setForm] = useState({
     fullName: "",
     mobile: "",
     altMobile: "",
     shippingAddress: ""
   });
+  const phoneRegex = /^[0-9]{10}$/;
+  const isAvailable = artwork?.availability !== false;
 
   // Load Artwork
+  const isFormValid =
+    form.fullName.trim() !== "" &&
+    phoneRegex.test(form.mobile) &&
+    form.shippingAddress.trim() !== "" &&
+    policiesChecked &&
+    isAvailable &&
+    !processing;
+
   useEffect(() => {
     if (!artworkId) {
       alert("Artwork not found");
@@ -144,7 +155,10 @@ export default function OrderProcess() {
       alert("Please fill all required fields");
       return;
     }
-
+    if (!phoneRegex.test(form.mobile)) {
+      alert("Enter a valid 10-digit mobile number");
+      return;
+    }
     if (!policiesChecked) {
       setShowPolicies(true);
       return;
@@ -218,7 +232,7 @@ export default function OrderProcess() {
       <div className="h-screen flex items-center justify-center">
         <p className="text-sm md:text-base animate-pulse">Loading...</p>
       </div>
-    ); 
+    );
 
   if (!artwork)
     return (
@@ -227,7 +241,8 @@ export default function OrderProcess() {
       </div>
     );
 
-  const isAvailable = artwork.availability !== false;
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-tr from-yellow-50 to-white flex items-center justify-center p-3">
@@ -302,9 +317,20 @@ export default function OrderProcess() {
               type="tel"
               required
               value={form.mobile}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                if (value.length <= 10) {
+                  setForm({ ...form, mobile: value });
+                }
+              }}
               placeholder="10-digit mobile number"
             />
+
+            {form.mobile && !phoneRegex.test(form.mobile) && (
+              <p className="text-xs text-red-600 -mt-2">
+                Mobile number must be exactly 10 digits
+              </p>
+            )}
 
             {/* Alt Mobile */}
             <Field
@@ -313,9 +339,16 @@ export default function OrderProcess() {
               name="altMobile"
               type="tel"
               value={form.altMobile}
-              onChange={handleChange}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, "");
+                if (value.length <= 10) {
+                  setForm({ ...form, altMobile: value });
+                }
+              }}
               placeholder="Alternate mobile"
             />
+
+
 
             {/* Address */}
             <FieldTextArea
@@ -350,8 +383,15 @@ export default function OrderProcess() {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                disabled={!isAvailable || processing}
-                className="bg-yellow-600 text-white text-xs md:text-sm px-4 py-2 rounded-lg w-fit shadow hover:bg-yellow-700 disabled:opacity-50"
+                disabled={!isFormValid || !isAvailable || processing}
+                className="
+      bg-yellow-600 text-white
+      text-xs md:text-sm
+      px-4 py-2 rounded-lg w-fit shadow
+      hover:bg-yellow-700
+      disabled:opacity-50
+      disabled:cursor-not-allowed
+    "
               >
                 {processing ? "Processing..." : "Pay Now"}
               </button>

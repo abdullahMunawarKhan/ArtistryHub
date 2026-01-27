@@ -31,6 +31,7 @@ import PrivacyPolicies from './pages/PrivacyPolicies';
 import TermsConditions from './pages/TermsCondition';
 import ComingSoon from './pages/ComingSoon';
 import Demo from './pages/Demo';
+import Version from './pages/Version';
 import { X } from "lucide-react";
 import AppUpdateChecker from "./components/AppUpdateChecker";
 import { registerForPushNotifications } from "./utils/pushNotifications";
@@ -196,6 +197,7 @@ function App() {
             <Route path="/terms-conditions" element={<TermsConditions />} />
             <Route path="/coming-soon" element={<ComingSoon />} />
             <Route path="/sample-upload" element={<Demo />} />
+            <Route path="/version" element={<Version />} />
 
           </Routes>
         </div>
