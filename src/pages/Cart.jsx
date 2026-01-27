@@ -124,30 +124,23 @@ function Cart() {
       <div className="bg-white/80 backdrop-blur-xl sticky top-0 z-40 border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
 
-          <div className="relative flex items-center">
-
-            {/* LEFT : Back button */}
-            <button className="p-2">
-              {/* Back icon */}
-            </button>
-
-            {/* CENTER : Title (true center) */}
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-900/10">
-                <ShoppingBag className="w-4 h-4" />
+          <div className="relative flex items-center justify-center min-h-[44px]">
+            {/* CENTER : Title (centered) */}
+            <div className="flex items-center gap-3 sm:gap-4 px-10">
+              <div className="p-2 sm:p-2.5 bg-slate-900 rounded-xl text-white shadow-lg shadow-slate-900/10">
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <h1 className="text-xl font-black text-slate-950 tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
                 Shopping Cart
               </h1>
             </div>
 
-            {/* RIGHT : Cart count */}
-            <div className="ml-auto flex items-center gap-3">
-              <span className="hidden sm:inline text-sm font-bold text-slate-400 uppercase tracking-widest">
+            {/* RIGHT : Cart count (absolute) */}
+            <div className="absolute right-0 hidden sm:flex items-center gap-3">
+              <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
                 {cartItems.length} {cartItems.length === 1 ? 'Masterpiece' : 'Masterpieces'}
               </span>
             </div>
-
           </div>
 
         </div>

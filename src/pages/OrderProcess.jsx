@@ -145,18 +145,60 @@ export default function OrderProcess() {
 
   const totalCost = artwork ? artwork.cost + DELIVERY_FEE : 0;
 
+  const validationTimeout = React.useRef(null);
+  const [errors, setErrors] = useState({});
+
   function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let newValue = value;
+    let newErrors = { ...errors };
+
+    if (validationTimeout.current) clearTimeout(validationTimeout.current);
+
+    // Mobile logic (restricted to 10 digits)
+    if (name === "mobile" || name === "altMobile") {
+      newValue = value.replace(/\D/g, "").slice(0, 10);
+
+      if (/\D/.test(value)) {
+        newErrors[name] = "Only digits are allowed";
+      } else if (newValue.length === 10 && !/^[6-9]\d{9}$/.test(newValue)) {
+        newErrors[name] = "Only 10 digits are allowed";
+      } else {
+        delete newErrors[name];
+      }
+    } else {
+      // Clear generic errors for other fields
+      delete newErrors[name];
+    }
+
+    setForm({ ...form, [name]: newValue });
+    setErrors(newErrors);
+
+    // Auto-clear after 0.5s
+    if (name === "mobile" || name === "altMobile") {
+      validationTimeout.current = setTimeout(() => {
+        setErrors((prev) => {
+          const updated = { ...prev };
+          delete updated[name];
+          return updated;
+        });
+      }, 500);
+    }
   }
 
   // Payment
   async function handlePayment() {
-    if (!form.fullName?.trim() || !form.mobile?.trim() || !form.shippingAddress?.trim()) {
-      alert("Please fill all required fields");
-      return;
+    const newErrors = {};
+    if (!form.fullName?.trim()) newErrors.fullName = "Required";
+    if (!form.shippingAddress?.trim()) newErrors.shippingAddress = "Required";
+
+    if (!form.mobile?.trim() || form.mobile.length !== 10 || !/^[6-9]\d{9}$/.test(form.mobile)) {
+      newErrors.mobile = "Only 10 digits are allowed";
     }
-    if (!phoneRegex.test(form.mobile)) {
-      alert("Enter a valid 10-digit mobile number");
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
     if (!policiesChecked) {
@@ -307,6 +349,7 @@ export default function OrderProcess() {
               value={form.fullName}
               onChange={handleChange}
               placeholder="Your full name"
+              error={errors.fullName}
             />
 
             {/* Mobile */}
@@ -317,20 +360,10 @@ export default function OrderProcess() {
               type="tel"
               required
               value={form.mobile}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value.length <= 10) {
-                  setForm({ ...form, mobile: value });
-                }
-              }}
+              onChange={handleChange}
               placeholder="10-digit mobile number"
+              error={errors.mobile}
             />
-
-            {form.mobile && !phoneRegex.test(form.mobile) && (
-              <p className="text-xs text-red-600 -mt-2">
-                Mobile number must be exactly 10 digits
-              </p>
-            )}
 
             {/* Alt Mobile */}
             <Field
@@ -339,16 +372,10 @@ export default function OrderProcess() {
               name="altMobile"
               type="tel"
               value={form.altMobile}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, "");
-                if (value.length <= 10) {
-                  setForm({ ...form, altMobile: value });
-                }
-              }}
+              onChange={handleChange}
               placeholder="Alternate mobile"
+              error={errors.altMobile}
             />
-
-
 
             {/* Address */}
             <FieldTextArea
@@ -359,6 +386,7 @@ export default function OrderProcess() {
               value={form.shippingAddress}
               onChange={handleChange}
               placeholder="Enter address with PIN code"
+              error={errors.shippingAddress}
             />
 
             {/* Policies */}
@@ -422,52 +450,46 @@ export default function OrderProcess() {
 /* =====================================================
    Small Reusable Field Component
 ===================================================== */
-function Field({ icon, label, ...rest }) {
+function Field({ icon, label, error, ...rest }) {
   return (
-    <label className="block text-xs md:text-sm mb-3">   {/* spacing between fields */}
-      <span className="font-medium text-slate-700 flex items-center gap-1 mb-1">
+    <div className="flex flex-col gap-1 w-full mb-4">
+      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
         {icon} {label}
-      </span>
+      </label>
 
       <input
         {...rest}
-        className="
-          w-full
-          text-xs md:text-sm
-          px-3 py-2
-          border border-slate-300
-          rounded-lg
-          focus:ring-2 focus:ring-yellow-500
-          outline-none
-          transition
-        "
+        className={`
+          w-full text-sm px-4 py-3 border rounded-xl 
+          focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-600
+          outline-none transition-all duration-300 shadow-sm
+          ${error ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 bg-slate-50/30'}
+        `}
       />
-    </label>
+      {error && <p className="text-rose-500 text-[10px] font-bold flex items-center gap-1 animate-fadeIn">● {error}</p>}
+    </div>
   );
 }
 
-function FieldTextArea({ icon, label, ...rest }) {
+function FieldTextArea({ icon, label, error, ...rest }) {
   return (
-    <label className="block text-xs md:text-sm mb-3">   {/* spacing between fields */}
-      <span className="font-medium text-slate-700 flex items-center gap-1 mb-1">
+    <div className="flex flex-col gap-1 w-full mb-4">
+      <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
         {icon} {label}
-      </span>
+      </label>
 
       <textarea
         {...rest}
-        rows={2}
-        className="
-          w-full
-          text-xs md:text-sm
-          px-3 py-2
-          border border-slate-300
-          rounded-lg
-          focus:ring-2 focus:ring-yellow-500
-          outline-none
-          transition
-        "
+        rows={3}
+        className={`
+          w-full text-sm px-4 py-3 border rounded-xl 
+          focus:ring-2 focus:ring-yellow-500/20 focus:border-yellow-600
+          outline-none transition-all duration-300 shadow-sm
+          ${error ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200 bg-slate-50/30'}
+        `}
       />
-    </label>
+      {error && <p className="text-rose-500 text-[10px] font-bold flex items-center gap-1 animate-fadeIn">● {error}</p>}
+    </div>
   );
 }
 

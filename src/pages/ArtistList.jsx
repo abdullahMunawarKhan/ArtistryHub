@@ -39,37 +39,14 @@ function StarRating({ value }) {
 
 
 
-function ArtistList() {
+function ArtistList({ user, setShowLoginToast }) {
   const [artists, setArtists] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState(null);
   const [filterTag, setFilterTag] = useState('All'); // 'All' or 'Following'
   const [followingIds, setFollowingIds] = useState([]); // user's following F
   const [searchTerm, setSearchTerm] = useState(''); // new state for search term
-  const [showLoginMessage, setShowLoginMessage] = useState(false);
   const [followLoading, setFollowLoading] = useState({});
   const navigate = useNavigate();
-
-  useEffect(() => {
-    async function fetchUser() {
-      // Get authenticated user
-      const { data: authData } = await supabase.auth.getUser();
-      const authUser = authData?.user;
-      if (!authUser) {
-        setUser(null);
-        return;
-      }
-      // Fetch user profile from your user table using authUser.id
-      const { data: profile } = await supabase
-        .from('user')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-      // Merge profile and auth data
-      setUser({ ...authUser, ...profile });
-    }
-    fetchUser();
-  }, []);
 
 
   useEffect(() => {
@@ -122,8 +99,7 @@ function ArtistList() {
   }
   const handleFollowToggle = async (artistId) => {
     if (!user) {
-      setShowLoginMessage(true);
-      setTimeout(() => setShowLoginMessage(false), 3000);
+      setShowLoginToast(true);
       return;
     }
 
@@ -210,17 +186,19 @@ function ArtistList() {
   return (
     <div className="p-3 sm:p-8 bg-gray-100 min-h-[90vh]">
       {/* Heading + Search */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center mb-4 sm:mb-6 gap-2 sm:gap-4">
-        <h1 className="text-xl sm:text-3xl font-bold text-gradient-primary">
+      <div className="flex flex-col items-center mb-6 sm:mb-8 gap-4 px-4 sm:px-0">
+        <h1 className="text-2xl sm:text-4xl font-black text-gradient-primary text-center px-10 sm:px-0 tracking-tight">
           Artist Directory
         </h1>
-        <input
-          type="text"
-          placeholder="Search artist by name"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="p-2 text-sm sm:text-base rounded-xl border border-gray-300 flex-1 sm:max-w-sm w-full"
-        />
+        <div className="w-full max-w-sm">
+          <input
+            type="text"
+            placeholder="Search artist by name"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-3 sm:p-4 text-sm sm:text-base rounded-2xl border-none shadow-ScopeBrush focus:ring-2 focus:ring-purple-400 transition-all bg-white"
+          />
+        </div>
       </div>
 
       {/* Filter buttons */}
@@ -243,8 +221,7 @@ function ArtistList() {
             }`}
           onClick={() => {
             if (!user) {
-              setShowLoginMessage(true);
-              setTimeout(() => setShowLoginMessage(false), 3000);
+              setShowLoginToast(true);
               return;
             }
             setFilterTag('Following');
@@ -254,18 +231,6 @@ function ArtistList() {
         </button>
       </div>
 
-      {/* Login popup */}
-      {showLoginMessage && (
-        <div className="fixed top-3 sm:top-5 right-3 sm:right-5 bg-red-100 border border-red-300 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg shadow-lg z-50 flex flex-col sm:flex-row items-center gap-2 sm:gap-3 max-w-[90%] sm:max-w-md">
-          <p className="text-xs sm:text-sm font-medium text-center sm:text-left">Please log in to follow artists!</p>
-          <button
-            onClick={() => navigate('/user-login')}
-            className="px-2 sm:px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto"
-          >
-            Login
-          </button>
-        </div>
-      )}
 
 
       {/* Artist Cards */}

@@ -2,18 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  UserIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  MapPinIcon,
-  AcademicCapIcon,
-  IdentificationIcon,
-  PhotoIcon,
-  DocumentIcon,
-  CheckCircleIcon,
-  XMarkIcon
-} from '@heroicons/react/24/outline';
+
 import {
   User,
   Phone,
@@ -26,9 +15,10 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
+
 const proofOptions = [
-  { value: 'PAN', label: 'PAN Card' },
   { value: 'Aadhar', label: 'Aadhar Card' },
+  { value: 'PAN', label: 'PAN Card' },
   { value: 'Voter ID', label: 'Voter ID Card' },
   { value: 'Passport', label: 'Passport' },
   { value: 'Driving License', label: 'Driving License' },
@@ -74,52 +64,63 @@ const FormField = ({
   required = false,
   icon: Icon,
   placeholder = '',
-  options = null
+  options = null,
+  error = null
 }) => (
-  <div className="space-y-2">
-    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-      {Icon && <Icon className="w-4 h-4" />}
+  <div className="flex flex-col gap-1.5 w-full">
+    <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+      {Icon && <Icon className="w-4 h-4 text-purple-600" />}
       {label}
-      {required && <span className="text-red-500">*</span>}
+      {required && <span className="text-rose-500">*</span>}
     </label>
 
-    {options ? (
-      <select
-        name={name}
-        value={value}
-        onChange={onChange}
-        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 bg-white"
-        required={required}
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
-    ) : (
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-        required={required}
-      />
-    )}
+    <div className="relative">
+      {options ? (
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 bg-white shadow-sm appearance-none ${error ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200'}`}
+          required={required}
+        >
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      ) : (
+        <input
+          type={type}
+          name={name}
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder}
+          className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all duration-300 shadow-sm ${error ? 'border-rose-300 bg-rose-50/30' : 'border-slate-200'}`}
+          required={required}
+        />
+      )}
+      {options && (
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      )}
+    </div>
+    {error && <p className="text-rose-500 text-[11px] font-semibold flex items-center gap-1 animate-fadeIn"><X size={12} strokeWidth={3} /> {error}</p>}
   </div>
 );
 
-const FileUpload = ({ label, accept, onChange, preview, icon: Icon, required = true, description }) => (
-  <div className="space-y-2">
-    <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-      <Icon className="w-4 h-4" />
+const FileUpload = ({ label, accept, onChange, preview, icon: Icon, required = true, description, error }) => (
+  <div className="flex flex-col gap-1.5 w-full">
+    <label className="flex items-center gap-2 text-sm font-bold text-slate-700">
+      <Icon className="w-4 h-4 text-purple-600" />
       {label}
-      {required && <span className="text-red-500">*</span>}
+      {required && <span className="text-rose-500">*</span>}
     </label>
-    {description && <p className="text-xs text-gray-500">{description}</p>}
+    {description && <p className="text-[11px] text-slate-500 leading-tight">{description}</p>}
 
-    <div className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors min-h-[180px] flex items-center justify-center ${preview ? 'border-green-300 bg-green-50' : 'border-gray-300 hover:border-purple-400'
-      }`}>
+    <div className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-300 min-h-[160px] flex items-center justify-center relative overflow-hidden group ${preview ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-200 bg-slate-50/50 hover:border-purple-300 hover:bg-white'
+      } ${error ? 'border-rose-200 bg-rose-50/30' : ''}`}>
       <input
         type="file"
         accept={accept}
@@ -132,30 +133,38 @@ const FileUpload = ({ label, accept, onChange, preview, icon: Icon, required = t
         className="cursor-pointer block w-full h-full"
       >
         {preview ? (
-          // File uploaded state (green)
-          preview.startsWith('data:image') || preview.startsWith('blob') || preview.includes('image') ? (
-            <div className="flex flex-col items-center space-y-2">
-              <img src={preview} alt="Preview" className="w-32 h-32 rounded-xl object-cover mx-auto border-2 border-gray-200" />
-              <p className="text-sm text-green-600 font-medium">File uploaded</p>
-              <p className="text-xs text-gray-500">Click to change</p>
+          preview.startsWith('data:image') || preview.startsWith('blob') || preview.includes('image') || preview.startsWith('http') ? (
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <img src={preview} alt="Preview" className="w-24 h-24 rounded-2xl object-cover mx-auto ring-4 ring-white shadow-md" />
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white rounded-full p-1 shadow-lg">
+                  <CheckCircle2 size={12} strokeWidth={3} />
+                </div>
+              </div>
+              <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">File Selected</p>
+              <p className="text-[10px] text-slate-400 font-medium">Click to change</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center space-y-2">
-              <DocumentIcon className="w-12 h-12 mx-auto text-green-500" />
-              <p className="text-sm text-green-600 font-medium">File uploaded</p>
-              <p className="text-xs text-gray-500">Click to change</p>
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                <FileText className="w-8 h-8 text-emerald-500" />
+              </div>
+              <p className="text-[11px] text-emerald-600 font-bold uppercase tracking-wider">Document Added</p>
+              <p className="text-[10px] text-slate-400 font-medium">Click to replace</p>
             </div>
           )
         ) : (
-          // No file uploaded state (gray)
-          <div className="flex flex-col items-center space-y-2">
-            <Icon className="w-12 h-12 mx-auto text-gray-400" />
-            <p className="text-sm text-gray-600">Click to upload file</p>
-            <p className="text-xs text-gray-400">or drag and drop</p>
+          <div className="flex flex-col items-center gap-2 group-hover:scale-105 transition-transform">
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-slate-400 group-hover:text-purple-500 transition-colors">
+              <Icon className="w-7 h-7" />
+            </div>
+            <p className="text-xs text-slate-600 font-bold">Standard Upload</p>
+            <p className="text-[10px] text-slate-400 font-medium tracking-tight">Tap to browse or drop file</p>
           </div>
         )}
       </label>
     </div>
+    {error && <p className="text-rose-500 text-[11px] font-semibold flex items-center gap-1 animate-fadeIn"><X size={12} strokeWidth={3} /> {error}</p>}
   </div>
 );
 
@@ -220,12 +229,57 @@ export default function Register() {
     })();
   }, [location, navigate]);
 
+  const validationTimeout = React.useRef(null);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
+    let newValue = value;
+    let newErrors = { ...errors };
+
+    // Clear any pending timeout
+    if (validationTimeout.current) clearTimeout(validationTimeout.current);
+
+    // Real-time Input Restriction & Validation
+    if (name === 'mobile') {
+      // 1. Restriction: Only allow digits and max 10 chars
+      newValue = value.replace(/\D/g, '').slice(0, 10);
+
+      // 2. Real-time Validation Message for invalid action
+      if (/\D/.test(value)) {
+        newErrors.mobile = "Only digits are allowed";
+      } else if (newValue.length === 10 && !/^[6-9]\d{9}$/.test(newValue)) {
+        newErrors.mobile = "Only 10 digits are allowed";
+      } else {
+        delete newErrors.mobile;
+      }
+    }
+
+    if (name === 'email') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (newValue.length > 0 && !emailRegex.test(newValue)) {
+        newErrors.email = "Please enter a valid email format";
+      } else {
+        delete newErrors.email;
+      }
+    }
+
+    // Generic clear error for other fields
+    if (name !== 'mobile' && name !== 'email' && errors[name]) {
+      delete newErrors[name];
+    }
+
+    setForm({ ...form, [name]: newValue });
+    setErrors(newErrors);
+
+    // Set timeout to clear error after 0.5s if it was a real-time validation error
+    if (name === 'mobile' || name === 'email') {
+      validationTimeout.current = setTimeout(() => {
+        setErrors(prev => {
+          const updated = { ...prev };
+          delete updated[name];
+          return updated;
+        });
+      }, 500);
     }
   };
 
@@ -252,13 +306,12 @@ export default function Register() {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (form.email && !emailRegex.test(form.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = 'Please enter a valid email format';
     }
 
     // Mobile validation
-    const mobileRegex = /^[6-9]\d{9}$/;
-    if (form.mobile && !mobileRegex.test(form.mobile)) {
-      newErrors.mobile = 'Please enter a valid 10-digit mobile number';
+    if (form.mobile && (form.mobile.length !== 10 || !/^[6-9]\d{9}$/.test(form.mobile))) {
+      newErrors.mobile = 'Only digits are allowed and limit will be 10';
     }
 
     if (!isEdit) {
@@ -273,6 +326,9 @@ export default function Register() {
     }
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -334,6 +390,7 @@ export default function Register() {
     } catch (err) {
       console.error('Registration error:', err);
       alert('Error: ' + err.message);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     setLoading(false);
   };
@@ -361,8 +418,8 @@ export default function Register() {
 
               {/* PERSONAL INFO */}
               <section>
-                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  <User size={18} />
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800 mb-6">
+                  <User size={20} className="text-purple-600" />
                   Personal Information
                 </h2>
 
@@ -375,8 +432,8 @@ export default function Register() {
                     icon={User}
                     placeholder="Enter your full name"
                     required
+                    error={errors.name}
                   />
-                  {errors.name && <p className="text-red-500 text-xs">{errors.name}</p>}
 
                   <FormField
                     label="Mobile Number"
@@ -386,8 +443,8 @@ export default function Register() {
                     icon={Phone}
                     placeholder="Enter 10-digit mobile number"
                     required
+                    error={errors.mobile}
                   />
-                  {errors.mobile && <p className="text-red-500 text-xs">{errors.mobile}</p>}
 
                   <FormField
                     label="Email Address"
@@ -398,8 +455,8 @@ export default function Register() {
                     icon={Mail}
                     placeholder="Enter your email"
                     required
+                    error={errors.email}
                   />
-                  {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
 
                   <FormField
                     label="Location"
@@ -407,21 +464,21 @@ export default function Register() {
                     value={form.location}
                     onChange={handleChange}
                     icon={MapPin}
-                    placeholder="City, State"
+                    placeholder="City"
                     required
+                    error={errors.location}
                   />
-                  {errors.location && <p className="text-red-500 text-xs">{errors.location}</p>}
                 </div>
               </section>
 
               {/* PROFESSIONAL INFO */}
               <section>
-                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  <GraduationCap size={18} />
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800 mb-6">
+                  <GraduationCap size={20} className="text-purple-600" />
                   Professional Information
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                   <FormField
                     label="Qualification"
                     name="qualification"
@@ -429,8 +486,8 @@ export default function Register() {
                     onChange={handleChange}
                     icon={GraduationCap}
                     placeholder="e.g., Bachelor of Fine Arts"
+                    error={errors.qualification}
                   />
-                  {errors.qualification && <p className="text-red-500 text-xs">{errors.qualification}</p>}
 
                   <FormField
                     label="ID Proof Type"
@@ -446,12 +503,12 @@ export default function Register() {
 
               {/* DOCUMENT UPLOADS */}
               <section>
-                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-semibold text-gray-800 mb-4">
-                  <FileText size={18} />
+                <h2 className="flex items-center gap-2 text-lg sm:text-xl font-bold text-slate-800 mb-6">
+                  <FileText size={20} className="text-purple-600" />
                   Document Uploads
                 </h2>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8">
                   <FileUpload
                     label="Profile Image"
                     accept="image/*"
@@ -460,8 +517,8 @@ export default function Register() {
                     icon={ImageIcon}
                     required={!isEdit}
                     description="Upload a clear profile photo"
+                    error={errors.profileImage}
                   />
-                  {errors.profileImage && <p className="text-red-500 text-xs">{errors.profileImage}</p>}
 
                   <FileUpload
                     label={`${form.id_proof_type} Document`}
@@ -471,8 +528,8 @@ export default function Register() {
                     icon={IdCard}
                     required={!isEdit}
                     description="Upload your ID proof document"
+                    error={errors.idFile}
                   />
-                  {errors.idFile && <p className="text-red-500 text-xs">{errors.idFile}</p>}
 
                   <FileUpload
                     label="Payment QR Code"
@@ -482,8 +539,8 @@ export default function Register() {
                     icon={ImageIcon}
                     required={!isEdit}
                     description="Upload payment QR code"
+                    error={errors.qrCodeFile}
                   />
-                  {errors.qrCodeFile && <p className="text-red-500 text-xs">{errors.qrCodeFile}</p>}
                 </div>
               </section>
 
@@ -514,65 +571,67 @@ export default function Register() {
       </div>
 
       {/* TERMS MODAL */}
-      {showTerms && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-xl">
+      {
+        showTerms && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col shadow-xl">
 
-            {/* Header */}
-            <div className="p-4 border-b flex justify-between">
-              <h2 className="text-xl font-semibold">Terms & Conditions</h2>
-              <button onClick={() => setShowTerms(false)}>
-                <X size={20} className="text-gray-500 hover:text-gray-700" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-4 overflow-y-auto text-sm leading-relaxed text-gray-700">
-              <pre className="whitespace-pre-wrap">{TERMS_TEXT}</pre>
-            </div>
-
-            {/* Footer */}
-            <div className="p-4 border-t bg-gray-50 space-y-3">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="w-4 h-4 text-purple-600"
-                />
-                I accept the terms and conditions
-              </label>
-
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowTerms(false)}
-                  className="px-5 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmSubmit}
-                  disabled={!termsAccepted || loading}
-                  className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-full"></div>
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={18} />
-                      Confirm Registration
-                    </>
-                  )}
+              {/* Header */}
+              <div className="p-4 border-b flex justify-between">
+                <h2 className="text-xl font-semibold">Terms & Conditions</h2>
+                <button onClick={() => setShowTerms(false)}>
+                  <X size={20} className="text-gray-500 hover:text-gray-700" />
                 </button>
               </div>
-            </div>
 
+              {/* Content */}
+              <div className="p-4 overflow-y-auto text-sm leading-relaxed text-gray-700">
+                <pre className="whitespace-pre-wrap">{TERMS_TEXT}</pre>
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t bg-gray-50 space-y-3">
+                <label className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                    className="w-4 h-4 text-purple-600"
+                  />
+                  I accept the terms and conditions
+                </label>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setShowTerms(false)}
+                    className="px-5 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmSubmit}
+                    disabled={!termsAccepted || loading}
+                    className="px-5 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="animate-spin h-4 w-4 border-b-2 border-white rounded-full"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 size={18} />
+                        Confirm Registration
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }

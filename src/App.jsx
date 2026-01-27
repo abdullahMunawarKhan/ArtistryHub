@@ -32,12 +32,12 @@ import TermsConditions from './pages/TermsCondition';
 import ComingSoon from './pages/ComingSoon';
 import Demo from './pages/Demo';
 import Version from './pages/Version';
-import { X } from "lucide-react";
+import { X, Info } from "lucide-react";
 import AppUpdateChecker from "./components/AppUpdateChecker";
 import { registerForPushNotifications } from "./utils/pushNotifications";
 import { PushNotifications } from "@capacitor/push-notifications";
-
-
+import { supabase } from './utils/supabase';
+import BottomNavbar from './components/BottomNavbar';
 
 
 function App() {
@@ -47,8 +47,68 @@ function App() {
   const isWelcomePage = location.pathname === '/';
   const isComingSoonPage = location.pathname === '/coming-soon';
 
+  const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [artistProfile, setArtistProfile] = useState(null);
+  const [showLoginToast, setShowLoginToast] = useState(false);
+
   const footerRef = useRef(null)
 
+  // Auto-close toast
+  useEffect(() => {
+    if (showLoginToast) {
+      const timer = setTimeout(() => setShowLoginToast(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [showLoginToast]);
+
+  // Fetch User & Profile Data
+  useEffect(() => {
+    const getUserData = async () => {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      setUser(authUser);
+
+      if (authUser) {
+        // Query unified 'user' table for role
+        const { data: userProfile } = await supabase
+          .from('user')
+          .select('id, role')
+          .eq('id', authUser.id)
+          .single()
+
+        if (userProfile) {
+          setIsAdmin(userProfile.role === 'efbv');
+
+          if (userProfile.role !== 'efbv') {
+            const { data: artistData } = await supabase
+              .from('artists')
+              .select('id')
+              .eq('user_id', authUser.id)
+              .single()
+            setArtistProfile(artistData || null);
+          }
+        }
+      } else {
+        setIsAdmin(false);
+        setArtistProfile(null);
+      }
+    };
+
+    getUserData();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        getUserData();
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+        setArtistProfile(null);
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (footerOpen) {
@@ -149,7 +209,18 @@ function App() {
     <div className="min-h-[calc(100vh-46px)] flex flex-col">
       <AppUpdateChecker />
       {!(isWelcomePage || isComingSoonPage) && (
-        <TopPanel footerOpen={footerOpen} setFooterOpen={setFooterOpen} />
+        <TopPanel
+          footerOpen={footerOpen}
+          setFooterOpen={setFooterOpen}
+          user={user}
+          setUser={setUser}
+          isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
+          artistProfile={artistProfile}
+          setArtistProfile={setArtistProfile}
+          showLoginToast={showLoginToast}
+          setShowLoginToast={setShowLoginToast}
+        />
       )}
 
       {!isWelcomePage && <Back />}
@@ -159,6 +230,7 @@ function App() {
         className={`
           flex-grow flex flex-col
           ${isWelcomePage ? 'p-0' : 'p-3 md:p-4'}
+          ${!(isWelcomePage || isComingSoonPage) ? 'pb-20 md:pb-4' : ''}
         `}
         style={{
           paddingTop: !isWelcomePage ? 'calc(5rem + env(safe-area-inset-top))' : '0'
@@ -179,7 +251,7 @@ function App() {
             <Route path="/update-password" element={<UpdatePassword />} />
             <Route path="/frtfgau84hfdja" element={<AdminLogin />} />
             <Route path="/dshakfgadsj" element={<AdminDashboard />} />
-            <Route path="/artist-list" element={<ArtistList />} />
+            <Route path="/artist-list" element={<ArtistList user={user} setShowLoginToast={setShowLoginToast} />} />
             <Route path="/artist-profile" element={<ArtistProfile />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/register" element={<Register />} />
@@ -203,18 +275,47 @@ function App() {
         </div>
       </main>
 
-      {/* FIXED, COLLAPSIBLE FOOTER */}
+      {/* LOGIN TOAST */}
+      {showLoginToast && (
+        <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+                  bg-white/95 backdrop-blur-2xl 
+                  border border-purple-200 shadow-2xl
+                  rounded-2xl px-6 py-5 z-[200] w-[85%] max-w-sm
+                  flex flex-col items-center justify-center gap-4 text-center animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <Info size={20} className="text-purple-600" />
+            <p className="text-gray-800 text-sm font-medium">Please log in to use this feature.</p>
+          </div>
+          <button
+            onClick={() => { setShowLoginToast(false); navigate('/user-login'); }}
+            className="w-full py-3 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+          >
+            Login
+          </button>
+        </div>
+      )}
 
-      <div ref={footerRef}
+      {/* BOTTOM NAVIGATION BAR */}
+      {!(isWelcomePage || isComingSoonPage) && (
+        <BottomNavbar
+          setShowLoginToast={setShowLoginToast}
+          user={user}
+          artistProfile={artistProfile}
+        />
+      )}
+
+      {/* FIXED, COLLAPSIBLE FOOTER */}
+      <div
+        ref={footerRef}
         onTransitionEnd={onFooterTransitionEnd}
         className={`
-    fixed bottom-0 left-0 w-full
-    bg-gradient-to-t from-gray-900 via-gray-800 to-gray-700
-    text-gray-300 border-t border-gray-600 backdrop-blur-sm
-    transition-all duration-300 ease-in-out
-    ${footerOpen ? 'h-3/4' : 'h-8'}
-  `}
-        style={{ zIndex: 50 }}
+          fixed bottom-0 left-0 w-full
+          bg-gradient-to-t from-gray-900 via-gray-800 to-gray-700
+          text-gray-300 border-t border-gray-600 backdrop-blur-sm
+          transition-all duration-300 ease-in-out
+          ${footerOpen ? 'h-3/4 z-[110] opacity-100' : 'h-0 md:h-8 opacity-0 md:opacity-100 z-50'}
+          ${footerOpen ? 'block' : 'hidden md:block'}
+        `}
       >
         {/* Gray "handle" area always visible (h-8) */}
         <div
