@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
-import { Heart, Loader2 } from "lucide-react";
+import { Heart, Loader2, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -848,10 +848,10 @@ mx-auto max-w-6xl px-3 py-3 md:px-4 md:py-4">
         {showGoTop && (
           <button
             onClick={scrollToTop}
-            className="fixed bottom-10 right-6 p-3 rounded-full bg-purple-600 text-white shadow-lg hover:bg-purple-700 transition"
+            className="fixed bottom-28 right-6 p-4 rounded-full bg-purple-600/90 backdrop-blur-md text-white shadow-2xl hover:bg-purple-700 active:scale-95 transition-all z-[60] border border-white/20 flex items-center justify-center group"
             aria-label="Scroll to top"
           >
-            ↑
+            <ChevronUp size={24} strokeWidth={3} className="group-hover:-translate-y-1 transition-transform" />
           </button>
         )}
         {/* Login Modal */}

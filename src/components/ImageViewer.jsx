@@ -13,8 +13,7 @@ export default function ImageViewer({
     watermarkText
 }) {
     const [zoom, setZoom] = useState(1);
-    const offset = useRef({ x: 0, y: 0 });
-    const raf = useRef(null);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
 
     const frameRef = useRef(null);
@@ -83,16 +82,7 @@ export default function ImageViewer({
         const nextX = clamp(e.clientX - start.current.x, -maxX, maxX);
         const nextY = clamp(e.clientY - start.current.y, -maxY, maxY);
 
-        offset.current = { x: nextX, y: nextY };
-
-        if (!raf.current) {
-            raf.current = requestAnimationFrame(() => {
-                imgRef.current.style.transform =
-                    `translate(${offset.current.x}px, ${offset.current.y}px) scale(${zoom})`;
-                raf.current = null;
-            });
-        }
-
+        setOffset({ x: nextX, y: nextY });
     };
 
 

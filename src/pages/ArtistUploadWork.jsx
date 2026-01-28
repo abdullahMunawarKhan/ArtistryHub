@@ -4,6 +4,9 @@ import { supabase } from "../utils/supabase";
 import Autocomplete from "react-google-autocomplete";
 import { useRef } from 'react';
 import ImageViewer from "../components/ImageViewer";
+import { Listbox } from "@headlessui/react";
+import { UploadCloud, Image as ImageIcon, X } from "lucide-react"
+import { Video, CheckCircle, AlertTriangle } from "lucide-react"
 
 // import { APIProvider, useMapsLibrary } from '@vis.gl/react-google-maps';
 
@@ -121,7 +124,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
   const [imageToRemoveIdx, setImageToRemoveIdx] = useState(null);
   const fileInputRef = useRef(null);
   const videoInputRef = useRef(null);
-
+  const [openCategory, setOpenCategory] = useState(false);
 
   useEffect(() => {
     async function loadUserAndArtist() {
@@ -189,12 +192,35 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
 
   function handleImageChange(e) {
-    const files = Array.from(e.target.files).slice(0, 3);
-    const validFiles = files.filter((file) => file.size <= 10 * 1024 * 1024);
-    if (validFiles.length < files.length) alert("Some images were ignored due to size limit.");
-    setImages(validFiles);
-    setPreviewUrls(validFiles.map((file) => URL.createObjectURL(file)));
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    const remainingSlots = 3 - previewUrls.length;
+    if (remainingSlots <= 0) {
+      alert("You can upload a maximum of 3 images.");
+      return;
+    }
+
+    const validFiles = files
+      .filter(file => file.size <= 10 * 1024 * 1024)
+      .slice(0, remainingSlots);
+
+    if (validFiles.length < files.length) {
+      alert("Some images were ignored due to size or max limit.");
+    }
+
+    setImages(prev => [...prev, ...validFiles]);
+    setPreviewUrls(prev => [
+      ...prev,
+      ...validFiles.map(file => URL.createObjectURL(file))
+    ]);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   }
+
 
   async function handleVideoChange(e) {
     const file = e.target.files[0];
@@ -384,6 +410,10 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     }
     if (!productId && !video) {
       alert("Video upload is mandatory for new artworks.");
+      return;
+    }
+    if (previewUrls.length === 0) {
+      alert("Please upload at least one image for the artwork.");
       return;
     }
 
@@ -672,21 +702,58 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
               />
             </div>
 
+
             {/* Category */}
-            <div>
-              <label className="block font-semibold text-gray-700 mb-1">Category *</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+            <div className="relative">
+              <label className="block font-semibold text-gray-700 mb-1">
+                Category *
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setOpenCategory(true)}
+                className="w-full border rounded-lg px-4 py-2 text-sm text-left 
+               focus:ring-2 focus:ring-blue-500 bg-white"
               >
-                <option value="">Select category</option>
-                {selectableCategories.map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
+                {category || "Select category"}
+              </button>
+
+              {/* Mobile-friendly modal */}
+              {openCategory && (
+                <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center">
+                  <div className="bg-white w-full sm:max-w-md rounded-t-xl sm:rounded-xl p-4 max-h-[70vh] overflow-y-auto">
+
+                    <h3 className="font-semibold text-gray-800 mb-3">
+                      Select Category
+                    </h3>
+
+                    {selectableCategories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setCategory(cat);
+                          setOpenCategory(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 rounded-lg mb-1 text-sm
+              ${category === cat ? "bg-blue-100 font-medium" : "hover:bg-gray-100"}`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => setOpenCategory(false)}
+                      className="mt-3 w-full py-2 text-sm text-gray-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
+
 
             {/* Material */}
             <div>
@@ -731,70 +798,92 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
             <br />
 
 
-            <div className="mb-6">
 
-              <label htmlFor="video-input" className="block font-semibold text-gray-700 mb-2">
-                Video Upload <span className="text-red-500">*</span>
-                <span className="text-xs text-gray-500 ml-1">( Max 50 MB )</span>
+
+            <div className="mb-6">
+              <label className="block font-semibold text-gray-700 mb-2">
+                Upload Images{" "}
+                <span className="text-xs text-gray-500">(Max 3, each under 10MB)</span>
               </label>
 
+              <p className="text-xs text-amber-700 mb-3 bg-amber-50 p-2 rounded border border-amber-200">
+                Don&apos;t upload with any social media ID tag or watermark — will be provided by our platform
+              </p>
+
+              {/* Custom Upload Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={previewUrls.length >= 3}
+                className={`w-full flex items-center justify-center gap-3
+      border-2 border-dashed rounded-xl py-4 px-4 text-sm font-medium
+      transition-all
+      ${previewUrls.length >= 3
+                    ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "border-blue-400 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                  }
+    `}
+              >
+                <UploadCloud className="w-5 h-5" />
+                {previewUrls.length >= 3
+                  ? "Image limit reached"
+                  : "Click to upload images"}
+              </button>
+
+              {/* Hidden file input (backend logic untouched) */}
               <input
-                ref={videoInputRef}
-                id="video-input"
+                ref={fileInputRef}
                 type="file"
-                accept="video/mp4,video/webm,video/ogg,video/avi,video/mov,video/wmv"
-                onChange={handleVideoChange}
-                required={!videoPreview}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${!video && !videoPreview
-                  ? 'border-red-300 bg-red-50'
-                  : 'border-gray-300'
-                  }`}
+                accept="image/*"
+                multiple
+                disabled={previewUrls.length >= 3}
+                onChange={handleImageChange}
+                className="hidden"
               />
 
-              {!video && !videoPreview && (
-                <p className="mt-2 text-sm text-red-600 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                  Video upload is mandatory (max 30 seconds)
-                </p>
-              )}
+              {/* Upload counter */}
+              <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                <ImageIcon className="w-4 h-4" />
+                {previewUrls.length} / 3 images uploaded
+              </p>
 
-              {videoPreview && (
-                <div className="mt-4">
-                  <video
-                    controls
-                    width="300"
-                    className="max-w-full rounded-lg shadow-md"
-                    onLoadedMetadata={(e) => {
-                      const duration = Math.round(e.target.duration);
-                      console.log(`Video duration: ${duration} seconds`);
-                    }}
+              {/* Preview grid */}
+              <div className="mt-4 flex gap-3 flex-wrap">
+                {previewUrls.map((url, i) => (
+                  <div
+                    key={i}
+                    className="relative group w-28 h-28 rounded-lg overflow-hidden
+                   border border-gray-200 shadow-sm"
                   >
-                    <source src={videoPreview} />
-                    Your browser does not support video preview.
-                  </video>
-                  <div className="mt-2 text-sm text-green-600 flex items-center">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                    </svg>
-                    Video selected successfully
-                  </div>
-                </div>
-              )}
+                    <img
+                      src={url}
+                      alt={`preview-${i}`}
+                      className="w-full h-full object-cover cursor-pointer
+                     group-hover:scale-105 transition-transform duration-300"
+                      onClick={() => {
+                        setCurrentImageIndex(i);
+                        setImageViewerOpen(true);
+                      }}
+                    />
 
-              <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                <div className="text-xs text-gray-600">
-                  <div className="font-medium mb-1">📋 Video Requirements:</div>
-                  <div className="space-y-1">
-                    <div>• <span className="font-medium">Format:</span> MP4 </div>
-                    <div>• <span className="font-medium">Max file size:</span> 50 MB</div>
-                    <div>• <span className="font-medium">Max duration:</span> 30 seconds</div>
+                    {/* Remove button */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowRemoveModal(true);
+                        setImageToRemoveIdx(i);
+                      }}
+                      className="absolute top-1 right-1 bg-black/70 hover:bg-black
+                     text-white rounded-full p-1
+                     opacity-0 group-hover:opacity-100 transition"
+                      title="Remove image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-
           </div>
 
           {/* Right Side */}
@@ -804,7 +893,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
               <label className="block font-semibold text-gray-700 mb-2">
                 Artwork Dimensions <span className="text-xs text-gray-400">(after packing)</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <input
                   type="number"
                   value={length}
@@ -812,8 +901,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Length (cm)"
                   min="1"
                   required
-                  className="border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-4 py-2 text-sm"
                 />
+
                 <input
                   type="number"
                   value={width}
@@ -821,8 +911,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Width (cm)"
                   min="1"
                   required
-                  className="border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-4 py-2 text-sm"
                 />
+
                 <input
                   type="number"
                   value={height}
@@ -830,8 +921,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Height (cm)"
                   min="1"
                   required
-                  className="border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-4 py-2 text-sm"
                 />
+
                 <input
                   type="number"
                   value={weight}
@@ -840,43 +932,70 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   min="0.1"
                   step="any"
                   required
-                  className="border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-4 py-2 text-sm"
                 />
               </div>
+
             </div>
             <div>
-              <label className="block font-semibold text-gray-700 mb-2">Length (cm)</label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  value={actualLength}
-                  onChange={e => setActualLength(e.target.value)}
-                  placeholder="Actual"
-                  min="1"
-                  required
-                  className="border rounded-lg px-4 py-2 text-sm"
-                />
+              <label className="block font-semibold text-gray-700 mb-2">
+                Artwork Dimensions <span className="text-xs text-gray-400">(True)</span>
+              </label>
+
+
+              {/* Length & Height in same row */}
+              <div className="grid grid-cols-2 gap-4">
+
+                {/* Length */}
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-2">
+                    Length (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={actualLength}
+                    onChange={e => setActualLength(e.target.value)}
+                    placeholder="Actual"
+                    min="1"
+                    required
+                    className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                  />
+                </div>
+
+                {/* Height */}
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-2">
+                    Height (cm)
+                  </label>
+                  <input
+                    type="number"
+                    value={actualHeight}
+                    onChange={e => setActualHeight(e.target.value)}
+                    placeholder="Actual"
+                    min="1"
+                    required
+                    className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-400 focus:outline-none"
+                  />
+                </div>
+
               </div>
-            </div>
-            <div>
-              <label className="block font-semibold text-gray-700 mb-2">Height (cm)</label>
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  value={actualHeight}
-                  onChange={e => setActualHeight(e.target.value)}
-                  placeholder="Actual"
-                  min="1"
-                  required
-                  className="border rounded-lg px-4 py-2 text-sm"
-                />
-              </div>
+
             </div>
 
-            {/* Price & Cost */}
-            <div className="space-y-4">
+
+
+            {/* Pricing Section */}
+            <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+
+              <h3 className="font-semibold text-gray-800 text-sm">
+                Pricing Details
+              </h3>
+
+              {/* Base Price */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">Base Price *</label>
+                <label className="sm:w-40 font-medium text-gray-700">
+                  Base Price *
+                </label>
                 <input
                   type="number"
                   min="0"
@@ -888,85 +1007,129 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 />
               </div>
 
+              {/* Pickup Charges */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">Pickup Charges</label>
+                <label className="sm:w-40 font-medium text-gray-700">
+                  Pickup Charges
+                </label>
                 <input
                   type="text"
                   value={pickupCharges}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-100"
                 />
               </div>
 
+              {/* Platform Fees */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">Platform Fees</label>
+                <label className="sm:w-40 font-medium text-gray-700">
+                  Platform Fees
+                </label>
                 <input
                   type="text"
                   value={platformFees.toFixed(2)}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-100"
                 />
               </div>
 
+              {/* Final Cost */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">Cost for Buyer</label>
+                <label className="sm:w-40 font-semibold text-gray-900">
+                  Cost for Buyer
+                </label>
                 <input
                   type="text"
                   value={cost}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-50"
+                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-white font-semibold"
                 />
               </div>
+
             </div>
 
             <div className="mb-6">
               <label className="block font-semibold text-gray-700 mb-2">
-                Upload Images (Max 3, each under 10MB) <br />
-                <span className="text-xs text-gray-500">
-                  *Don't upload with any social media ID tag or watermark — will be provided by our platform
-                </span>
+                Video Upload <span className="text-red-500">*</span>
+                <span className="text-xs text-gray-500 ml-1">(Max 50 MB)</span>
               </label>
 
+              {/* Upload button */}
+              <button
+                type="button"
+                onClick={() => videoInputRef.current?.click()}
+                className={`w-full flex items-center justify-center gap-3
+      border-2 border-dashed rounded-xl py-4 px-4 text-sm font-medium
+      transition-all
+      ${!video && !videoPreview
+                    ? "border-red-400 bg-red-50 text-red-700 hover:bg-red-100"
+                    : "border-green-400 bg-green-50 text-green-700"
+                  }
+    `}
+              >
+                <UploadCloud className="w-5 h-5" />
+                {!video && !videoPreview
+                  ? "Click to upload video (Required)"
+                  : "Video selected successfully"}
+              </button>
+
+              {/* Hidden native input (logic unchanged) */}
               <input
-                ref={fileInputRef}
+                ref={videoInputRef}
+                id="video-input"
                 type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                className="block w-full text-sm text-gray-700 border border-gray-300 rounded-md cursor-pointer bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+                accept="video/mp4,video/webm,video/ogg,video/avi,video/mov,video/wmv"
+                onChange={handleVideoChange}
+                required={!videoPreview}
+                className="hidden"
               />
 
+              {/* Validation message */}
+              {!video && !videoPreview && (
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  Video upload is mandatory (max 30 seconds)
+                </p>
+              )}
 
-              <div className="flex gap-3 flex-wrap">
-                {previewUrls.map((url, i) => (
-                  <div key={i} className="relative group">
-                    <img
-                      src={url}
-                      alt={`preview-${i}`}
-                      className="w-28 h-28 object-cover rounded-lg shadow cursor-pointer hover:scale-105 transition-transform duration-300"
-                      onClick={() => {
-                        setCurrentImageIndex(i);
-                        setImageViewerOpen(true);
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowRemoveModal(true);
-                        setImageToRemoveIdx(i);
-                      }}
-                      className="absolute top-1 right-1 bg-black bg-opacity-60 text-white rounded-full w-7 h-7 flex items-center justify-center opacity-100 transition"
-                      title="Remove image"
-                    >
-                      &times;
-                    </button>
+              {/* Video preview */}
+              {videoPreview && (
+                <div className="mt-4">
+                  <video
+                    controls
+                    className="w-full max-w-sm rounded-lg shadow-md border border-gray-200"
+                    onLoadedMetadata={(e) => {
+                      const duration = Math.round(e.target.duration);
+                      console.log(`Video duration: ${duration} seconds`);
+                    }}
+                  >
+                    <source src={videoPreview} />
+                    Your browser does not support video preview.
+                  </video>
 
-
+                  <div className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" />
+                    Video selected successfully
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
 
+              {/* Requirements */}
+              <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="text-xs text-gray-600">
+                  <div className="font-medium mb-1 flex items-center gap-1">
+                    <Video className="w-4 h-4" />
+                    Video Requirements
+                  </div>
+                  <div className="space-y-1">
+                    <div>• <span className="font-medium">Format:</span> MP4, WebM, OGG, AVI, MOV, WMV</div>
+                    <div>• <span className="font-medium">Max file size:</span> 50 MB</div>
+                    <div>• <span className="font-medium">Max duration:</span> 30 seconds</div>
+                  </div>
+                </div>
+              </div>
             </div>
+
 
 
           </div>
@@ -1007,7 +1170,9 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
       {showRemoveModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-8">
+          <div className="bg-white rounded-xl shadow-lg 
+                w-full max-w-md mx-4 
+                p-4 sm:p-6">
             <h3 className="text-lg font-bold mb-4">Are you sure you want to delete this image?</h3>
             <div className="flex gap-4 justify-end">
               <button

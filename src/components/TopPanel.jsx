@@ -20,7 +20,7 @@ import { UserRound, ChevronDown, Menu, X } from "lucide-react";
 import { KeyRound, LogOut, Mail } from "lucide-react";
 
 const FALLBACK_APK_URL =
-  "https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v1.1.3.apk";
+  "https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v9_1769533296653.apk";
 
 function TopPanel({
   footerOpen,
@@ -137,7 +137,7 @@ function TopPanel({
       <nav className="flex items-center justify-between px-2 md:px-4 py-2 w-full">
         <div className="flex items-center flex-shrink-0">
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/images/logo2.jpeg" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
+            <img src="/images/logo_4.png" alt="ScopeBrush Logo" className="h-12 w-12 object-contain" />
             <span className="text-2xl font-bold" style={{ color: '#D740A1' }}>ScopeBrush</span>
           </Link>
         </div>
