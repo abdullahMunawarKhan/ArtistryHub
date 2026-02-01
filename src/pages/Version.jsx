@@ -161,7 +161,7 @@ const Version = () => {
                                             whileHover={{ y: -5 }}
                                             className="group bg-purple-50 p-6 rounded-[2rem] border border-purple-100 flex flex-col items-center justify-center transition-all hover:shadow-xl hover:shadow-purple-200"
                                         >
-                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Discovery</span>
+                                            <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2">Latest Version</span>
                                             <span className="text-3xl font-black text-purple-700 tracking-tighter group-hover:text-purple-600 transition-colors">
                                                 {latestVersion ? latestVersion.version_no : '---'}
                                             </span>

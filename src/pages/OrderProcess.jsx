@@ -145,8 +145,17 @@ export default function OrderProcess() {
 
   const totalCost = artwork ? artwork.cost + DELIVERY_FEE : 0;
 
-  const validationTimeout = React.useRef(null);
-  const [errors, setErrors] = useState({});
+  // Validation on blur (focus lost)
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    if ((name === "mobile" || name === "altMobile") && value.length > 0) {
+      if (value.length < 10) {
+        setErrors((prev) => ({ ...prev, [name]: "10 digits are allowed" }));
+      } else if (!/^[6-9]\d{9}$/.test(value)) {
+        setErrors((prev) => ({ ...prev, [name]: "Invalid mobile format" }));
+      }
+    }
+  };
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -157,33 +166,39 @@ export default function OrderProcess() {
 
     // Mobile logic (restricted to 10 digits)
     if (name === "mobile" || name === "altMobile") {
+      const isNonDigit = /\D/.test(value);
       newValue = value.replace(/\D/g, "").slice(0, 10);
 
-      if (/\D/.test(value)) {
+      if (isNonDigit) {
         newErrors[name] = "Only digits are allowed";
-      } else if (newValue.length === 10 && !/^[6-9]\d{9}$/.test(newValue)) {
-        newErrors[name] = "Only 10 digits are allowed";
+
+        // Auto-clear "Only digits" error shortly
+        validationTimeout.current = setTimeout(() => {
+          setErrors((prev) => {
+            const updated = { ...prev };
+            if (updated[name] === "Only digits are allowed") delete updated[name];
+            return updated;
+          });
+        }, 1500);
       } else {
-        delete newErrors[name];
+        // Clear "digits" or "length" errors if typing validly
+        if (newErrors[name] === "Only digits are allowed" || newErrors[name] === "10 digits are allowed") {
+          delete newErrors[name];
+        }
+
+        // Immediate check if we hit 10 chars
+        if (newValue.length === 10 && !/^[6-9]\d{9}$/.test(newValue)) {
+          newErrors[name] = "Invalid mobile format";
+        } else if (newValue.length === 10) {
+          if (newErrors[name] === "Invalid mobile format") delete newErrors[name];
+        }
       }
     } else {
-      // Clear generic errors for other fields
       delete newErrors[name];
     }
 
     setForm({ ...form, [name]: newValue });
     setErrors(newErrors);
-
-    // Auto-clear after 0.5s
-    if (name === "mobile" || name === "altMobile") {
-      validationTimeout.current = setTimeout(() => {
-        setErrors((prev) => {
-          const updated = { ...prev };
-          delete updated[name];
-          return updated;
-        });
-      }, 500);
-    }
   }
 
   // Payment
@@ -353,6 +368,7 @@ export default function OrderProcess() {
             />
 
             {/* Mobile */}
+            {/* Mobile */}
             <Field
               icon={<Phone size={16} />}
               label="Mobile Number"
@@ -361,10 +377,12 @@ export default function OrderProcess() {
               required
               value={form.mobile}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="10-digit mobile number"
               error={errors.mobile}
             />
 
+            {/* Alt Mobile */}
             {/* Alt Mobile */}
             <Field
               icon={<Phone size={16} />}
@@ -373,6 +391,7 @@ export default function OrderProcess() {
               type="tel"
               value={form.altMobile}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Alternate mobile"
               error={errors.altMobile}
             />

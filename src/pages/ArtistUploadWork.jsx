@@ -141,6 +141,52 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
     }
     loadUserAndArtist();
   }, []);
+
+  const isRestored = useRef(false);
+
+  // Reset restoration flag when productId changes
+  useEffect(() => {
+    isRestored.current = false;
+  }, [productId]);
+
+  // Load saved data for NEW uploads (no productId)
+  useEffect(() => {
+    if (productId) return;
+
+    const saved = localStorage.getItem("artist_upload_new");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.description) setDescription(parsed.description);
+        if (parsed.category) setCategory(parsed.category);
+        if (parsed.material) setMaterial(parsed.material);
+        if (parsed.pickupAddress) setPickupAddress(parsed.pickupAddress);
+        if (parsed.basePrice) setBasePrice(parsed.basePrice);
+        if (parsed.length) setLength(parsed.length);
+        if (parsed.width) setWidth(parsed.width);
+        if (parsed.height) setHeight(parsed.height);
+        if (parsed.weight) setWeight(parsed.weight);
+        if (parsed.actualLength) setActualLength(parsed.actualLength);
+        if (parsed.actualHeight) setActualHeight(parsed.actualHeight);
+      } catch (e) {
+        console.error("Error parsing saved upload data", e);
+      }
+    }
+    isRestored.current = true;
+  }, [productId]);
+
+  // Save data on change
+  useEffect(() => {
+    if (!isRestored.current) return;
+
+    const key = productId ? `artist_upload_${productId}` : "artist_upload_new";
+    const data = {
+      title, description, category, material, pickupAddress,
+      basePrice, length, width, height, weight, actualLength, actualHeight
+    };
+    localStorage.setItem(key, JSON.stringify(data));
+  }, [title, description, category, material, pickupAddress, basePrice, length, width, height, weight, actualLength, actualHeight, productId]);
   useEffect(() => {
     const base = Number(basePrice);
     if (!isNaN(base) && base >= 0) {
@@ -170,21 +216,37 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         return;
       }
       if (data) {
-        setTitle(data.title || "");
-        setDescription(data.description || "");
-        setCategory(data.category || "");
-        setPickupAddress(data.pickupAddress || "")
-        setCost(data.cost?.toString() || "");
-        setMaterial(data.material || "");
+        // Load any saved session override (if user navigated away during edit)
+        let savedData = {};
+        try {
+          const saved = localStorage.getItem(`artist_upload_${productId}`);
+          if (saved) savedData = JSON.parse(saved);
+        } catch (e) { console.error(e); }
+
+        setTitle(savedData.title ?? data.title ?? "");
+        setDescription(savedData.description ?? data.description ?? "");
+        setCategory(savedData.category ?? data.category ?? "");
+        setPickupAddress(savedData.pickupAddress || data.pickupAddress || "")
+        // setCost is derived from basePrice, so we rely on basePrice setting. 
+        // But for initial render visuals, we might set it if needed, but effect handles it.
+
+        setMaterial(savedData.material ?? data.material ?? "");
+
+        // Fix: populate basePrice from DB if not in session
+        const dbBasePrice = data.base_price ? data.base_price.toString() : "";
+        setBasePrice(savedData.basePrice ?? dbBasePrice);
+
         setPreviewUrls(Array.isArray(data.image_urls) ? data.image_urls : data.image_urls ? [data.image_urls] : []);
         setVideoPreview(data.video_url || "");
-        setLength(data.length || " ");
-        setHeight(data.Height || " ");
-        setWeight(data.weight || " ");
-        setWidth(data.width || " ");
-        setActualLength(data.actual_length || "");
-        setActualHeight(data.actual_height || "");
 
+        setLength(savedData.length ?? data.length?.toString() ?? "");
+        setHeight(savedData.height ?? data.Height?.toString() ?? "");
+        setWeight(savedData.weight ?? data.weight?.toString() ?? "");
+        setWidth(savedData.width ?? data.width?.toString() ?? "");
+        setActualLength(savedData.actualLength ?? data.actual_length?.toString() ?? "");
+        setActualHeight(savedData.actualHeight ?? data.actual_height?.toString() ?? "");
+
+        isRestored.current = true;
       }
     }
     fetchArtwork();
@@ -546,6 +608,10 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
       setVideo(null);
       setVideoPreview("");
 
+      // Clear the saved session 
+      const sessionKey = productId ? `artist_upload_${productId}` : "artist_upload_new";
+      localStorage.removeItem(sessionKey);
+
       onUploadSuccess && onUploadSuccess();
 
       // Navigate back to profile
@@ -667,52 +733,52 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
 
   return (
-    <div className="pt-20 max-w-6xl mx-auto p-6 bg-white shadow-xl rounded-2xl">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
+    <div className="pt-20 max-w-6xl mx-auto p-4 md:p-6 bg-white shadow-xl rounded-xl md:rounded-2xl">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6 text-gray-800">
         {productId ? "Edit Artwork" : "Upload Artwork"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
         {/* Top Section: Responsive grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
           {/* Left Side */}
-          <div className="space-y-5">
+          <div className="space-y-4 md:space-y-5">
             {/* Title */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Title *</label>
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-1">Title *</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter title"
                 required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             {/* Description */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Description</label>
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-1">Description</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Enter description"
                 rows={3}
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
 
             {/* Category */}
             <div className="relative">
-              <label className="block font-semibold text-gray-700 mb-1">
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-1">
                 Category *
               </label>
 
               <button
                 type="button"
                 onClick={() => setOpenCategory(true)}
-                className="w-full border rounded-lg px-4 py-2 text-sm text-left 
+                className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm text-left 
                focus:ring-2 focus:ring-blue-500 bg-white"
               >
                 {category || "Select category"}
@@ -757,13 +823,13 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
             {/* Material */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">Material</label>
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-1">Material</label>
               <input
                 type="text"
                 value={material}
                 onChange={(e) => setMaterial(e.target.value)}
                 placeholder="Enter material"
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -782,7 +848,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
               </div>
             </APIProvider> */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-1">
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-1">
                 Pickup Address <span className="text-red-500">*</span>{" "}
                 <span className="text-xs text-gray-400">(with Pin code, precise)</span>
               </label>
@@ -792,7 +858,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 placeholder="Enter pickup address"
                 rows={3}
                 required
-                className="w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <br />
@@ -800,8 +866,8 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
 
 
-            <div className="mb-6">
-              <label className="block font-semibold text-gray-700 mb-2">
+            <div className="mb-4 md:mb-6">
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-2">
                 Upload Images{" "}
                 <span className="text-xs text-gray-500">(Max 3, each under 10MB)</span>
               </label>
@@ -816,7 +882,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={previewUrls.length >= 3}
                 className={`w-full flex items-center justify-center gap-3
-      border-2 border-dashed rounded-xl py-4 px-4 text-sm font-medium
+      border-2 border-dashed rounded-xl py-3 px-3 md:py-4 md:px-4 text-sm font-medium
       transition-all
       ${previewUrls.length >= 3
                     ? "border-gray-300 bg-gray-100 text-gray-400 cursor-not-allowed"
@@ -887,13 +953,13 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
           </div>
 
           {/* Right Side */}
-          <div className="space-y-6">
+          <div className="space-y-5 md:space-y-6">
             {/* Dimensions */}
             <div>
-              <label className="block font-semibold text-gray-700 mb-2">
+              <label className="block text-sm md:text-base font-medium md:font-semibold text-gray-700 mb-2">
                 Artwork Dimensions <span className="text-xs text-gray-400">(after packing)</span>
               </label>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 <input
                   type="number"
                   value={length}
@@ -901,7 +967,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Length (cm)"
                   min="1"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm"
                 />
 
                 <input
@@ -911,7 +977,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Width (cm)"
                   min="1"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm"
                 />
 
                 <input
@@ -921,7 +987,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   placeholder="Height (cm)"
                   min="1"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm"
                 />
 
                 <input
@@ -932,7 +998,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   min="0.1"
                   step="any"
                   required
-                  className="w-full border rounded-lg px-4 py-2 text-sm"
+                  className="w-full border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm"
                 />
               </div>
 
@@ -985,15 +1051,15 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
 
 
             {/* Pricing Section */}
-            <div className="border rounded-xl p-4 bg-gray-50 space-y-4">
+            <div className="border rounded-xl p-3 md:p-4 bg-gray-50 space-y-3 md:space-y-4">
 
               <h3 className="font-semibold text-gray-800 text-sm">
-                Pricing Details
+                Pricing Details (include packing cost)
               </h3>
 
               {/* Base Price */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">
+                <label className="sm:w-40 text-sm md:text-base font-medium text-gray-700">
                   Base Price *
                 </label>
                 <input
@@ -1003,53 +1069,53 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                   value={basePrice}
                   onChange={(e) => setBasePrice(e.target.value)}
                   required
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm"
+                  className="flex-1 border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm"
                 />
               </div>
 
               {/* Pickup Charges */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">
+                <label className="sm:w-40 text-sm md:text-base font-medium text-gray-700">
                   Pickup Charges
                 </label>
                 <input
                   type="text"
                   value={pickupCharges}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-100"
+                  className="flex-1 border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm bg-gray-100"
                 />
               </div>
 
               {/* Platform Fees */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-medium text-gray-700">
+                <label className="sm:w-40 text-sm md:text-base font-medium text-gray-700">
                   Platform Fees
                 </label>
                 <input
                   type="text"
                   value={platformFees.toFixed(2)}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-gray-100"
+                  className="flex-1 border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm bg-gray-100"
                 />
               </div>
 
               {/* Final Cost */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="sm:w-40 font-semibold text-gray-900">
+                <label className="sm:w-40 text-sm md:text-base font-semibold text-gray-900">
                   Cost for Buyer
                 </label>
                 <input
                   type="text"
                   value={cost}
                   readOnly
-                  className="flex-1 border rounded-lg px-4 py-2 text-sm bg-white font-semibold"
+                  className="flex-1 border rounded-lg px-3 py-2 md:px-4 md:py-2 text-sm bg-white font-semibold"
                 />
               </div>
 
             </div>
 
-            <div className="mb-6">
-              <label className="block font-semibold text-gray-700 mb-2">
+            <div className="mb-4 md:mb-6">
+              <label className="block text-sm md:text-base font-semibold text-gray-700 mb-2">
                 Video Upload <span className="text-red-500">*</span>
                 <span className="text-xs text-gray-500 ml-1">(Max 50 MB)</span>
               </label>
@@ -1059,7 +1125,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
                 type="button"
                 onClick={() => videoInputRef.current?.click()}
                 className={`w-full flex items-center justify-center gap-3
-      border-2 border-dashed rounded-xl py-4 px-4 text-sm font-medium
+      border-2 border-dashed rounded-xl py-3 px-3 md:py-4 md:px-4 text-sm font-medium
       transition-all
       ${!video && !videoPreview
                     ? "border-red-400 bg-red-50 text-red-700 hover:bg-red-100"
@@ -1145,7 +1211,7 @@ export default function ArtistUploadWork({ categories, onUploadSuccess }) {
         <button
           type="submit"
           disabled={loading}
-          className="mx-auto block w-48 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-lg rounded-lg transition disabled:opacity-50"
+          className="mx-auto block w-full md:w-48 py-2 md:py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-bold text-base md:text-lg rounded-lg transition disabled:opacity-50"
         >
           {loading
             ? (productId ? "Updating..." : "Uploading...")

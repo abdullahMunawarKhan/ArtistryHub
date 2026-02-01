@@ -532,9 +532,10 @@ text-3xl md:text-6xl drop-shadow-lg">
             </h1>
 
           </div>
-          <p className="text-base md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
+          <p className="text-sm md:text-2xl text-slate-700 max-w-2xl text-center px-2 leading-relaxed tracking-wide mb-2">
             Discover amazing artworks from talented artists
           </p>
+
           {/* 🔹 Sticky Filter + Search Section */}
           <div className="sticky top-[56px] z-30 bg-white/80 backdrop-blur-md 
 rounded-xl shadow-lg border border-slate-100 

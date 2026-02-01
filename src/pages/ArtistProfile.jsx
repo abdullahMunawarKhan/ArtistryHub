@@ -84,11 +84,15 @@ function ArtistProfileShare({ artistId }) {
   const profileUrl = `https://scopebrush.vercel.app/#/artist-profile?id=${artistId}`;
 
   const handleShare = async () => {
+    const shareText = artist?.name
+      ? `Check out the amazing artwork by ${artist.name} on ScopeBrush!`
+      : 'Take a look at this artist’s profile on ScopeBrush!';
+
     // 1️⃣ Native Capacitor share (Android / iOS)
     if (Capacitor.isNativePlatform()) {
       await Share.share({
         title: 'Check out this artist',
-        text: 'Take a look at this artist’s profile!',
+        text: shareText,
         url: profileUrl,
         dialogTitle: 'Share Artist Profile',
       });
@@ -100,7 +104,7 @@ function ArtistProfileShare({ artistId }) {
       try {
         await navigator.share({
           title: 'Check out this artist',
-          text: 'Take a look at this artist’s profile!',
+          text: shareText,
           url: profileUrl,
         });
       } catch (err) {
@@ -111,7 +115,7 @@ function ArtistProfileShare({ artistId }) {
 
     // 3️⃣ Clipboard fallback
     try {
-      await navigator.clipboard.writeText(profileUrl);
+      await navigator.clipboard.writeText(`${shareText} ${profileUrl}`);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
