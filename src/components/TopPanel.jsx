@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from "react-dom";
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Capacitor } from "@capacitor/core";
 
@@ -17,7 +18,7 @@ import {
   Info,
 } from "lucide-react";
 import { UserRound, ChevronDown, Menu, X } from "lucide-react";
-import { KeyRound, LogOut, Mail } from "lucide-react";
+import { KeyRound, LogOut, Mail, Download } from "lucide-react";
 
 const FALLBACK_APK_URL =
   "https://efszsjxupcsdeqcisnfi.supabase.co/storage/v1/object/public/apk/ScopeBrush_v9_1769533296653.apk";
@@ -39,6 +40,8 @@ function TopPanel({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const isNative = Capacitor.isNativePlatform();
   const [apkDownloadUrl, setApkDownloadUrl] = useState(FALLBACK_APK_URL);
+
+  const [showDownloadPopup, setShowDownloadPopup] = useState(false);
 
   const navigate = useNavigate();
   const adminMenuRef = useRef();
@@ -169,7 +172,9 @@ function TopPanel({
                   <Info size={18} /> App Version
                 </button>
               ) : (
-                <a href={apkDownloadUrl} download className="nav-link flex items-center gap-2">Download App</a>
+                <button onClick={() => setShowDownloadPopup(true)} className="nav-link flex items-center gap-2">
+                  <Download size={18} /> Download App
+                </button>
               )}
             </>
           )}
@@ -270,12 +275,51 @@ function TopPanel({
                 {Capacitor.isNativePlatform() ? (
                   <li><button className="menu-item flex items-center justify-center gap-2 w-full" onClick={() => { setMenuOpen(false); navigate('/version'); }}><Info size={18} /> App Version</button></li>
                 ) : (
-                  <li><a href={apkDownloadUrl} download className="menu-item flex items-center justify-center gap-2 w-full">Download App</a></li>
+                  <li>
+                    <button
+                      onClick={() => { setMenuOpen(false); setShowDownloadPopup(true); }}
+                      className="menu-item flex items-center justify-center gap-2 w-full"
+                    >
+                      <Download size={18} /> Download App
+                    </button>
+                  </li>
                 )}
               </ul>
             </nav>
           </div>
         </div>
+      )}
+      {showDownloadPopup && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-ScopeBrush w-full max-w-xs md:max-w-sm p-6 transform scale-100 transition-all animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="bg-purple-50 p-4 rounded-full mb-4 ring-4 ring-purple-50/50">
+                <Download size={32} className="text-purple-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Download App</h3>
+              <p className="text-gray-500 mb-8 leading-relaxed">
+                Download the app on your Android phone for the best experience.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button
+                  onClick={() => setShowDownloadPopup(false)}
+                  className="flex-1 py-3 px-4 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold rounded-xl transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <a
+                  href={apkDownloadUrl}
+                  download
+                  onClick={() => setShowDownloadPopup(false)}
+                  className="flex-1 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-xl text-center transition-all shadow-lg shadow-purple-200 active:scale-95 flex items-center justify-center gap-2"
+                >
+                  Continue
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
       )}
     </header>
   );

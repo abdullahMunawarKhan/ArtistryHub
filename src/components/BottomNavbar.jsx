@@ -106,3 +106,4 @@ const BottomNavbar = ({ setShowLoginToast, user, artistProfile }) => {
 };
 
 export default BottomNavbar;
+

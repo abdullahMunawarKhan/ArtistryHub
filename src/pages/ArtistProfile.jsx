@@ -79,47 +79,48 @@ function ConfirmationModal({ visible, onConfirm, onCancel, message }) {
   );
 }
 
-function ArtistProfileShare({ artistId }) {
+function ArtistProfileShare({ artist }) {
   const [copied, setCopied] = useState(false);
-  const profileUrl = `https://scopebrush.vercel.app/#/artist-profile?id=${artistId}`;
+  const profileUrl = `https://scopebrush.vercel.app/#/artist-profile?id=${artist?.id}`;
 
   const handleShare = async () => {
     const shareText = artist?.name
       ? `Check out the amazing artwork by ${artist.name} on ScopeBrush!`
       : 'Take a look at this artist’s profile on ScopeBrush!';
 
-    // 1️⃣ Native Capacitor share (Android / iOS)
-    if (Capacitor.isNativePlatform()) {
-      await Share.share({
-        title: 'Check out this artist',
-        text: shareText,
-        url: profileUrl,
-        dialogTitle: 'Share Artist Profile',
-      });
-      return;
-    }
+    // Unified Share Logic
+    try {
+      // 1. Try Capacitor Share (works for both Native and Web if supported)
+      const canShareResult = await Share.canShare();
 
-    // 2️⃣ Web Share API
-    if (navigator.share) {
-      try {
-        await navigator.share({
+      if (canShareResult.value) {
+        await Share.share({
           title: 'Check out this artist',
           text: shareText,
           url: profileUrl,
+          dialogTitle: 'Share Artist Profile',
         });
-      } catch (err) {
-        console.log('Share cancelled');
+        return; // Success or user interaction complete
       }
-      return;
-    }
 
-    // 3️⃣ Clipboard fallback
-    try {
-      await navigator.clipboard.writeText(`${shareText} ${profileUrl}`);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      alert('Copy failed. Please copy manually:\n' + profileUrl);
+      // If we reach here, Share API says it's not supported, so throw to trigger fallback
+      throw new Error("Share API not supported");
+
+    } catch (err) {
+      // 2. Fallback to Clipboard
+      // We only fallback if it wasn't a user cancellation
+      const isUserCancellation = err.name === 'AbortError' || err.message?.toLowerCase().includes('cancelled');
+
+      if (!isUserCancellation) {
+        try {
+          await navigator.clipboard.writeText(`${shareText} ${profileUrl}`);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (clipboardErr) {
+          console.error("Clipboard failed:", clipboardErr);
+          alert('Copy failed. Please copy manually:\n' + profileUrl);
+        }
+      }
     }
   };
 
@@ -262,11 +263,10 @@ export default function ArtistProfile() {
       return;
     }
 
+    const isCurrentlyFollowing = followingIds.includes(artistId);
     setFollowLoading(prev => ({ ...prev, [artistId]: true }));
 
     try {
-      const isCurrentlyFollowing = followingIds.includes(artistId);
-
       if (isCurrentlyFollowing) {
         // Unfollow logic
         const newFollowingIds = followingIds.filter(id => id !== artistId);
@@ -289,13 +289,7 @@ export default function ArtistProfile() {
 
         // Update local state
         setFollowingIds(newFollowingIds);
-        setArtists(prev =>
-          prev.map(artist =>
-            artist.id === artistId
-              ? { ...artist, followers: Math.max(0, artist.followers - 1) }
-              : artist
-          )
-        );
+        setArtist(prev => ({ ...prev, followers: Math.max((prev.followers || 0) - 1, 0) }));
 
       } else {
         // Follow logic
@@ -319,26 +313,12 @@ export default function ArtistProfile() {
 
         // Update local state
         setFollowingIds(newFollowingIds);
-        setArtists(prev =>
-          prev.map(artist =>
-            artist.id === artistId
-              ? { ...artist, followers: artist.followers + 1 }
-              : artist
-          )
-        );
+        setArtist(prev => ({ ...prev, followers: (prev.followers || 0) + 1 }));
       }
     } catch (error) {
       console.error('Error toggling follow:', error);
-      // You might want to show an error message to the user here
     } finally {
       setFollowLoading(prev => ({ ...prev, [artistId]: false }));
-      // In handleFollowToggle’s try/catch, after setFollowLoading
-      if (isCurrentlyFollowing) {
-        setArtist(prev => ({ ...prev, followers: Math.max(prev.followers - 1, 0) }));
-      } else {
-        setArtist(prev => ({ ...prev, followers: prev.followers + 1 }));
-      }
-
     }
   };
   // fetch artworks + reviews
@@ -512,7 +492,7 @@ export default function ArtistProfile() {
 
         {/* TOP ROW — Share + Edit (same on all screens) */}
         <div className="flex items-center justify-between mb-3">
-          <ArtistProfileShare artistId={artist.id} />
+          <ArtistProfileShare artist={artist} />
           {isOwner && (
             <button
               onClick={() => navigate(`/register?edit=1&id=${artist.id}`)}

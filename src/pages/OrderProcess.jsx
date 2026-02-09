@@ -1,5 +1,5 @@
 // src/pages/OrderProcess.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../utils/supabase";
 
@@ -102,6 +102,10 @@ export default function OrderProcess() {
     altMobile: "",
     shippingAddress: ""
   });
+
+  const [errors, setErrors] = useState({});
+  const validationTimeout = useRef(null);
+
   const phoneRegex = /^[0-9]{10}$/;
   const isAvailable = artwork?.availability !== false;
 
