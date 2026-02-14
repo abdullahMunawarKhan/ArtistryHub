@@ -82,6 +82,7 @@ function Modal({ children, onClose }) {
 
 function AdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [activeMetric, setActiveMetric] = useState('users');
   const [userEmail, setUserEmail] = useState('');
   const [artistList, setArtistList] = useState([]);
   const [orderTag, setOrderTag] = useState('all');
@@ -271,7 +272,7 @@ function AdminDashboard() {
           fetchTimeSeries('artworks', 'created_at', period),
           fetchTimeSeries('orders', 'ordered_at', period),
         ]);
-        // Format each dataset as needed
+
         setSignups((u || []).map(row => ({
           timestamp: row.hour_bucket,
           count: row.count
@@ -288,21 +289,14 @@ function AdminDashboard() {
           timestamp: row.hour_bucket,
           count: row.count
         })));
-        console.log('Signups:', u);      // ← log 'u', not 'signups'
-        console.log('ArtistRegs:', a);
-        console.log('ArtworksAdded:', w);
-        console.log('PendingOrders:', o);
-        console.log('Analytics data structure:', analyticsData); // Add this 
-
       } catch (err) {
-
+        console.error('Analytics load failed:', err);
       }
     }
 
     loadAnalytics();
-    // const timer = setInterval(loadAnalytics, 60 * 60 * 1000); // hourly refresh
-    // return () => clearInterval(timer);
   }, [period]);
+
 
   useEffect(() => {
     async function fetchArtworkPayments() {
@@ -952,53 +946,91 @@ function AdminDashboard() {
 
         {!selectedSection && (         //{selectedSection === 'home' && (
           <div className="flex flex-col gap-4 sm:gap-6 md:gap-8">
-            {/* Time Window Selector */}
-            <div className="flex gap-1 sm:gap-2 justify-center flex-wrap">
-              {['day', 'week', 'month'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p)}
-                  className={`px-2 sm:px-3 md:px-5 py-1 sm:py-2 rounded text-xs sm:text-sm font-medium shadow-sm transition-all duration-200 ${period === p
-                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                    : 'bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600'
-                    }`}
-                >
-                  {p === 'day' ? 'Today' : p === 'week' ? 'Last 7 Days' : 'Last 30 Days'}
-                </button>
-              ))}
-            </div>
-
-            {/* Analytics Charts */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-5">
-              {[{
-                title: 'Users',
-                data: signups
-              }, {
-                title: 'Artist Registrations',
-                data: artistRegs
-              }, {
-                title: 'Artworks Added',
-                data: artworksAdded
-              }, {
-                title: 'Delivered Orders',
-                data: pendingOrders
-              }].map((chart, i) => (
-                <div
-                  key={i}
-                  className="bg-gradient-to-br from-white to-gray-50 rounded-lg shadow p-2 sm:p-3 md:p-4 flex flex-col hover:shadow-lg transition duration-200"
-                >
-                  <h4 className="text-xs sm:text-sm md:text-base font-medium mb-1 text-center text-gray-700">
-                    {chart.title}
-                  </h4>
-                  <div className="w-full h-32 sm:h-40 md:h-52">
-                    <TimeSeriesChart data={chart.data} dataKey="count" title="" />
-                  </div>
-                  <div className="mt-2 text-lg sm:text-xl md:text-2xl font-bold text-blue-600 text-center">
-                    {chart.data.reduce((sum, point) => sum + point.count, 0)}
-                  </div>
-                  <div className="text-xs text-gray-500 text-center">Total in this period</div>
+            {/* Premium Analytics Overview */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8">
+              <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-800">Platform Overview</h3>
+                  <p className="text-gray-500 text-sm">Real-time engagement and growth metrics</p>
                 </div>
-              ))}
+
+                <div className="flex bg-gray-50 p-1 rounded-2xl border border-gray-100">
+                  {['day', 'week', 'month'].map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setPeriod(p)}
+                      className={`px-6 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${period === p
+                        ? 'bg-white text-blue-600 shadow-sm border border-gray-100'
+                        : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                    >
+                      {p === 'day' ? 'Today' : p === 'week' ? 'Weekly' : 'Monthly'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-12 relative">
+                {/* Visual Connection Line (Desktop) */}
+                <div className="hidden lg:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-100 via-purple-100 to-green-100 -z-0"></div>
+
+                {[
+                  { id: 'users', label: 'Total Users', data: signups, color: 'blue', icon: Home },
+                  { id: 'artists', label: 'Artist Regs', data: artistRegs, color: 'purple', icon: Palette },
+                  { id: 'artworks', label: 'Works Added', data: artworksAdded, color: 'orange', icon: Image },
+                  { id: 'orders', label: 'Delivered', data: pendingOrders, color: 'green', icon: ShoppingCart }
+                ].map((item, i) => {
+                  const isActive = activeMetric === item.id;
+                  const themeClasses = {
+                    blue: 'text-blue-600 bg-blue-50',
+                    purple: 'text-purple-600 bg-purple-50',
+                    orange: 'text-orange-600 bg-orange-50',
+                    green: 'text-green-600 bg-green-50'
+                  };
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setActiveMetric(item.id)}
+                      className={`relative z-10 flex flex-col items-center group transition-all duration-300 ${isActive ? 'scale-110' : 'opacity-60 hover:opacity-100'}`}
+                    >
+                      <div className={`w-14 h-14 rounded-2xl ${themeClasses[item.color]} flex items-center justify-center mb-4 shadow-sm border-2 ${isActive ? 'border-blue-400' : 'border-white'}`}>
+                        <item.icon size={24} />
+                      </div>
+                      <div className="text-center">
+                        <span className="block text-3xl font-black text-gray-900 mb-1">
+                          {item.data.reduce((s, p) => s + p.count, 0)}
+                        </span>
+                        <span className={`text-xs font-bold uppercase tracking-widest ${isActive ? 'text-gray-900' : 'text-gray-400'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="w-full h-[400px] bg-gray-50/50 rounded-3xl p-6 border border-gray-50 mb-4 transition-all duration-500">
+                <TimeSeriesChart
+                  data={
+                    activeMetric === 'users' ? signups :
+                      activeMetric === 'artists' ? artistRegs :
+                        activeMetric === 'artworks' ? artworksAdded :
+                          pendingOrders
+                  }
+                  dataKey="count"
+                  title={`${activeMetric.charAt(0).toUpperCase() + activeMetric.slice(1)} Performance Trend`}
+                  color={
+                    activeMetric === 'users' ? 'blue' :
+                      activeMetric === 'artists' ? 'purple' :
+                        activeMetric === 'artworks' ? 'orange' :
+                          'green'
+                  }
+                  period={period}
+                />
+              </div>
+              <p className="text-center text-xs text-gray-400 font-medium italic">
+                * Chart reflects user signups for the selected period. Graphical representation inspired by growth flow patterns.
+              </p>
             </div>
           </div>
         )}
